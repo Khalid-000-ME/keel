@@ -181,7 +181,72 @@ within a bounded drift of the shipped balance, a starting pool ratio within
 0.2x-5x) rather than adversarial mis-configuration, which has its own
 dedicated test.
 
-## 5. What's built vs. deferred
+## 5. Uniswap v4 — `KeelSkewHook`, the same kernel on a second venue
+
+Resolving the PRD's Part D.7 `[VERIFY]` list against the real source:
+
+- **`BaseHook` isn't in `v4-periphery`'s current `main`.** It was removed
+  upstream in commit `5da22e60` ("remove hooks and move to hook repo").
+  `contracts/lib/v4-periphery` is pinned to `3779387e`, the last commit
+  before that removal, which still has it at `src/utils/BaseHook.sol`.
+- **`Hooks.Permissions`**, read directly from `v4-core/src/libraries/Hooks.sol`:
+  14 booleans (`beforeInitialize`, `afterInitialize`, `beforeAddLiquidity`,
+  `afterAddLiquidity`, `beforeRemoveLiquidity`, `afterRemoveLiquidity`,
+  `beforeSwap`, `afterSwap`, `beforeDonate`, `afterDonate`,
+  `beforeSwapReturnDelta`, `afterSwapReturnDelta`,
+  `afterAddLiquidityReturnDelta`, `afterRemoveLiquidityReturnDelta`).
+  `KeelSkewHook` only sets `beforeSwap`/`afterSwap`.
+- **Compiler version conflict, and how it's resolved:** `v4-core` pins
+  `pragma solidity 0.8.26;` exactly; `swap-vm`/`aqua` pin `0.8.30` exactly.
+  `AvellanedaStoikov.sol` is imported by files in both dependency trees, so
+  it can't pin either exact version — it uses `pragma solidity ^0.8.24;`
+  instead, letting solc auto-detection (`contracts/foundry.toml`'s
+  `auto_detect_solc = true`) resolve each compilation unit to whichever
+  exact version its other imports require. `v4-core`'s `Pool.sol` also
+  needs a much higher `optimizer_runs` than the rest of this repo to avoid
+  a stack-too-deep error under `via_ir` — given its own
+  `compilation_restrictions` entry in `foundry.toml`, scoped to
+  `lib/v4-core/**` only.
+
+**Design choice, not a `[VERIFY]` item but worth stating plainly:** the PRD's
+Part D.7 sketch has `_beforeSwap` translate the reservation price into a
+`BeforeSwapDelta`/custom-curve override — the same curve-reshaping approach
+Aqua's `applyInventorySkew` uses. Reading `Hooks.sol` and `BaseHook.sol`
+shows a simpler, safer, and more idiomatic extension point already exists
+for exactly this: a pool initialized with `LPFeeLibrary.DYNAMIC_FEE_FLAG`
+lets `beforeSwap` return an LP-fee override (`uint24 | LPFeeLibrary.OVERRIDE_FEE_FLAG`)
+instead of reshaping the curve directly. `KeelSkewHook` uses this. It reuses
+`AvellanedaStoikov.halfSpreadWad` and `softBoundPenaltyBps` — both already
+spread/fee-shaped (a price offset, a bps surcharge) — converting the price
+offset to a relative fee fraction via the pool's own current
+`sqrtPriceX96` (read live through `StateLibrary.getSlot0`, not tracked
+separately, since the pool already knows this authoritatively). It does
+*not* reuse `reservationPriceWad`/`recenterBalances`, which are specific to
+SwapVM's `(balanceIn, balanceOut)` curve representation and don't have an
+equivalent on a concentrated-liquidity pool without reimplementing swap math
+v4's own core already owns. "One kernel, two venues" means the same
+`AvellanedaStoikov` library, unmodified — each venue calls the subset of its
+functions that maps onto how that venue actually prices a fill, not that
+every function is used identically everywhere.
+
+A second, related difference: the Aqua opcode reads a maker's real,
+individually-owned wallet inventory via `AQUA.safeBalances()` — that's the
+core thesis of the whole project (Part A). A v4 pool's liquidity belongs to
+the pool collectively, not to one maker, so there is no equivalent balance
+to read. `KeelSkewHook` instead tracks the pool's own accumulated inventory
+drift itself (`poolInventoryWad`, updated in `_afterSwap` from the pool's
+settled `BalanceDelta`) against a configured target — pricing the pool's
+drift the same way Aqua prices a maker's drift, one fill at a time.
+
+Tested end-to-end in `test/KeelSkewHook.t.sol` against a real, freshly
+deployed `PoolManager` (via `v4-core`'s own `Deployers` test harness) and a
+hook address mined with the real `HookMiner` (not a mock hook or a
+pre-computed address) — including
+`test_DriftedInventory_ExposedSideCostsMoreThanCoveredSide`, which proves
+the bid/ask asymmetry through an actual pool swap, not only through the
+pure-math fuzz tests in `AvellanedaStoikov.t.sol`.
+
+## 6. What's built vs. deferred
 
 Built and tested (`contracts/`):
 
@@ -194,9 +259,10 @@ Built and tested (`contracts/`):
   router.
 - `test/QuoteSwapParity.t.sol` — the critical differential test, 2000 fuzz
   runs plus explicit boundary cases.
+- `KeelSkewHook.sol` — the same kernel as a Uniswap v4 dynamic-fee hook.
+- `test/KeelSkewHook.t.sol` — 5 tests against a real, freshly deployed
+  `PoolManager`, proving the bid/ask asymmetry through an actual pool swap.
 
-Deferred to the next phase (not started): the Uniswap v4 `KeelSkewHook`, the
-subgraph + Subgraph MCP, `AdversarialFlow.s.sol` and the sim-report package,
-`packages/strategy-sdk` (the off-chain SDK wrapper), and the `apps/console`
-frontend. These were scoped out deliberately to get the core mechanism
-correct and tested first, per the PRD's own Day 1-4 build schedule (Part J).
+Deferred (not started): the subgraph + Subgraph MCP, `AdversarialFlow.s.sol`
+and the sim-report package, `packages/strategy-sdk` (the off-chain SDK
+wrapper), and the `apps/console` frontend.

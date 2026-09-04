@@ -3,11 +3,25 @@ src = "src"
 test = "test"
 script = "script"
 libs = ["lib"]
-solc_version = "0.8.30"
+# No pinned solc_version: swap-vm/aqua pin exactly 0.8.30 and v4-core pins
+# exactly 0.8.26 (see remappings.txt's v4 section) -- auto-detection lets
+# forge pick the matching installed solc per file instead of forcing one
+# version across both dependency trees.
+auto_detect_solc = true
 optimizer = true
 optimizer_runs = 700
 via_ir = true
 fuzz = { runs = 2000 }
+
+# v4-core's own swap logic (Pool.sol) needs its own much higher
+# optimizer_runs to avoid a "stack too deep" Yul error under via_ir --
+# matches the optimizer_runs v4-core's own foundry.toml uses for itself.
+additional_compiler_profiles = [
+    { name = "v4-core", via_ir = true, optimizer_runs = 44_444_444 },
+]
+compilation_restrictions = [
+    { paths = "lib/v4-core/**", optimizer_runs = 44_444_444 },
+]
 
 [fuzz]
 seed = "0x1"
