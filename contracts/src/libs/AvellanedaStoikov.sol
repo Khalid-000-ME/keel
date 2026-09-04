@@ -100,6 +100,57 @@ library AvellanedaStoikov {
         newBalanceOut = k / newBalanceIn;
     }
 
+    /// @notice Full inventory-aware skew, composed from the pieces above into
+    ///         the single balance transformation a VM opcode applies in one
+    ///         pass. See the @dev note on why this is one composed call
+    ///         rather than three independent VM instructions.
+    /// @dev Order of composition:
+    ///      1. mid <- implied by the live (balanceIn, balanceOut) pair
+    ///      2. r   <- reservationPriceWad(mid, q, params, t)
+    ///      3. this specific call always adds to balanceIn (taker gives
+    ///         tokenIn), so it is "exposed-side" flow when q >= 0 (already
+    ///         long tokenIn, this fill pushes further from target) and
+    ///         "covered-side" flow when q < 0 (mean-reverting, buys back
+    ///         the short). Exposed-side gets r - halfSpread (worse for the
+    ///         taker, discouraging the fill); covered-side gets r +
+    ///         halfSpread (better for the taker, rewarding the fill that
+    ///         helps the maker mean-revert) -- the actual bid/ask
+    ///         asymmetry from Avellaneda-Stoikov, expressed as which side
+    ///         of the reservation price this call's direction lands on.
+    ///      4. exposed-side flow additionally pays the soft-bound penalty,
+    ///         shaving `softBoundPenaltyBps` off the tokenOut the taker
+    ///         receives -- covered-side flow never pays it, since it's the
+    ///         flow the position wants to attract as it nears the bound.
+    ///      5. recenter (balanceIn, balanceOut) around that effective
+    ///         price, preserving curve depth, then apply the bound penalty.
+    function applyInventorySkew(
+        uint256 balanceIn,
+        uint256 balanceOut,
+        int256 inventoryQWad,
+        Params memory p,
+        uint256 elapsedSecs,
+        int256 boundWad
+    ) internal pure returns (uint256 newBalanceIn, uint256 newBalanceOut) {
+        int256 mid = midFromBalancesWad(balanceIn, balanceOut);
+        int256 r = reservationPriceWad(mid, inventoryQWad, p, elapsedSecs);
+
+        int256 halfSpread = halfSpreadWad(p, elapsedSecs);
+        if (halfSpread < 0) halfSpread = 0;
+
+        bool exposedSide = inventoryQWad >= 0;
+        int256 effectivePrice = exposedSide ? r - halfSpread : r + halfSpread;
+        if (effectivePrice < 1) effectivePrice = 1; // never quote a non-positive price
+
+        (newBalanceIn, newBalanceOut) = recenterBalances(balanceIn, balanceOut, effectivePrice);
+
+        if (exposedSide) {
+            uint256 penaltyBps = softBoundPenaltyBps(inventoryQWad, boundWad);
+            if (penaltyBps > 0) {
+                newBalanceOut -= Math.mulDiv(newBalanceOut, penaltyBps, 10_000);
+            }
+        }
+    }
+
     function _wmul(int256 a, int256 b) private pure returns (int256) {
         return (a * b) / WAD;
     }

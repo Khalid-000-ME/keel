@@ -113,6 +113,63 @@ contract AvellanedaStoikovTest is Test {
         assertEq(AvellanedaStoikov.softBoundPenaltyBps(123, 0), 0);
     }
 
+    /// @notice The composed opcode transform: exposed-side flow (q >= 0, this
+    ///         call's direction adds to an already-long tokenIn position)
+    ///         must land on a strictly worse implied price than covered-side
+    ///         flow (q < 0, mean-reverting) for the same |q| and params --
+    ///         this is the actual bid/ask asymmetry the mechanism sells.
+    function testFuzz_ApplyInventorySkew_ExposedSideWorseThanCoveredSide(
+        uint256 balanceIn,
+        uint256 balanceOut,
+        int256 absQWad,
+        int256 gammaWad,
+        int256 sigmaSqWad,
+        int256 baseSpreadWad
+    ) public pure {
+        balanceIn = bound(balanceIn, 1e12, 1e27);
+        balanceOut = bound(balanceOut, 1e12, 1e27);
+        absQWad = bound(absQWad, 1e6, 1e20);
+        gammaWad = bound(gammaWad, 0, 1e15);
+        sigmaSqWad = bound(sigmaSqWad, 0, 1e15);
+        baseSpreadWad = bound(baseSpreadWad, 1e10, 1e16); // keep spread meaningfully > 0
+
+        AvellanedaStoikov.Params memory p = _params(gammaWad, sigmaSqWad, baseSpreadWad, 30 days);
+
+        (uint256 exposedIn, uint256 exposedOut) =
+            AvellanedaStoikov.applyInventorySkew(balanceIn, balanceOut, absQWad, p, 0, 0);
+        (uint256 coveredIn, uint256 coveredOut) =
+            AvellanedaStoikov.applyInventorySkew(balanceIn, balanceOut, -absQWad, p, 0, 0);
+
+        vm.assume(exposedIn > 1e6 && coveredIn > 1e6);
+
+        int256 exposedPrice = AvellanedaStoikov.midFromBalancesWad(exposedIn, exposedOut);
+        int256 coveredPrice = AvellanedaStoikov.midFromBalancesWad(coveredIn, coveredOut);
+
+        assertLt(exposedPrice, coveredPrice, "exposed-side flow must be priced worse than covered-side flow");
+    }
+
+    /// @notice Exposed-side flow at/past the soft bound must yield strictly
+    ///         less tokenOut than the same flow with no bound configured --
+    ///         the penalty must actually bite, not just compile.
+    function testFuzz_ApplyInventorySkew_BoundPenaltyReducesExposedSideOutput(
+        uint256 balanceIn,
+        uint256 balanceOut,
+        int256 qWad,
+        int256 boundWad
+    ) public pure {
+        balanceIn = bound(balanceIn, 1e12, 1e27);
+        balanceOut = bound(balanceOut, 1e12, 1e27);
+        boundWad = bound(boundWad, 1e6, 1e18);
+        qWad = bound(qWad, boundWad, 10 * boundWad); // at or past the bound, exposed side
+
+        AvellanedaStoikov.Params memory p = _params(0, 0, 1e14, 30 days);
+
+        (, uint256 outNoBound) = AvellanedaStoikov.applyInventorySkew(balanceIn, balanceOut, qWad, p, 0, 0);
+        (, uint256 outWithBound) = AvellanedaStoikov.applyInventorySkew(balanceIn, balanceOut, qWad, p, 0, boundWad);
+
+        assertLt(outWithBound, outNoBound, "soft-bound penalty must reduce tokenOut on exposed-side flow at/past bound");
+    }
+
     /// @notice recenterBalances preserves the constant-product invariant
     ///         (within integer-rounding tolerance) while moving the implied
     ///         price to the requested target.
