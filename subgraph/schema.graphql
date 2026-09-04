@@ -1,0 +1,48 @@
+"""
+A Keel strategy shipped on Aqua -- identified the same way Aqua itself
+identifies it (strategyHash = keccak256(strategy), see Aqua.ship() and
+SwapVM.hash()). Reconstructed entirely from on-chain events (Aqua's
+`Shipped` for creation, KeelRouter's `Swapped` for every fill after), so
+this mirrors the same reservation price a `quote()` call to the router
+would compute right now -- the routability problem the PRD's Part D.5
+describes: a solver can't read Keel's price off a single reserve the way
+it would for a pool AMM, because there isn't one.
+"""
+type KeelPosition @entity(immutable: false) {
+  id: ID! # strategyHash
+  maker: Bytes!
+  keelRouter: Bytes!
+  """ Lower-address token of the pair -- Aqua/SwapVM's own sort convention. """
+  tokenA: Bytes!
+  """ Higher-address token of the pair. """
+  tokenB: Bytes!
+  gammaWad: BigInt!
+  sigmaSqWad: BigInt!
+  baseSpreadWad: BigInt!
+  """ targetInventoryWad is denominated in whichever token was tokenIn at ship time (matches KeelInventorySkew.ProgramData -- see mapping.ts). """
+  targetInventoryWad: BigInt!
+  boundWad: BigInt!
+  horizonSecs: BigInt!
+  startTimestamp: BigInt!
+  currentBalanceAWad: BigInt! # updated on every fill from the Swapped event's amountIn/amountOut
+  currentBalanceBWad: BigInt!
+  currentReservationPriceWad: BigInt! # re-derived with the same AS formula, see mapping.ts
+  currentHalfSpreadWad: BigInt!
+  shippedAt: BigInt!
+  shippedAtBlock: BigInt!
+  lastUpdated: BigInt!
+  fills: [Fill!]! @derivedFrom(field: "position")
+}
+
+type Fill @entity(immutable: true) {
+  id: ID! # tx hash + log index
+  position: KeelPosition!
+  taker: Bytes!
+  amountIn: BigInt!
+  amountOut: BigInt!
+  midWadAtFill: BigInt!
+  reservationPriceAtFillWad: BigInt!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}

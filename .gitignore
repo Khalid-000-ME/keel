@@ -11,6 +11,8 @@ contracts/deployments/
 dist/
 .next/
 *.log
+subgraph/generated/
+subgraph/build/
 
 # Only README.md is tracked -- FEEDBACK/*.md is exempted since Uniswap's
 # track qualification requires those files to actually be in the repo.

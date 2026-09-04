@@ -1,0 +1,16 @@
+{
+  "name": "@keel/subgraph",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --studio keel"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-ts": "^0.38.2"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.97.0"
+  }
+}
