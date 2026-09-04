@@ -1,0 +1,15 @@
+# Feedback — Uniswap (v4)
+
+Notes from building `contracts/src/uniswap/KeelSkewHook.sol` against the real `v4-core`/`v4-periphery` source (compiled and tested against a real, freshly deployed `PoolManager` — not written against docs alone).
+
+## `BaseHook.sol` was removed from `v4-periphery`'s `main` with no forwarding pointer
+
+Commit `5da22e60` ("remove hooks and move to hook repo") deleted `src/utils/BaseHook.sol` from `v4-periphery` entirely. There's no deprecation notice, no README pointer to wherever it moved, and no tag on the last commit that still had it — finding a working version meant `git log --oneline --all -- '**/BaseHook.sol'` and manually walking history to the commit right before the removal (`3779387e`). For anyone building a hook today by cloning `v4-periphery`'s `main` (which is what "the official repo" reasonably means to a builder), the very first file they need doesn't exist, with nothing in the repo explaining why or where it went. Even a one-line README note ("hooks moved to `github.com/Uniswap/hooks` as of `5da22e60`") would have saved real time.
+
+## Multi-dependency solc version conflicts have no documented resolution pattern
+
+`v4-core` pins `pragma solidity 0.8.26;` *exactly*. Any project integrating v4 alongside another dependency that also pins an exact (different) version — a completely normal situation once a project touches more than one protocol — hits a hard wall with Foundry's default single-`solc_version` config. The actual fix (`auto_detect_solc = true` plus a `compilation_restrictions` entry giving `v4-core`'s `Pool.sol` its own much higher `optimizer_runs` to avoid a stack-too-deep error under `via_ir`, matching what `v4-core`'s *own* `foundry.toml` uses internally) isn't hard once found, but nothing points a builder at it — we found the `optimizer_runs` requirement by trial and error after a cryptic Yul "variable is 1 too deep in the stack" error. A short "integrating v4 alongside other pinned-version dependencies" doc section, even just linking to `v4-core`'s own `foundry.toml` as the canonical settings to mirror, would directly help.
+
+## The dynamic-fee LP-fee-override mechanism deserves more visibility
+
+For a hook that needs to price a swap differently based on external state (in our case, accumulated inventory drift) rather than reshape the curve itself, `beforeSwap` returning an LP-fee override (`uint24 | LPFeeLibrary.OVERRIDE_FEE_FLAG`, on a pool initialized with `LPFeeLibrary.DYNAMIC_FEE_FLAG`) is exactly the right, minimal extension point — simpler and safer than `BeforeSwapDelta`-based curve reshaping for this whole class of "adjust the fee, not the curve" hooks. We found it by reading `LPFeeLibrary.sol` directly after `BeforeSwapDelta` started looking like more machinery than the problem needed. This mechanism feels underexposed relative to how broadly useful it is — most "make the fee reflect external state" hook ideas (which is a large fraction of hook ideas generally) would benefit from finding this pattern faster than we did.

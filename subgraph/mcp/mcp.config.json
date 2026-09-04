@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "keel-subgraph": {
+      "command": "npx",
+      "args": ["mcp-remote", "--header", "Authorization:${AUTH_HEADER}", "https://subgraphs.mcp.thegraph.com/sse"],
+      "env": {
+        "AUTH_HEADER": "Bearer ${THEGRAPH_GATEWAY_API_KEY}"
+      }
+    }
+  }
+}
