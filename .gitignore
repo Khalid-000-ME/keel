@@ -1,7 +1,7 @@
 node_modules/
 .env
-# Vendored 1inch dependencies -- not committed to this repo. Pull them
-# yourself per docs/SETUP.md (git clone, not a submodule, by request).
+# Vendored 1inch/Uniswap dependencies -- not committed to this repo, not
+# git submodules either. See README.md's Setup section to pull them.
 contracts/lib/
 contracts/out/
 contracts/cache/
@@ -11,3 +11,9 @@ contracts/deployments/
 dist/
 .next/
 *.log
+
+# Only README.md is tracked -- FEEDBACK/*.md is exempted since Uniswap's
+# track qualification requires those files to actually be in the repo.
+*.md
+!README.md
+!FEEDBACK/*.md
