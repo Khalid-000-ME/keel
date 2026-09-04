@@ -1,0 +1,6 @@
+[submodule "contracts/lib/swap-vm"]
+	path = contracts/lib/swap-vm
+	url = https://github.com/1inch/swap-vm.git
+[submodule "contracts/lib/aqua"]
+	path = contracts/lib/aqua
+	url = https://github.com/1inch/aqua.git
