@@ -1,0 +1,335 @@
+{
+  "ticks": 40,
+  "startMidWad": "1000000000000000000",
+  "endMidWad": "700267852453563488",
+  "trendPct": "-29.97%",
+  "startInventoryWad": "1005000000000000000000",
+  "stockEndInventoryWad": "1200000000000000000000",
+  "keelEndInventoryWad": "1200000000000000000000",
+  "stockEndPnlWad": "-26613096175953969050",
+  "keelEndPnlWad": "-4260761837214633965",
+  "pnlImprovementWad": "22352334338739335085",
+  "headline": "Over 40 fills on a trending series (mid moved from 1.0000 to 0.7002, -29.97%), both positions took on the identical inventory drift (token0 grew 19.40% for both, since both received the same fixed-size adversarial fills), but the stock position ended -26.6130 PnL while Keel ended -4.2607 PnL -- a 22.3523 improvement, entirely from Keel's reservation-price skew pricing the exposed-side fills worse for the taker as inventory drifted.",
+  "series": [
+    {
+      "tick": 0,
+      "midWad": "1000000000000000000",
+      "stockInventoryWad": "1005000000000000000000",
+      "stockPnlWad": "24875621890547264",
+      "keelInventoryWad": "1005000000000000000000",
+      "keelPnlWad": "47257805698839483"
+    },
+    {
+      "tick": 1,
+      "midWad": "990074503106358753",
+      "stockInventoryWad": "1010000000000000000000",
+      "stockPnlWad": "-245067946313459",
+      "keelInventoryWad": "1010000000000000000000",
+      "keelPnlWad": "131724445357867483"
+    },
+    {
+      "tick": 2,
+      "midWad": "980296049406920890",
+      "stockInventoryWad": "1015000000000000000000",
+      "stockPnlWad": "-73884382048896008",
+      "keelInventoryWad": "1015000000000000000000",
+      "keelPnlWad": "249839816598291805"
+    },
+    {
+      "tick": 3,
+      "midWad": "970661748647140187",
+      "stockInventoryWad": "1020000000000000000000",
+      "stockPnlWad": "-194608164312098219",
+      "keelInventoryWad": "1020000000000000000000",
+      "keelPnlWad": "398040010190860062"
+    },
+    {
+      "tick": 4,
+      "midWad": "961168781237985390",
+      "stockInventoryWad": "1025000000000000000000",
+      "stockPnlWad": "-361024371489389638",
+      "keelInventoryWad": "1025000000000000000000",
+      "keelPnlWad": "573203051402171876"
+    },
+    {
+      "tick": 5,
+      "midWad": "951814396192742415",
+      "stockInventoryWad": "1030000000000000000000",
+      "stockPnlWad": "-571781706450737256",
+      "keelInventoryWad": "1030000000000000000000",
+      "keelPnlWad": "771300545347367841"
+    },
+    {
+      "tick": 6,
+      "midWad": "942595909133754359",
+      "stockInventoryWad": "1035000000000000000000",
+      "stockPnlWad": "-825568301091544292",
+      "keelInventoryWad": "1035000000000000000000",
+      "keelPnlWad": "988760981614421964"
+    },
+    {
+      "tick": 7,
+      "midWad": "933510700366402949",
+      "stockInventoryWad": "1040000000000000000000",
+      "stockPnlWad": "-1121110446882343575",
+      "keelInventoryWad": "1040000000000000000000",
+      "keelPnlWad": "1222011087994997493"
+    },
+    {
+      "tick": 8,
+      "midWad": "924556213017751479",
+      "stockInventoryWad": "1045000000000000000000",
+      "stockPnlWad": "-1457171371138982484",
+      "keelInventoryWad": "1045000000000000000000",
+      "keelPnlWad": "1467880185730525753"
+    },
+    {
+      "tick": 9,
+      "midWad": "915729951237380096",
+      "stockInventoryWad": "1050000000000000000000",
+      "stockPnlWad": "-1832550057178614243",
+      "keelInventoryWad": "1050000000000000000000",
+      "keelPnlWad": "1722378058548235393"
+    },
+    {
+      "tick": 10,
+      "midWad": "907029478458049886",
+      "stockInventoryWad": "1055000000000000000000",
+      "stockPnlWad": "-2246080106608204132",
+      "keelInventoryWad": "1055000000000000000000",
+      "keelPnlWad": "1981929452219024047"
+    },
+    {
+      "tick": 11,
+      "midWad": "898452415713932750",
+      "stockInventoryWad": "1060000000000000000000",
+      "stockPnlWad": "-2696628642069695372",
+      "keelInventoryWad": "1060000000000000000000",
+      "keelPnlWad": "2242959086782339640"
+    },
+    {
+      "tick": 12,
+      "midWad": "889996440014239943",
+      "stockInventoryWad": "1065000000000000000000",
+      "stockPnlWad": "-3183095248839661915",
+      "keelInventoryWad": "1065000000000000000000",
+      "keelPnlWad": "2502263166459584179"
+    },
+    {
+      "tick": 13,
+      "midWad": "881659282770173466",
+      "stockInventoryWad": "1070000000000000000000",
+      "stockPnlWad": "-3704410953751408775",
+      "keelInventoryWad": "1070000000000000000000",
+      "keelPnlWad": "2755887803415260649"
+    },
+    {
+      "tick": 14,
+      "midWad": "873438728273211634",
+      "stockInventoryWad": "1075000000000000000000",
+      "stockPnlWad": "-4259537239974243722",
+      "keelInventoryWad": "1075000000000000000000",
+      "keelPnlWad": "3000260521513686386"
+    },
+    {
+      "tick": 15,
+      "midWad": "865332612222823147",
+      "stockInventoryWad": "1080000000000000000000",
+      "stockPnlWad": "-4847465096248222307",
+      "keelInventoryWad": "1080000000000000000000",
+      "keelPnlWad": "3231810303148085423"
+    },
+    {
+      "tick": 16,
+      "midWad": "857338820301783264",
+      "stockInventoryWad": "1085000000000000000000",
+      "stockPnlWad": "-5467214099233215179",
+      "keelInventoryWad": "1085000000000000000000",
+      "keelPnlWad": "3447314562952941048"
+    },
+    {
+      "tick": 17,
+      "midWad": "849455286797341204",
+      "stockInventoryWad": "1090000000000000000000",
+      "stockPnlWad": "-6117831527688832916",
+      "keelInventoryWad": "1090000000000000000000",
+      "keelPnlWad": "3642853147203809624"
+    },
+    {
+      "tick": 18,
+      "midWad": "841679993266560053",
+      "stockInventoryWad": "1095000000000000000000",
+      "stockPnlWad": "-6798391507256703632",
+      "keelInventoryWad": "1095000000000000000000",
+      "keelPnlWad": "3814861944285101904"
+    },
+    {
+      "tick": 19,
+      "midWad": "834010967244219261",
+      "stockInventoryWad": "1100000000000000000000",
+      "stockPnlWad": "-7507994184668982982",
+      "keelInventoryWad": "1100000000000000000000",
+      "keelPnlWad": "3959779576714980018"
+    },
+    {
+      "tick": 20,
+      "midWad": "826446280991735537",
+      "stockInventoryWad": "1105000000000000000000",
+      "stockPnlWad": "-8245764930256908877",
+      "keelInventoryWad": "1105000000000000000000",
+      "keelPnlWad": "4074377937286187260"
+    },
+    {
+      "tick": 21,
+      "midWad": "818984050285620687",
+      "stockInventoryWad": "1110000000000000000000",
+      "stockPnlWad": "-9010853567680823519",
+      "keelInventoryWad": "1110000000000000000000",
+      "keelPnlWad": "4154767412030672081"
+    },
+    {
+      "tick": 22,
+      "midWad": "811622433244054865",
+      "stockInventoryWad": "1115000000000000000000",
+      "stockPnlWad": "-9802433629848488721",
+      "keelInventoryWad": "1115000000000000000000",
+      "keelPnlWad": "4197397057980993041"
+    },
+    {
+      "tick": 23,
+      "midWad": "804359629190210943",
+      "stockInventoryWad": "1120000000000000000000",
+      "stockPnlWad": "-10619701640031829686",
+      "keelInventoryWad": "1120000000000000000000",
+      "keelPnlWad": "4198719764099836211"
+    },
+    {
+      "tick": 24,
+      "midWad": "797193877551020408",
+      "stockInventoryWad": "1125000000000000000000",
+      "stockPnlWad": "-11461876417233560100",
+      "keelInventoryWad": "1125000000000000000000",
+      "keelPnlWad": "4155514256726119040"
+    },
+    {
+      "tick": 25,
+      "midWad": "790123456790123456",
+      "stockInventoryWad": "1130000000000000000000",
+      "stockPnlWad": "-12328198404894570177",
+      "keelInventoryWad": "1130000000000000000000",
+      "keelPnlWad": "4063917766083424271"
+    },
+    {
+      "tick": 26,
+      "midWad": "783146683373795911",
+      "stockInventoryWad": "1135000000000000000000",
+      "stockPnlWad": "-13217929022070591650",
+      "keelInventoryWad": "1135000000000000000000",
+      "keelPnlWad": "3920396647191972092"
+    },
+    {
+      "tick": 27,
+      "midWad": "776261910768693357",
+      "stockInventoryWad": "1140000000000000000000",
+      "stockPnlWad": "-14130350036242579130",
+      "keelInventoryWad": "1140000000000000000000",
+      "keelPnlWad": "3721422028099721683"
+    },
+    {
+      "tick": 28,
+      "midWad": "769467528470298553",
+      "stockInventoryWad": "1145000000000000000000",
+      "stockPnlWad": "-15064762956959548230",
+      "keelInventoryWad": "1145000000000000000000",
+      "keelPnlWad": "3463791016624134957"
+    },
+    {
+      "tick": 29,
+      "midWad": "762761961061001887",
+      "stockInventoryWad": "1150000000000000000000",
+      "stockPnlWad": "-16020488449545369111",
+      "keelInventoryWad": "1150000000000000000000",
+      "keelPnlWad": "3143663554420280962"
+    },
+    {
+      "tick": 30,
+      "midWad": "756143667296786389",
+      "stockInventoryWad": "1155000000000000000000",
+      "stockPnlWad": "-16996865768132308826",
+      "keelInventoryWad": "1155000000000000000000",
+      "keelPnlWad": "2757526822893217063"
+    },
+    {
+      "tick": 31,
+      "midWad": "749611139221528831",
+      "stockInventoryWad": "1160000000000000000000",
+      "stockPnlWad": "-17993252207314007716",
+      "keelInventoryWad": "1160000000000000000000",
+      "keelPnlWad": "2301873575954124629"
+    },
+    {
+      "tick": 32,
+      "midWad": "743162901307966706",
+      "stockInventoryWad": "1165000000000000000000",
+      "stockPnlWad": "-19009022571739141565",
+      "keelInventoryWad": "1165000000000000000000",
+      "keelPnlWad": "1773530120402210170"
+    },
+    {
+      "tick": 33,
+      "midWad": "736797509624417469",
+      "stockInventoryWad": "1170000000000000000000",
+      "stockPnlWad": "-20043568662994329401",
+      "keelInventoryWad": "1170000000000000000000",
+      "keelPnlWad": "1168674583405974518"
+    },
+    {
+      "tick": 34,
+      "midWad": "730513551026371539",
+      "stockInventoryWad": "1175000000000000000000",
+      "stockPnlWad": "-21096298783150938107",
+      "keelInventoryWad": "1175000000000000000000",
+      "keelPnlWad": "483817956299135628"
+    },
+    {
+      "tick": 35,
+      "midWad": "724309642372114078",
+      "stockInventoryWad": "1180000000000000000000",
+      "stockPnlWad": "-22166637254375398148",
+      "keelInventoryWad": "1180000000000000000000",
+      "keelPnlWad": "-284522525976805044"
+    },
+    {
+      "tick": 36,
+      "midWad": "718184429761562769",
+      "stockInventoryWad": "1185000000000000000000",
+      "stockPnlWad": "-23254023954026499534",
+      "keelInventoryWad": "1185000000000000000000",
+      "keelPnlWad": "-1139481204544899029"
+    },
+    {
+      "tick": 37,
+      "midWad": "712136587797539568",
+      "stockInventoryWad": "1190000000000000000000",
+      "stockPnlWad": "-24357913864685969459",
+      "keelInventoryWad": "1190000000000000000000",
+      "keelPnlWad": "-2084866645612734880"
+    },
+    {
+      "tick": 38,
+      "midWad": "706164818868723960",
+      "stockInventoryWad": "1195000000000000000000",
+      "stockPnlWad": "-25477776638590459583",
+      "keelInventoryWad": "1195000000000000000000",
+      "keelPnlWad": "-3124141554948494408"
+    },
+    {
+      "tick": 39,
+      "midWad": "700267852453563488",
+      "stockInventoryWad": "1200000000000000000000",
+      "stockPnlWad": "-26613096175953969050",
+      "keelInventoryWad": "1200000000000000000000",
+      "keelPnlWad": "-4260761837214633965"
+    }
+  ]
+}

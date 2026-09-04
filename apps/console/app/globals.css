@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --graphite: #12151a;
+  --panel: #1b2028;
+  --hairline: #2a313c;
+  --readout: #e8ecf1;
+  --long: #3fa37a;
+  --short: #c2452c;
+  --neutral-amber: #d9a441;
+}
+
+@theme inline {
+  --color-graphite: var(--graphite);
+  --color-panel: var(--panel);
+  --color-hairline: var(--hairline);
+  --color-readout: var(--readout);
+  --color-long: var(--long);
+  --color-short: var(--short);
+  --color-neutral-amber: var(--neutral-amber);
+  --font-mono: var(--font-ibm-plex-mono);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--graphite);
+  color: var(--readout);
+  font-family: var(--font-sans);
+}
+
+.font-numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

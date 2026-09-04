@@ -19,3 +19,5 @@ subgraph/build/
 *.md
 !README.md
 !FEEDBACK/*.md
+.next/
+*.tsbuildinfo
