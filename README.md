@@ -171,9 +171,49 @@ This project was built from a detailed implementation PRD that marked several in
 | **Uniswap** — public repo, `FEEDBACK.md`, feedback form | `FEEDBACK/UNISWAP.md`; form submission is a manual step outside this repo |
 | **Uniswap** — README points to the relevant contracts/lines | `contracts/src/uniswap/KeelSkewHook.sol` — see `_beforeSwap`/`_computeFeeBps` for the actual skew logic |
 
+## Deploying to Sepolia
+
+Copy `.env.example` to `.env.local` and fill in `DEPLOYER_PRIVATE_KEY` (a funded Sepolia wallet, ~0.02 ETH for gas), `SEPOLIA_RPC_URL`, and optionally `ETHERSCAN_API_KEY`. Then, from `contracts/`:
+
+```bash
+set -a && source ../.env.local && set +a
+
+# Deploys Aqua + KeelRouter (no canonical Aqua deployment exists on Sepolia
+# yet). Dry-run first (omit --broadcast) to sanity-check against a fork:
+forge script script/DeployAquaRouter.s.sol --fork-url $SEPOLIA_RPC_URL
+
+# Then actually broadcast:
+forge script script/DeployAquaRouter.s.sol --rpc-url $SEPOLIA_RPC_URL \
+  --private-key $DEPLOYER_PRIVATE_KEY --broadcast \
+  --verify --etherscan-api-key $ETHERSCAN_API_KEY
+
+# Deploys KeelSkewHook against Sepolia's real, already-deployed PoolManager
+# (0xE03A1074c86CFeDd5C142C4F04F1a1536e203543) -- kept as a separate script
+# from the one above; see DeployAquaRouter.s.sol's doc comment for why
+# (mixing the two in one file pushed KeelRouter's bytecode over EIP-170's
+# contract size limit).
+forge script script/DeployKeelSkewHook.s.sol --rpc-url $SEPOLIA_RPC_URL \
+  --private-key $DEPLOYER_PRIVATE_KEY --broadcast \
+  --verify --etherscan-api-key $ETHERSCAN_API_KEY
+```
+
+Both scripts were dry-run against a real Sepolia fork (`--fork-url`, no `--broadcast`) before being documented here — they deploy cleanly with no errors and no contract-size warnings. Update `subgraph/subgraph.yaml`'s placeholder addresses/`startBlock` with the deployed addresses afterward.
+
+## Deploying the subgraph
+
+Needs `THEGRAPH_DEPLOY_KEY` (from Subgraph Studio, in `.env.example`). After `subgraph.yaml`'s addresses are updated:
+
+```bash
+cd subgraph
+pnpm codegen && pnpm build
+npx graph deploy --studio keel --deploy-key $THEGRAPH_DEPLOY_KEY
+```
+
+`THEGRAPH_GATEWAY_API_KEY` (also in `.env.example`) is separate — it's for *querying* the deployed subgraph via `subgraph/mcp/mcp.config.json`, not for deploying it.
+
 ## What's deferred
 
-Subgraph Studio deployment (needs an API key), a live testnet deployment of `KeelRouter`/`KeelSkewHook` (so `subgraph.yaml`'s addresses and `/position/[hash]`'s live data are currently placeholders), and the Uniswap Developer Feedback Form submission itself (a manual step, content ready in `FEEDBACK/UNISWAP.md`).
+The steps above (testnet deployment, subgraph deployment) need real credentials this environment doesn't have — see `.env.example`. The Uniswap Developer Feedback Form submission is a manual step outside this repo (content ready in `FEEDBACK/UNISWAP.md`).
 
 ## License
 

@@ -21,3 +21,5 @@ subgraph/build/
 !FEEDBACK/*.md
 .next/
 *.tsbuildinfo
+.env*
+!.env.example
