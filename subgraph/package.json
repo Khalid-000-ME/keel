@@ -5,7 +5,7 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --studio keel"
+    "deploy": "graph deploy keel-subgraph"
   },
   "dependencies": {
     "@graphprotocol/graph-ts": "^0.38.2"

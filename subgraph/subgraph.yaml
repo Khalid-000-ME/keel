@@ -9,11 +9,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: Aqua
-    network: mainnet # TODO: set to the network Keel is actually deployed on
+    network: base-sepolia
     source:
-      address: "0x0000000000000000000000000000000000000000" # TODO: real Aqua deployment address
+      address: "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD"
       abi: Aqua
-      startBlock: 0 # TODO: block Aqua was deployed at on the target network
+      startBlock: 46398488
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -31,11 +31,11 @@ dataSources:
       file: ./src/mapping.ts
   - kind: ethereum
     name: KeelRouter
-    network: mainnet # TODO: must match the Aqua data source's network
+    network: base-sepolia
     source:
-      address: "0x0000000000000000000000000000000000000000" # TODO: real KeelRouter deployment address
+      address: "0x1771093A5094FCc818775806eD8a729f6cF7DA0E"
       abi: KeelRouter
-      startBlock: 0 # TODO: block KeelRouter was deployed at
+      startBlock: 46398488
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

@@ -9,7 +9,9 @@ import { KeelPosition, Fill } from "../generated/schema";
 // event filtering by app) because Aqua's Shipped event fires for every app
 // built on it, not just Keel -- this is how handleShipped tells a Keel
 // strategy apart from anyone else's.
-const KEEL_ROUTER_ADDRESS = Address.fromString("0x0000000000000000000000000000000000000000"); // TODO: real deployment address
+// Deployed on Base Sepolia (chain 84532), block 46398488 -- see
+// contracts/broadcast/DeployAquaRouter.s.sol/84532/run-latest.json.
+const KEEL_ROUTER_ADDRESS = Address.fromString("0x1771093A5094FCc818775806eD8a729f6cF7DA0E");
 
 // Must match contracts/src/instructions/KeelInstructions.sol's
 // KeelInventorySkew.OPCODE exactly.

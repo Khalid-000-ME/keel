@@ -5,11 +5,15 @@ import { Script, console2 } from "forge-std/Script.sol";
 
 import { Aqua } from "aqua/Aqua.sol";
 import { KeelRouter } from "../src/routers/KeelRouter.sol";
+import { NetworkConfig } from "./NetworkConfig.sol";
 
 /// @notice Deploys Aqua + KeelRouter fresh -- no canonical Aqua deployment
-///         exists on Sepolia yet (confirmed by reading swap-vm's own
-///         ignition/parameters/chain-11155111.json, whose `aqua` field is
-///         still the zero-address placeholder).
+///         exists on any of the supported testnets yet (confirmed by
+///         reading swap-vm's own ignition/parameters/chain-*.json files,
+///         whose `aqua` field is still the zero-address placeholder).
+///         Works identically against Ethereum Sepolia, Base Sepolia, or
+///         Arbitrum Sepolia -- picks the right WETH address for
+///         `block.chainid` via NetworkConfig.sol.
 /// @dev Kept in its own file, separate from DeployKeelSkewHook.s.sol: a
 ///      single script importing both this dependency tree and v4-core's
 ///      forces the whole file's compilation unit under v4-core's own
@@ -19,27 +23,25 @@ import { KeelRouter } from "../src/routers/KeelRouter.sol";
 ///      via `forge build --sizes`) -- a real deploy would have reverted.
 ///      Compiled alone, KeelRouter is 21,510 bytes, comfortably under the
 ///      limit.
-/// @dev Run with:
+/// @dev Run with (pick whichever RPC you want to deploy to):
 ///   forge script script/DeployAquaRouter.s.sol --rpc-url $SEPOLIA_RPC_URL \
 ///     --private-key $DEPLOYER_PRIVATE_KEY --broadcast --verify \
 ///     --etherscan-api-key $ETHERSCAN_API_KEY
 /// Omit --broadcast for a dry run first.
 contract DeployAquaRouter is Script {
-    // Sepolia (chain 11155111) canonical WETH9 -- confirmed against
-    // swap-vm's own ignition/parameters/chain-11155111.json and
-    // v4-periphery's own broadcast records for the same chain.
-    address constant SEPOLIA_WETH = 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14;
-
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
+        NetworkConfig.Config memory net = NetworkConfig.get(block.chainid);
+
+        console2.log("Deploying on chain:", block.chainid);
 
         vm.startBroadcast(deployerPrivateKey);
 
         Aqua aqua = new Aqua();
         console2.log("Aqua deployed at:", address(aqua));
 
-        KeelRouter router = new KeelRouter(address(aqua), SEPOLIA_WETH, deployer, "Keel", "1.0.0");
+        KeelRouter router = new KeelRouter(address(aqua), net.weth, deployer, "Keel", "1.0.0");
         console2.log("KeelRouter deployed at:", address(router));
 
         vm.stopBroadcast();

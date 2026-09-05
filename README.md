@@ -10,6 +10,17 @@ Aqua is the first venue where this is possible. Tokens never leave the maker's w
 
 The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kernel, two venues.
 
+**Live on Base Sepolia** (chain 84532):
+
+| Contract | Address |
+|---|---|
+| Aqua | [`0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD`](https://sepolia.basescan.org/address/0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD) |
+| KeelRouter | [`0x1771093A5094FCc818775806eD8a729f6cF7DA0E`](https://sepolia.basescan.org/address/0x1771093A5094FCc818775806eD8a729f6cF7DA0E) |
+| KeelSkewHook | [`0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0`](https://sepolia.basescan.org/address/0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0) (against Base Sepolia's real, already-deployed v4 `PoolManager`) |
+| Subgraph | [thegraph.com/studio/subgraph/keel-subgraph](https://thegraph.com/studio/subgraph/keel-subgraph) — indexing live, `hasIndexingErrors: false` |
+
+Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethereum Sepolia and Arbitrum Sepolia deployments are pending a working RPC (see Deploying below) — both scripts are network-agnostic and dry-run clean against both chains already, just blocked on every free/anonymous RPC endpoint tried so far rate-limiting `eth_sendRawTransaction`.
+
 ---
 
 ## What's actually built
@@ -18,15 +29,15 @@ The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kerne
 |---|---|---|
 | Pricing kernel | `contracts/src/libs/AvellanedaStoikov.sol` | Built, 8 fuzz properties × 2000 runs |
 | SwapVM opcode | `contracts/src/instructions/KeelInstructions.sol` | Built, real opcode `0x92` on real SwapVM |
-| Aqua router | `contracts/src/routers/KeelRouter.sol` | Built, append-only over the real `AquaSwapVMRouter` |
+| Aqua router | `contracts/src/routers/KeelRouter.sol` | **Live on Base Sepolia** |
 | Quote/swap parity | `contracts/test/QuoteSwapParity.t.sol` | 2000 fuzz runs + boundary cases, all passing |
-| Uniswap v4 hook | `contracts/src/uniswap/KeelSkewHook.sol` | Built, tested against a real deployed `PoolManager` |
+| Uniswap v4 hook | `contracts/src/uniswap/KeelSkewHook.sol` | **Live on Base Sepolia**, against the real deployed `PoolManager` |
 | Adversarial simulation | `contracts/script/AdversarialFlow.s.sol` | Built, produces the receipt below from a real run |
 | Off-chain SDK | `packages/strategy-sdk` | Built, byte-verified against live Solidity fixtures |
-| Subgraph | `subgraph/` | Built, `graph codegen`/`graph build` verified; not deployed (needs Subgraph Studio credentials) |
+| Subgraph | `subgraph/` | **Live**, indexing Base Sepolia, no indexing errors |
 | Console (demo UI) | `apps/console` | Built, 3 pages, typechecked + built + screenshot-verified |
 
-24 Foundry tests, 4 SDK tests, all green as of the last commit. No testnet deployment yet.
+24 Foundry tests, 4 SDK tests, all green as of the last commit.
 
 ---
 
@@ -166,54 +177,60 @@ This project was built from a detailed implementation PRD that marked several in
 |---|---|
 | **1inch** — official Aqua/SwapVM contracts must be used | `contracts/lib/swap-vm`, `contracts/lib/aqua` fetched verbatim (Setup); `KeelRouter` inherits the real `AquaSwapVMRouter` directly, nothing rewritten |
 | **1inch** — projects that utilize SwapVM score higher | The entire mechanism *is* a SwapVM opcode, not an app layered on top |
+| **1inch** — onchain execution of token transfers presented at demo | `KeelRouter` is **live on Base Sepolia** (address above) — a real `ship()`/`swap()` can be demoed on a public chain, not just a local fork |
 | **1inch** — proper git history | Commit-per-feature throughout; see `git log` |
-| **The Graph** — compose two or more products | Subgraph (`subgraph/`) + Subgraph MCP (`subgraph/mcp/mcp.config.json`, wiring The Graph's real, official Subgraph MCP endpoint — `https://subgraphs.mcp.thegraph.com/sse` — up to Keel's schema for agent/solver queries) |
+| **The Graph** — compose two or more products | Subgraph, **live** at [thegraph.com/studio/subgraph/keel-subgraph](https://thegraph.com/studio/subgraph/keel-subgraph) + Subgraph MCP (`subgraph/mcp/mcp.config.json`, wiring The Graph's real, official Subgraph MCP endpoint — `https://subgraphs.mcp.thegraph.com/sse` — up to Keel's schema for agent/solver queries) |
+| **The Graph** — consume live data, not mocked/static | The subgraph indexes **live** Base Sepolia events (`hasIndexingErrors: false`, confirmed via its own `_meta` query) |
 | **Uniswap** — public repo, `FEEDBACK.md`, feedback form | `FEEDBACK/UNISWAP.md`; form submission is a manual step outside this repo |
 | **Uniswap** — README points to the relevant contracts/lines | `contracts/src/uniswap/KeelSkewHook.sol` — see `_beforeSwap`/`_computeFeeBps` for the actual skew logic |
 
-## Deploying to Sepolia
+## Deploying (Ethereum Sepolia / Base Sepolia / Arbitrum Sepolia)
 
-Copy `.env.example` to `.env.local` and fill in `DEPLOYER_PRIVATE_KEY` (a funded Sepolia wallet, ~0.02 ETH for gas), `SEPOLIA_RPC_URL`, and optionally `ETHERSCAN_API_KEY`. Then, from `contracts/`:
+Both deploy scripts are network-agnostic — they read `block.chainid` and pick the right WETH/`PoolManager` address via `contracts/script/NetworkConfig.sol`, which has real, verified addresses for all three chains (extracted directly from `v4-periphery`'s own deployment broadcast records, not guessed). No canonical Aqua deployment exists on any of them yet, so `DeployAquaRouter.s.sol` deploys a fresh one alongside `KeelRouter`.
+
+Copy `.env.example` to `.env.local` and fill in `DEPLOYER_PRIVATE_KEY` (a funded wallet, ~0.02 ETH for gas on whichever chain), an RPC URL for your target chain, and optionally `ETHERSCAN_API_KEY`. Then, from `contracts/`:
 
 ```bash
 set -a && source ../.env.local && set +a
+RPC_URL=...   # your chosen chain's RPC
 
-# Deploys Aqua + KeelRouter (no canonical Aqua deployment exists on Sepolia
-# yet). Dry-run first (omit --broadcast) to sanity-check against a fork:
-forge script script/DeployAquaRouter.s.sol --fork-url $SEPOLIA_RPC_URL
+# Dry-run first (omit --broadcast) to sanity-check against a fork:
+forge script script/DeployAquaRouter.s.sol --fork-url $RPC_URL
 
 # Then actually broadcast:
-forge script script/DeployAquaRouter.s.sol --rpc-url $SEPOLIA_RPC_URL \
+forge script script/DeployAquaRouter.s.sol --rpc-url $RPC_URL \
   --private-key $DEPLOYER_PRIVATE_KEY --broadcast \
   --verify --etherscan-api-key $ETHERSCAN_API_KEY
 
-# Deploys KeelSkewHook against Sepolia's real, already-deployed PoolManager
-# (0xE03A1074c86CFeDd5C142C4F04F1a1536e203543) -- kept as a separate script
-# from the one above; see DeployAquaRouter.s.sol's doc comment for why
-# (mixing the two in one file pushed KeelRouter's bytecode over EIP-170's
-# contract size limit).
-forge script script/DeployKeelSkewHook.s.sol --rpc-url $SEPOLIA_RPC_URL \
+# Deploys KeelSkewHook against that chain's real, already-deployed
+# PoolManager -- kept as a separate script from the one above; see
+# DeployAquaRouter.s.sol's doc comment for why (mixing the two in one
+# file pushed KeelRouter's bytecode over EIP-170's contract size limit).
+forge script script/DeployKeelSkewHook.s.sol --rpc-url $RPC_URL \
   --private-key $DEPLOYER_PRIVATE_KEY --broadcast \
   --verify --etherscan-api-key $ETHERSCAN_API_KEY
 ```
 
-Both scripts were dry-run against a real Sepolia fork (`--fork-url`, no `--broadcast`) before being documented here — they deploy cleanly with no errors and no contract-size warnings. Update `subgraph/subgraph.yaml`'s placeholder addresses/`startBlock` with the deployed addresses afterward.
+**A note on free/anonymous RPC providers**, from direct experience deploying this: several public endpoints (zan.top, tatum.io, routeme.sh) rate-limit or outright block `eth_sendRawTransaction` for unregistered accounts, even though reads (balance, code, chain ID) work fine through them — `forge script`'s deploy flow needs many more calls than a couple of reads (nonce, gas estimation, broadcast, receipt polling), so it hits these limits fast. Base Sepolia's public RPC (`sepolia.base.org`) has no such restriction; Alchemy/Infura's free tiers also work reliably for Ethereum Sepolia and Arbitrum Sepolia if your provider's anonymous tier doesn't.
+
+Update `subgraph/subgraph.yaml`'s addresses/`network`/`startBlock` with the deployed values afterward (see the real Base Sepolia example already committed there).
 
 ## Deploying the subgraph
 
-Needs `THEGRAPH_DEPLOY_KEY` (from Subgraph Studio, in `.env.example`). After `subgraph.yaml`'s addresses are updated:
+Needs a subgraph created in [Subgraph Studio](https://thegraph.com/studio) first (the deploy key alone doesn't create one) and `THEGRAPH_DEPLOY_KEY` from its page. Then:
 
 ```bash
 cd subgraph
+pnpm exec graph auth "$THEGRAPH_DEPLOY_KEY"
 pnpm codegen && pnpm build
-npx graph deploy --studio keel --deploy-key $THEGRAPH_DEPLOY_KEY
+pnpm exec graph deploy <your-subgraph-name> --version-label v0.1.0
 ```
 
 `THEGRAPH_GATEWAY_API_KEY` (also in `.env.example`) is separate — it's for *querying* the deployed subgraph via `subgraph/mcp/mcp.config.json`, not for deploying it.
 
 ## What's deferred
 
-The steps above (testnet deployment, subgraph deployment) need real credentials this environment doesn't have — see `.env.example`. The Uniswap Developer Feedback Form submission is a manual step outside this repo (content ready in `FEEDBACK/UNISWAP.md`).
+Ethereum Sepolia and Arbitrum Sepolia deployments, blocked on a working (non-rate-limited) RPC for those two chains specifically — see the note above. The Uniswap Developer Feedback Form submission is a manual step outside this repo (content ready in `FEEDBACK/UNISWAP.md`).
 
 ## License
 
