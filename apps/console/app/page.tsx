@@ -1,12 +1,13 @@
-import Link from "next/link";
 import { ArrowUpRight, Activity, Layers, ShieldCheck, Waves } from "lucide-react";
 
 import { Spotlight } from "@/components/ui/spotlight";
+import { ButtonLink, InlineLink } from "@/components/ui/button";
+import { HeroBackdrop } from "@/components/HeroBackdrop";
 import { PnlChart } from "@/components/PnlChart";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { HeroHeadline, StatCounter, Reveal } from "@/components/landing-client";
 import { receipt } from "@/lib/receipt";
-import { formatWad, wadToNumber } from "@/lib/wad";
+import { wadToNumber } from "@/lib/wad";
 
 const DEPLOYMENTS = [
   { label: "KeelRouter", address: "0x1771093A5094FCc818775806eD8a729f6cF7DA0E" },
@@ -26,43 +27,41 @@ export default function LandingPage() {
     <main className="relative overflow-hidden">
       {/* ---------- hero ---------- */}
       <section className="relative">
-        <div className="grid-substrate pointer-events-none absolute inset-0 h-[680px]" />
+        <HeroBackdrop />
         <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="#d9a441" />
 
-        <div className="relative mx-auto max-w-6xl px-6 pt-24 pb-20">
-          <div className="border-hairline bg-panel/40 text-readout-dim mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] backdrop-blur">
-            <span className="bg-amber-bright h-1.5 w-1.5 rounded-full" />
-            <span className="font-numeric tracking-[0.14em]">AVELLANEDA-STOIKOV · ON-CHAIN · FIRST</span>
-          </div>
+        <div className="relative mx-auto max-w-6xl px-6 pt-28 pb-24">
+          <div className="flex flex-col items-center">
+            <div className="border-hairline/80 bg-panel/40 text-readout-dim mb-9 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] backdrop-blur-md">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="bg-amber-bright absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" />
+                <span className="bg-amber-bright relative inline-flex h-1.5 w-1.5 rounded-full" />
+              </span>
+              <span className="font-numeric tracking-[0.14em]">AVELLANEDA-STOIKOV · ON-CHAIN · FIRST</span>
+            </div>
 
-          <HeroHeadline />
+            <HeroHeadline />
 
-          <p className="text-readout-dim mt-8 max-w-2xl text-[17px] leading-relaxed">
-            Every AMM before this quoted the same price regardless of what the maker was holding. Keel is a SwapVM
-            position that prices its own inventory risk directly into the curve — a mechanism that only exists because
-            Aqua is the first venue where a maker&apos;s <span className="text-readout">real wallet balance</span> is
-            readable at quote time.
-          </p>
+            <p className="text-readout-dim mt-8 max-w-2xl text-center text-[17px] leading-relaxed text-balance">
+              Every AMM before this quoted the same price regardless of what the maker was holding. Keel is a SwapVM
+              position that prices its own inventory risk directly into the curve — a mechanism that only exists because
+              Aqua is the first venue where a maker&apos;s <span className="text-readout">real wallet balance</span> is
+              readable at quote time.
+            </p>
 
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <Link
-              href="/simulate"
-              className="group bg-readout text-graphite hover:bg-amber-bright inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-colors"
-            >
-              See the receipt
-              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-            <Link
-              href="/position/live"
-              className="border-hairline hover:border-hairline-bright hover:bg-panel inline-flex items-center gap-2 rounded-lg border px-5 py-2.5 text-[13px] transition-colors"
-            >
-              <Activity className="h-4 w-4" />
-              Watch a position lean
-            </Link>
+            <div className="mt-11 flex flex-wrap items-center justify-center gap-3">
+              <ButtonLink href="/simulate" variant="primary">
+                See the receipt
+              </ButtonLink>
+              <ButtonLink href="/position/live" variant="secondary" arrow={false}>
+                <Activity className="h-4 w-4" />
+                Watch a position lean
+              </ButtonLink>
+            </div>
           </div>
 
           {/* headline stat strip */}
-          <div className="border-hairline/70 mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-xl border md:grid-cols-4">
+          <div className="border-hairline/70 bg-graphite/40 mt-20 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border backdrop-blur-sm md:grid-cols-4">
             <StatBlock label="PnL saved" value={<StatCounter to={pnlImprovement} />} tone="long" unit="token1-equiv" />
             <StatBlock label="Fills simulated" value={String(receipt.ticks)} tone="neutral" unit="adversarial" />
             <StatBlock label="Trend endured" value={receipt.trendPct} tone="short" unit="mid drift" />
@@ -79,12 +78,9 @@ export default function LandingPage() {
               <FieldLabel>Evidence</FieldLabel>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Same flow. Same inventory. Different PnL.</h2>
             </div>
-            <Link
-              href="/simulate"
-              className="text-readout-dim hover:text-readout hidden items-center gap-1.5 text-[13px] transition-colors sm:flex"
-            >
-              Full table <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
+            <div className="hidden sm:block">
+              <InlineLink href="/simulate">Full table</InlineLink>
+            </div>
           </div>
 
           <div className="border-hairline bg-panel/50 relative overflow-hidden rounded-2xl border p-8 backdrop-blur">
@@ -162,12 +158,20 @@ export default function LandingPage() {
                     href={`https://sepolia.basescan.org/address/${d.address}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="bg-panel-raised/70 hover:bg-panel-raised group flex items-center justify-between gap-4 px-4 py-3 transition-colors"
+                    className="bg-panel-raised/70 hover:bg-panel-raised group relative flex items-center justify-between gap-4 overflow-hidden px-4 py-3 transition-colors"
                   >
-                    <span className="text-readout text-[13px]">{d.label}</span>
+                    {/* left rail lights up on hover */}
+                    <span className="bg-long-bright absolute inset-y-0 left-0 w-px scale-y-0 transition-transform duration-300 group-hover:scale-y-100" />
+                    <span className="text-readout group-hover:translate-x-1 text-[13px] transition-transform duration-300">
+                      {d.label}
+                    </span>
                     <span className="flex items-center gap-2">
-                      <NumericReadout value={`${d.address.slice(0, 10)}…${d.address.slice(-6)}`} size="xs" className="text-readout-dim" />
-                      <ArrowUpRight className="text-readout-dim group-hover:text-readout h-3.5 w-3.5 transition-colors" />
+                      <NumericReadout
+                        value={`${d.address.slice(0, 10)}…${d.address.slice(-6)}`}
+                        size="xs"
+                        className="text-readout-dim group-hover:text-readout transition-colors"
+                      />
+                      <ArrowUpRight className="text-readout-dim group-hover:text-long-bright h-3.5 w-3.5 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </span>
                   </a>
                 ))}

@@ -34,12 +34,19 @@ export function Nav() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative rounded-md px-3 py-1.5 text-[13px] transition-colors",
+                  "group relative rounded-lg px-3 py-1.5 text-[13px] transition-colors duration-300",
                   active ? "text-readout" : "text-readout-dim hover:text-readout",
                 )}
               >
-                {active && <span className="bg-panel-raised absolute inset-0 rounded-md" />}
+                {active ? (
+                  <span className="bg-panel-raised ring-hairline/70 absolute inset-0 rounded-lg ring-1" />
+                ) : (
+                  <span className="bg-panel-raised/60 absolute inset-0 scale-95 rounded-lg opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100" />
+                )}
                 <span className="relative">{link.label}</span>
+                {active && (
+                  <span className="bg-amber-bright/80 absolute -bottom-px left-1/2 h-px w-6 -translate-x-1/2 rounded-full" />
+                )}
               </Link>
             );
           })}

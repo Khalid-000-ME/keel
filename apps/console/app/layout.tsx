@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import { Nav } from "@/components/Nav";
+import { SparkLayer } from "@/components/spark-layer";
 import "./globals.css";
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -26,8 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${ibmPlexMono.variable} ${inter.variable}`}>
       <body className="bg-graphite text-readout min-h-screen antialiased">
-        <Nav />
-        {children}
+        <SparkLayer>
+          <Nav />
+          {children}
         <footer className="border-hairline/60 mt-32 border-t">
           <div className="text-readout-dim mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-[12px] sm:flex-row sm:items-center sm:justify-between">
             <span className="font-numeric">KEEL · ETHOnline 2026 · 1inch × The Graph × Uniswap</span>
@@ -36,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </span>
           </div>
         </footer>
+        </SparkLayer>
       </body>
     </html>
   );

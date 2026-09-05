@@ -12,9 +12,9 @@ import DecryptedText from "@/components/DecryptedText";
 
 export function HeroHeadline() {
   return (
-    <h1 className="max-w-4xl text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-6xl">
+    <h1 className="mx-auto max-w-4xl text-center text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-6xl">
       <span className="block">The first Aqua position</span>
-      <span className="text-readout-dim block">
+      <span className="text-readout-dim mt-1 block">
         that knows{" "}
         <span className="text-readout">
           <DecryptedText
