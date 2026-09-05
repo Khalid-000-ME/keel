@@ -1,34 +1,108 @@
 @import "tailwindcss";
 
 :root {
-  --graphite: #12151a;
-  --panel: #1b2028;
+  /* Core terminal palette (KEEL_PRD Part F.2), extended for depth */
+  --graphite: #0c0e12;
+  --graphite-raised: #12151a;
+  --panel: #171b22;
+  --panel-raised: #1e232c;
   --hairline: #2a313c;
+  --hairline-bright: #3a4351;
   --readout: #e8ecf1;
+  --readout-dim: #9aa4b2;
   --long: #3fa37a;
+  --long-bright: #4fd39b;
   --short: #c2452c;
+  --short-bright: #ef5f42;
   --neutral-amber: #d9a441;
+  --amber-bright: #f5c05e;
 }
 
 @theme inline {
   --color-graphite: var(--graphite);
+  --color-graphite-raised: var(--graphite-raised);
   --color-panel: var(--panel);
+  --color-panel-raised: var(--panel-raised);
   --color-hairline: var(--hairline);
+  --color-hairline-bright: var(--hairline-bright);
   --color-readout: var(--readout);
+  --color-readout-dim: var(--readout-dim);
   --color-long: var(--long);
+  --color-long-bright: var(--long-bright);
   --color-short: var(--short);
+  --color-short-bright: var(--short-bright);
   --color-neutral-amber: var(--neutral-amber);
-  --font-mono: var(--font-ibm-plex-mono);
-  --font-sans: var(--font-inter);
+  --color-amber-bright: var(--amber-bright);
+
+  /* Literal font names -- @theme inline resolves at parse time, so a
+     var() indirection to next/font's runtime variable would resolve to
+     nothing (see the shadcn Tailwind v4 font gotcha). */
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --animate-spotlight: spotlight 2s ease 0.75s 1 forwards;
+
+  @keyframes spotlight {
+    0% {
+      opacity: 0;
+      transform: translate(-72%, -62%) scale(0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-50%, -40%) scale(1);
+    }
+  }
+}
+
+html {
+  background: var(--graphite);
 }
 
 body {
   background: var(--graphite);
   color: var(--readout);
-  font-family: var(--font-sans);
+  font-family: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Every number in this product is a readout, not prose. */
 .font-numeric {
-  font-family: var(--font-mono);
+  font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Fine grid, the substrate of a trading terminal. */
+.grid-substrate {
+  background-image:
+    linear-gradient(to right, rgba(42, 49, 60, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(42, 49, 60, 0.35) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+.hairline-x {
+  background: linear-gradient(90deg, transparent, var(--hairline-bright), transparent);
+}
+
+::selection {
+  background: rgba(217, 164, 65, 0.25);
+  color: var(--readout);
+}
+
+/* Scrollbar, terminal-flavoured */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--graphite);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: 6px;
+  border: 2px solid var(--graphite);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hairline-bright);
 }
