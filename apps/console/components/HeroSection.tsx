@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { HeroBackdrop } from "@/components/HeroBackdrop";
 
 const MIN_SCALE = 1.06;
-const MAX_SCALE = 1.28;
+const MAX_SCALE = 1.15;
 
 /**
  * The hero pins to the viewport for an extra half-screen of scroll before
