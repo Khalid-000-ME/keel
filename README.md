@@ -237,4 +237,4 @@ Ethereum Sepolia and Arbitrum Sepolia deployments, blocked on a working (non-rat
 
 ## License
 
-MIT.
+[MIT](LICENSE).
