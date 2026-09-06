@@ -21,7 +21,7 @@ export default function MechanismPage() {
         <div className="grid-substrate pointer-events-none absolute inset-0 h-[420px]" />
         <div className="relative mx-auto max-w-5xl px-6 pt-28 pb-4">
           <FieldLabel>The mechanism</FieldLabel>
-          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+          <h1 className="mt-3 max-w-3xl text-3xl font-display font-normal text-balance sm:text-5xl">
             Inventory risk, priced into the curve.
           </h1>
           <p className="text-readout-dim mt-5 max-w-2xl text-[16px] leading-relaxed">
@@ -38,7 +38,7 @@ export default function MechanismPage() {
       <section className="mx-auto max-w-5xl px-6 py-20">
         <Reveal>
           <FieldLabel>01 · The problem</FieldLabel>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight">
+          <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">
             Quote symmetrically, and a trend grinds you down.
           </h2>
 
@@ -83,7 +83,7 @@ export default function MechanismPage() {
       <section className="mx-auto max-w-5xl px-6 py-16">
         <Reveal>
           <FieldLabel>02 · What Aqua changes</FieldLabel>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight">
+          <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">
             Aqua exposes the one number the formula needs.
           </h2>
           <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
@@ -113,7 +113,7 @@ export default function MechanismPage() {
         <div className="relative mx-auto max-w-5xl px-6">
           <Reveal>
             <FieldLabel>03 · The asymmetry</FieldLabel>
-            <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight">
+            <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">
               Same size. Same block. Different price.
             </h2>
             <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
@@ -132,7 +132,7 @@ export default function MechanismPage() {
       <section className="mx-auto max-w-5xl px-6 py-20">
         <Reveal>
           <FieldLabel>04 · The opcode</FieldLabel>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight">
+          <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">
             One instruction, in a slot that was already free.
           </h2>
 
@@ -163,7 +163,7 @@ export default function MechanismPage() {
       <section className="mx-auto max-w-5xl px-6 py-16">
         <Reveal>
           <FieldLabel>05 · The proof</FieldLabel>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight">Quote and swap never disagree.</h2>
+          <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">Quote and swap never disagree.</h2>
           <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
             Reading live inventory at quote time makes divergence <span className="text-readout">more</span> likely,
             not less — a solver quotes one number, execution returns another, and the taker&apos;s slippage check
@@ -215,12 +215,12 @@ export default function MechanismPage() {
       <section className="mx-auto max-w-5xl px-6 py-16">
         <Reveal>
           <FieldLabel>06 · Portability</FieldLabel>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight">One pricing kernel. Two venues.</h2>
+          <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">One pricing kernel. Two venues.</h2>
 
           <div className="border-hairline mt-10 grid gap-px overflow-hidden rounded-2xl border md:grid-cols-2">
             <div className="bg-panel/40 hover:bg-panel/70 p-8 transition-colors">
               <FieldLabel>Aqua / SwapVM</FieldLabel>
-              <h3 className="mt-3 text-lg font-medium tracking-tight">Re-centres the constant-product curve</h3>
+              <h3 className="mt-3 text-lg font-display font-normal">Re-centres the constant-product curve</h3>
               <p className="text-readout-dim mt-3 text-[13px] leading-relaxed">
                 <span className="font-numeric">reservationPriceWad</span> +{" "}
                 <span className="font-numeric">recenterBalances</span> rewrite the balance registers before{" "}
@@ -229,7 +229,7 @@ export default function MechanismPage() {
             </div>
             <div className="bg-panel/40 hover:bg-panel/70 p-8 transition-colors">
               <FieldLabel>Uniswap v4</FieldLabel>
-              <h3 className="mt-3 text-lg font-medium tracking-tight">Overrides the LP fee per swap</h3>
+              <h3 className="mt-3 text-lg font-display font-normal">Overrides the LP fee per swap</h3>
               <p className="text-readout-dim mt-3 text-[13px] leading-relaxed">
                 <span className="font-numeric">halfSpreadWad</span> +{" "}
                 <span className="font-numeric">softBoundPenaltyBps</span> feed{" "}
@@ -253,7 +253,7 @@ export default function MechanismPage() {
       <section className="mx-auto max-w-5xl px-6 py-16">
         <Reveal>
           <FieldLabel>07 · Routability</FieldLabel>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight">
+          <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">
             A solver can&apos;t read a reserve that doesn&apos;t exist.
           </h2>
           <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
@@ -316,7 +316,7 @@ export default function MechanismPage() {
           <div className="relative flex h-full flex-col items-center justify-center px-6 text-center">
             <Reveal>
               <AsciiArt art={WATERLINE} className="text-readout-dim mb-8 text-[10px]" />
-              <h2 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+              <h2 className="text-2xl font-display font-normal text-balance sm:text-3xl">
                 Now go look at the numbers.
               </h2>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

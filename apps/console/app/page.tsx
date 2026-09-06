@@ -63,7 +63,7 @@ export default function LandingPage() {
           <Reveal>
             <div className="mx-auto max-w-2xl text-center">
               <FieldLabel>In plain terms</FieldLabel>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+              <h2 className="mt-3 text-2xl font-display font-normal text-balance sm:text-3xl">
                 A position that leans, and knows it.
               </h2>
               <p className="text-readout-dim mt-4 text-[15px] leading-relaxed text-balance">
@@ -115,7 +115,7 @@ export default function LandingPage() {
           <div className="mb-8 flex items-end justify-between gap-6">
             <div>
               <FieldLabel>Evidence</FieldLabel>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight">Same flow. Same inventory. Different PnL.</h2>
+              <h2 className="mt-2 text-2xl font-display font-normal">Same flow. Same inventory. Different PnL.</h2>
             </div>
             <div className="hidden sm:block">
               <InlineLink href="/simulate">Full table</InlineLink>
@@ -153,7 +153,7 @@ export default function LandingPage() {
                   </span>
                   <FieldLabel className="text-long-bright">Live on Base Sepolia</FieldLabel>
                 </div>
-                <h2 className="text-xl font-semibold tracking-tight">Deployed, not just tested.</h2>
+                <h2 className="text-xl font-display font-normal">Deployed, not just tested.</h2>
                 <p className="text-readout-dim mt-3 text-[13px] leading-relaxed">
                   The router, the hook and Aqua itself are live on a public chain — and the subgraph is indexing them
                   with no errors.

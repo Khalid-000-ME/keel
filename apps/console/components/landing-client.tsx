@@ -35,7 +35,7 @@ export function HeroHeadline() {
 
 export function ReceiptHeading() {
   return (
-    <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+    <h1 className="mt-2 text-3xl font-display font-normal sm:text-4xl">
       <DecryptedText
         text="Adversarial flow receipt"
         animateOn="view"

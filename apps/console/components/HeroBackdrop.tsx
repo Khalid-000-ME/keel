@@ -65,6 +65,7 @@ export function HeroBackdrop() {
         opacity={0.85}
         blend={false}
         grade="saturate(0.92) contrast(1.12) brightness(0.78)"
+        zoomOnScroll
       />
 
       <div
