@@ -60,10 +60,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Avellaneda-Stoikov reservation pricing, as a SwapVM opcode
               </span>
             </div>
-            <div aria-hidden className="pointer-events-none relative h-20 select-none sm:h-32">
+            <div
+              aria-hidden
+              className="pointer-events-none relative select-none overflow-hidden"
+              style={{
+                "--wm-size": "clamp(11rem, 56vw, 58rem)",
+                height: "calc(var(--wm-size) * 0.62)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 90%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 90%)",
+              } as React.CSSProperties}
+            >
               <span
-                className="font-numeric text-readout absolute inset-x-0 -bottom-8 text-center leading-none font-bold whitespace-nowrap opacity-[0.05] sm:-bottom-14"
-                style={{ fontSize: "clamp(4.5rem, 16vw, 12rem)" }}
+                className="font-numeric text-readout absolute inset-x-0 top-0 text-center leading-none font-bold whitespace-nowrap opacity-[0.14]"
+                style={{ fontSize: "var(--wm-size)", letterSpacing: "0.02em" }}
               >
                 KEEL
               </span>
