@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { formatUnits, parseUnits, type Hex } from "viem";
-import { useAccount, useReadContract, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
-import { ADDRESSES, AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
+import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
 import { markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { TiltGauge } from "@/components/TiltGauge";
@@ -23,7 +23,9 @@ const REFRESH_MS = 6_000;
  * the browser, it's what the deployed router says right now.
  */
 export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy; onChanged: () => void }) {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const onRightChain = isConnected && chainId === CHAIN.id;
   const [fillSize, setFillSize] = useState(5);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   }
 
   async function testFill(isAToB: boolean) {
-    if (!address) return;
+    if (!address || !onRightChain) return;
     const tokenIn = isAToB ? strategy.token0 : strategy.token1;
     const label = isAToB ? "exposed-side" : "covered-side";
     setBusy(label);
@@ -89,6 +91,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
         abi: ERC20_ABI,
         functionName: "approve",
         args: [ADDRESSES.demoTaker, amountIn],
+        chainId: CHAIN.id,
       });
       await new Promise((r) => setTimeout(r, 2_500));
 
@@ -98,6 +101,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
         abi: DEMO_TAKER_ABI,
         functionName: "fill",
         args: [ADDRESSES.keelRouter, orderTuple, amountIn, isAToB],
+        chainId: CHAIN.id,
       });
       setTxHash(hash);
       setStatus(`Filled ${label} — watch the quotes move.`);
@@ -111,6 +115,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   }
 
   async function dock() {
+    if (!onRightChain) return;
     setBusy("dock");
     setStatus("Docking — returning the inventory…");
     try {
@@ -119,6 +124,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
         abi: AQUA_ABI,
         functionName: "dock",
         args: [ADDRESSES.keelRouter, strategy.strategyHash, [strategy.token0, strategy.token1]],
+        chainId: CHAIN.id,
       });
       setTxHash(hash);
       markDocked(strategy.strategyHash, hash);
@@ -236,7 +242,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                disabled={busy !== null || !address}
+                disabled={busy !== null || !address || !onRightChain}
                 onClick={() => testFill(true)}
                 className="font-numeric border-short/40 text-short-bright hover:bg-short/[0.08] border px-3 py-2 text-[12px] transition-colors disabled:opacity-40"
               >
@@ -244,7 +250,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
               </button>
               <button
                 type="button"
-                disabled={busy !== null || !address}
+                disabled={busy !== null || !address || !onRightChain}
                 onClick={() => testFill(false)}
                 className="font-numeric border-long/40 text-long-bright hover:bg-long/[0.08] border px-3 py-2 text-[12px] transition-colors disabled:opacity-40"
               >
@@ -253,7 +259,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
               {isMine && (
                 <button
                   type="button"
-                  disabled={busy !== null}
+                  disabled={busy !== null || !onRightChain}
                   onClick={dock}
                   className="font-numeric border-hairline text-readout-dim hover:text-readout hover:border-hairline-bright ml-auto border px-3 py-2 text-[12px] transition-colors disabled:opacity-40"
                 >

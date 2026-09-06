@@ -48,7 +48,7 @@ function ConsoleInner() {
         </div>
       )}
 
-      <FaucetPanel onChanged={refresh} />
+      <FaucetPanel />
 
       <StrategyBuilder onShipped={refresh} />
 

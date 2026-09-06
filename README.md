@@ -19,7 +19,7 @@ The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kerne
 | KeelSkewHook | [`0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0`](https://sepolia.basescan.org/address/0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0) (against Base Sepolia's real, already-deployed v4 `PoolManager`) |
 | Subgraph | [thegraph.com/studio/subgraph/keel-subgraph](https://thegraph.com/studio/subgraph/keel-subgraph) — indexing live, `hasIndexingErrors: false` |
 | KeelDemoTaker | [`0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763`](https://sepolia.basescan.org/address/0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763) — quote/fill helper for the browser console |
-| Demo tokens | [`0x1d61…d642`](https://sepolia.basescan.org/address/0x1d61A82FC489f87f7D2FFc7271e431083FE2d642) (KDB, tokenA) · [`0xb17A…4A47`](https://sepolia.basescan.org/address/0xb17A85D426ea907A28c8F0E33d2278F7d02d4A47) (KDA, tokenB) — permissionless faucets |
+| Demo tokens | [`Draft`](https://sepolia.basescan.org/address/0x0ECf96941D2c5FE408E021F9e078FeC6484B235b) (DRFT, tokenA) · [`Ballast`](https://sepolia.basescan.org/address/0x6d56c9975130822012e97A163d39Bf5e0D96A3f3) (BALT, tokenB) — permissionless faucets, named as a real asset pair rather than "Test Token A/B" |
 
 Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethereum Sepolia and Arbitrum Sepolia deployments are pending a working RPC (see Deploying below) — both scripts are network-agnostic and dry-run clean against both chains already, just blocked on every free/anonymous RPC endpoint tried so far rate-limiting `eth_sendRawTransaction`.
 
@@ -42,7 +42,7 @@ Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethe
 | Subgraph | `subgraph/` | **Live**, indexing Base Sepolia, no indexing errors |
 | Maker console | `apps/console/app/strategies` | **Live** — connect a wallet and ship a real position from the browser |
 | Demo kit | `contracts/src/demo/` | **Live on Base Sepolia** — faucet tokens + taker helper the console drives |
-| Console (demo UI) | `apps/console` | Built, 5 pages, typechecked + built + screenshot-verified |
+| Console (demo UI) | `apps/console` | Built, 6 pages, typechecked + built + screenshot-verified |
 
 32 Foundry tests, 5 SDK tests, all green as of the last commit.
 
@@ -147,11 +147,11 @@ cd apps/console && pnpm build && pnpm start
 pnpm --filter @keel/console dev
 ```
 
-Four pages:
+Six pages (five plus a guided fallback for the maker console):
 
 - `/` — landing, PnL comparison + headline
 - `/mechanism` — the long-form explanation, with the formulas typeset and an interactive skew lab
-- **`/strategies` — the maker console: connect a wallet and actually ship a position.** Mint faucet inventory, dial γ / σ² / δ₀ / target / soft bound while a live quote-curve preview and the literal SwapVM bytecode update underneath, read the strategy hash back from the router *before* signing, then approve and `ship()`. Shipped positions list below with balances and both-side quotes read live from the chain every few seconds, plus one-click test fills (watch the exposed-side quote walk away from mid as you hit it) and dock-and-withdraw. Nothing is mocked — it writes to the same Aqua + KeelRouter above.
+- **`/strategies` — the maker console: connect a wallet and actually ship a position, one screen.** Faucet balances, γ / σ² / δ₀ / target / soft bound, the live quote-curve preview, and the literal SwapVM bytecode all sit in one view — adjust a parameter and the curve and bytecode update immediately, ship in place, results appear below. Reads the strategy hash back from the router *before* signing, then approve + `ship()`. Shipped positions show balances and both-side quotes read live from the chain every few seconds, plus one-click test fills (watch the exposed-side quote walk away from mid as you hit it) and dock-and-withdraw. Nothing is mocked — it writes to the same Aqua + KeelRouter above. A step-by-step walkthrough of the identical flow (same hooks, same verified ship/fill logic) is kept at `/strategies/guided` as a fallback.
 - `/simulate` — the full receipt table
 - `/position/[hash]` — the live tilt gauge, still rendering the AdversarialFlow simulation's final state as a stand-in pending a direct subgraph read, plus a "Real evidence" panel with the shipped/filled Base Sepolia position's hashes (see above)
 

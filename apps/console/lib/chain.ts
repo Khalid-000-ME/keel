@@ -16,15 +16,22 @@ export const ADDRESSES = {
 } as const;
 
 /**
+ * Ballast and Draft -- both nautical terms for a hull's own stability, which
+ * is the whole thesis of this project (see README). Named this way rather
+ * than something like "Keel Demo Token A" specifically so a wallet's sign
+ * prompt reads as a real asset pair, not a test fixture -- these are still
+ * permissionless testnet faucet tokens with no value (KeelDemoToken.sol),
+ * just not named to advertise that in the UI.
+ *
  * Aqua/SwapVM require tokenA < tokenB numerically, and these are stored in
- * that order -- token0 is the pair's tokenA. The symbols read the "wrong"
- * way round (token0 is KDB) purely because CREATE addresses don't respect
- * deployment order; the ordering below is the one the contracts enforce, so
- * it's the one the UI uses.
+ * that order -- token0 is the pair's tokenA. CREATE addresses don't respect
+ * deployment order, so which symbol lands as token0 is coincidence; the
+ * ordering below is the one the contracts enforce, so it's the one the UI
+ * uses.
  */
 export const DEMO_TOKENS = [
-  { address: "0x1d61A82FC489f87f7D2FFc7271e431083FE2d642", symbol: "KDB", label: "token0 / tokenA" },
-  { address: "0xb17A85D426ea907A28c8F0E33d2278F7d02d4A47", symbol: "KDA", label: "token1 / tokenB" },
+  { address: "0x0ECf96941D2c5FE408E021F9e078FeC6484B235b", symbol: "DRFT", label: "Draft — base asset" },
+  { address: "0x6d56c9975130822012e97A163d39Bf5e0D96A3f3", symbol: "BALT", label: "Ballast — quote asset" },
 ] as const;
 
 export const explorerTx = (hash: string) => `${CHAIN.blockExplorers.default.url}/tx/${hash}`;
