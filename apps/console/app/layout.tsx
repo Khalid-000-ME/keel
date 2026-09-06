@@ -76,8 +76,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               } as React.CSSProperties}
             >
               <span
-                className="text-readout-dim absolute inset-x-0 top-0 text-center leading-none font-semibold whitespace-nowrap italic opacity-[0.09]"
-                style={{ fontFamily: "var(--font-montserrat)", fontSize: "var(--wm-size)" }}
+                className="text-readout-dim absolute inset-x-0 text-center leading-none font-semibold whitespace-nowrap italic opacity-[0.09]"
+                style={{
+                  fontFamily: "var(--font-montserrat)",
+                  fontSize: "var(--wm-size)",
+                  top: "calc(var(--wm-size) * -0.16)",
+                }}
               >
                 keel
               </span>
