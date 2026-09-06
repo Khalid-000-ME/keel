@@ -21,6 +21,8 @@ The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kerne
 
 Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethereum Sepolia and Arbitrum Sepolia deployments are pending a working RPC (see Deploying below) — both scripts are network-agnostic and dry-run clean against both chains already, just blocked on every free/anonymous RPC endpoint tried so far rate-limiting `eth_sendRawTransaction`.
 
+**A real Keel position has been shipped and filled against this deployment** — 8 real fills, real `safeTransferFrom` calls, real inventory drift, real soft-bound clamp — via `contracts/script/ShipKeelDemo.s.sol`. Every hash is independently re-verified against the live chain (not just copied from forge's own broadcast log — see `docs/onchain-demo/base-sepolia-run-1.json`'s `verificationNote` for why that mattered here) and checked in at `docs/onchain-demo/base-sepolia-run-1.json`, with the same data rendered on `/position/live`'s "Real evidence" panel as a fallback if the live RPC or subgraph is unreachable during a demo. [Ship tx](https://sepolia.basescan.org/tx/0xbc055d7c9a9decbf8f73b85612aa9ee48dd7fa4d7811f2725f9e248b8aedb260) · strategy hash `0x21851573476bedbc0ca391536e394a1566be94ff1515a7ec07d81f7dd1961cd8`.
+
 ---
 
 ## What's actually built
@@ -33,6 +35,7 @@ Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethe
 | Quote/swap parity | `contracts/test/QuoteSwapParity.t.sol` | 2000 fuzz runs + boundary cases, all passing |
 | Uniswap v4 hook | `contracts/src/uniswap/KeelSkewHook.sol` | **Live on Base Sepolia**, against the real deployed `PoolManager` |
 | Adversarial simulation | `contracts/script/AdversarialFlow.s.sol` | Built, produces the receipt below from a real run |
+| Real position, real fills | `contracts/script/ShipKeelDemo.s.sol` | **Live on Base Sepolia** — 8 real fills, hashes verified and checked in |
 | Off-chain SDK | `packages/strategy-sdk` | Built, byte-verified against live Solidity fixtures |
 | Subgraph | `subgraph/` | **Live**, indexing Base Sepolia, no indexing errors |
 | Console (demo UI) | `apps/console` | Built, 3 pages, typechecked + built + screenshot-verified |
@@ -139,7 +142,7 @@ cd apps/console && pnpm build && pnpm start
 pnpm --filter @keel/console dev
 ```
 
-Three pages: `/` (landing, PnL comparison + headline), `/simulate` (the full receipt table), `/position/[hash]` (the live tilt gauge — currently rendering the AdversarialFlow simulation's final state as a stand-in, since there's no testnet deployment yet to read from).
+Three pages: `/` (landing, PnL comparison + headline), `/simulate` (the full receipt table), `/position/[hash]` (the live tilt gauge, still rendering the AdversarialFlow simulation's final state as a stand-in pending a direct subgraph read — but now also showing a "Real evidence" panel with the actual shipped/filled Base Sepolia position's hashes, see above).
 
 ---
 

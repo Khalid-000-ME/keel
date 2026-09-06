@@ -1,17 +1,20 @@
 import { TiltGauge } from "@/components/TiltGauge";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { GaugePanel, Reveal } from "@/components/position-client";
+import { InlineLink } from "@/components/ui/button";
 import { receipt } from "@/lib/receipt";
+import { onchainDemo } from "@/lib/onchain-demo";
 import { formatWad, wadToNumber } from "@/lib/wad";
 
 /**
- * No Keel *position* has been shipped on-chain yet (the router and hook
- * are deployed on Base Sepolia, but nobody has called ship() with a Keel
- * program against them), so there are no KeelPosition entities in the
- * subgraph to read. This renders the Keel side of the AdversarialFlow
- * simulation's final state instead -- same gauge, same data shape, real
- * numbers from a real run, just not a live on-chain read. Swapping the
- * source for a subgraph query is a drop-in change once a position exists.
+ * The gauge above still renders the Keel side of the AdversarialFlow local
+ * simulation's final state (same gauge, same data shape, real numbers from
+ * a real run, just not a live on-chain read) -- swapping the source for a
+ * subgraph query reading a specific strategyHash is a drop-in change, not
+ * yet made. A real Keel position *has* been shipped and filled against the
+ * live Base Sepolia deployment now (see contracts/script/ShipKeelDemo.s.sol
+ * and the "Real evidence" panel below), so the subgraph should already
+ * have a KeelPosition entity for it -- this page just doesn't query it yet.
  */
 export default async function PositionPage({ params }: { params: Promise<{ hash: string }> }) {
   const { hash } = await params;
@@ -90,12 +93,52 @@ export default async function PositionPage({ params }: { params: Promise<{ hash:
           <div className="border-hairline bg-panel/30 mt-6 rounded-2xl border p-6">
             <FieldLabel>Wiring this to live data</FieldLabel>
             <p className="text-readout-dim mt-3 text-[13px] leading-relaxed">
-              <span className="font-numeric text-readout">KeelRouter</span> is live on Base Sepolia and the subgraph is
-              indexing it, but no Keel strategy has been shipped against it yet — so there are no{" "}
-              <span className="font-numeric text-readout">KeelPosition</span> entities to query. Once one is shipped,
-              this page reads <span className="font-numeric text-readout">currentReservationPriceWad</span> and{" "}
-              <span className="font-numeric text-readout">currentBalanceAWad</span> straight from the subgraph and the
-              needle tracks a real position.
+              <span className="font-numeric text-readout">KeelRouter</span> is live on Base Sepolia and the subgraph
+              is indexing it. This page still renders the local simulation above rather than a subgraph read, but a
+              real Keel strategy has now been shipped and filled against the live deployment — see the evidence
+              below. Once this page reads from the subgraph directly, it queries{" "}
+              <span className="font-numeric text-readout">currentReservationPriceWad</span> and{" "}
+              <span className="font-numeric text-readout">currentBalanceAWad</span> for that strategy hash and the
+              needle tracks it instead.
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.05}>
+          <div className="border-hairline bg-panel/30 mt-6 rounded-2xl border p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <FieldLabel>Real evidence — Base Sepolia</FieldLabel>
+              <span className="border-long/30 bg-long/[0.06] text-long-bright rounded-full border px-3 py-1 text-[11px]">
+                <span className="font-numeric">{onchainDemo.fills.length} real fills, all confirmed</span>
+              </span>
+            </div>
+            <p className="text-readout-dim mt-3 text-[13px] leading-relaxed">
+              A Keel position with strategy hash{" "}
+              <span className="font-numeric text-readout break-all">{onchainDemo.strategyHash}</span> was shipped and
+              filled {onchainDemo.fills.length} times against the live{" "}
+              <span className="font-numeric text-readout">KeelRouter</span> — real{" "}
+              <span className="font-numeric text-readout">safeTransferFrom</span> calls, real inventory drift, real
+              soft-bound clamp. Every hash below resolves on Basescan right now.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
+              <InlineLink href={`${onchainDemo.explorer}/tx/${onchainDemo.shipTxHash}`} external>
+                Ship tx
+              </InlineLink>
+              {onchainDemo.fills.map((f) => (
+                <InlineLink key={f.tick} href={`${onchainDemo.explorer}/tx/${f.txHash}`} external>
+                  Fill #{f.tick}
+                </InlineLink>
+              ))}
+            </div>
+            <p className="text-readout-dim mt-4 text-[12px]">
+              Final on-chain balances:{" "}
+              <span className="font-numeric text-readout">{wadToNumber(onchainDemo.finalBalance0).toFixed(2)}</span>{" "}
+              token0,{" "}
+              <span className="font-numeric text-readout">{wadToNumber(onchainDemo.finalBalance1).toFixed(2)}</span>{" "}
+              token1 — read straight from{" "}
+              <span className="font-numeric text-readout">aqua.safeBalances()</span> after the run, matching this
+              file&apos;s numbers to the last wei. Reproduce:{" "}
+              <span className="font-numeric text-readout">forge script script/ShipKeelDemo.s.sol --tc ShipKeelDemo</span>
             </p>
           </div>
         </Reveal>
