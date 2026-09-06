@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans, Montserrat } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { SparkLayer } from "@/components/spark-layer";
 import "./globals.css";
@@ -32,6 +32,14 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  style: ["italic"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://keel.vercel.app"),
   title: "Keel — the position that knows which way it's leaning",
@@ -48,7 +56,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ibmPlexMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable}`}>
+    <html
+      lang="en"
+      className={`${ibmPlexMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${montserrat.variable}`}
+    >
       <body className="bg-graphite text-readout min-h-screen antialiased">
         <SparkLayer>
           <Nav />
@@ -62,19 +73,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <div
               aria-hidden
-              className="pointer-events-none relative select-none overflow-hidden"
+              className="border-hairline/30 relative h-36 w-full max-w-full select-none overflow-hidden border-t sm:h-44 md:h-52"
               style={{
-                "--wm-size": "clamp(11rem, 56vw, 58rem)",
-                height: "calc(var(--wm-size) * 0.62)",
-                maskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 90%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 90%)",
-              } as React.CSSProperties}
+                maskImage: "linear-gradient(to bottom, black 0%, black 35%, transparent 88%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 35%, transparent 88%)",
+              }}
             >
               <span
-                className="font-numeric text-readout absolute inset-x-0 top-0 text-center leading-none font-bold whitespace-nowrap opacity-[0.14]"
-                style={{ fontSize: "var(--wm-size)", letterSpacing: "0.02em" }}
+                className="text-readout-dim absolute inset-x-0 top-6 text-center leading-none font-semibold whitespace-nowrap italic opacity-[0.09] sm:top-8"
+                style={{ fontFamily: "var(--font-montserrat)", fontSize: "clamp(4.5rem, 13vw, 10rem)" }}
               >
-                KEEL
+                keel
               </span>
             </div>
           </footer>
