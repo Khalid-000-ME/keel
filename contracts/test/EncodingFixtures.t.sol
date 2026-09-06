@@ -74,4 +74,48 @@ contract EncodingFixturesTest is Test {
         console2.log("traits", MakerTraits.unwrap(order.traits));
         console2.logBytes(order.data);
     }
+
+    /// @notice The bytes Aqua actually files a strategy under. `Aqua.ship`
+    ///         does `strategyHash = keccak256(strategy)` over exactly this
+    ///         blob, and the router's own `hash(order)` re-derives it the
+    ///         same way -- so an encoder that is even one word off produces a
+    ///         strategy nothing can look up afterwards. Logged separately
+    ///         from the order fields above because `abi.encode` of a dynamic
+    ///         struct prefixes a head offset that is easy to omit by hand.
+    function test_LogEncodedOrderFixture() public pure {
+        address maker = address(0x111111111111111111111111111111111111111A);
+        address tokenA = address(0x222222222222222222222222222222222222222B);
+        address tokenB = address(0x333333333333333333333333333333333333333C);
+        bytes memory program = bytes.concat(XYCSwap.build(), Salt.build(uint64(2)));
+
+        ISwapVM.Order memory order = MakerTraitsLib.build(
+            MakerTraitsLib.Args({
+                maker: maker,
+                receiver: address(0),
+                tokenA: tokenA,
+                tokenB: tokenB,
+                shouldUnwrapWeth: false,
+                useAquaInsteadOfSignature: true,
+                allowZeroAmountIn: false,
+                hasPreTransferInHook: false,
+                hasPostTransferInHook: false,
+                hasPreTransferOutHook: false,
+                hasPostTransferOutHook: false,
+                preTransferInTarget: address(0),
+                preTransferInData: "",
+                postTransferInTarget: address(0),
+                postTransferInData: "",
+                preTransferOutTarget: address(0),
+                preTransferOutData: "",
+                postTransferOutTarget: address(0),
+                postTransferOutData: "",
+                program: program
+            })
+        );
+
+        console2.log("encodedOrder");
+        console2.logBytes(abi.encode(order));
+        console2.log("strategyHash");
+        console2.logBytes32(keccak256(abi.encode(order)));
+    }
 }

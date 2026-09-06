@@ -18,6 +18,8 @@ The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kerne
 | KeelRouter | [`0x1771093A5094FCc818775806eD8a729f6cF7DA0E`](https://sepolia.basescan.org/address/0x1771093A5094FCc818775806eD8a729f6cF7DA0E) |
 | KeelSkewHook | [`0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0`](https://sepolia.basescan.org/address/0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0) (against Base Sepolia's real, already-deployed v4 `PoolManager`) |
 | Subgraph | [thegraph.com/studio/subgraph/keel-subgraph](https://thegraph.com/studio/subgraph/keel-subgraph) — indexing live, `hasIndexingErrors: false` |
+| KeelDemoTaker | [`0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763`](https://sepolia.basescan.org/address/0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763) — quote/fill helper for the browser console |
+| Demo tokens | [`0x1d61…d642`](https://sepolia.basescan.org/address/0x1d61A82FC489f87f7D2FFc7271e431083FE2d642) (KDB, tokenA) · [`0xb17A…4A47`](https://sepolia.basescan.org/address/0xb17A85D426ea907A28c8F0E33d2278F7d02d4A47) (KDA, tokenB) — permissionless faucets |
 
 Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethereum Sepolia and Arbitrum Sepolia deployments are pending a working RPC (see Deploying below) — both scripts are network-agnostic and dry-run clean against both chains already, just blocked on every free/anonymous RPC endpoint tried so far rate-limiting `eth_sendRawTransaction`.
 
@@ -38,9 +40,11 @@ Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethe
 | Real position, real fills | `contracts/script/ShipKeelDemo.s.sol` | **Live on Base Sepolia** — 8 real fills, hashes verified and checked in |
 | Off-chain SDK | `packages/strategy-sdk` | Built, byte-verified against live Solidity fixtures |
 | Subgraph | `subgraph/` | **Live**, indexing Base Sepolia, no indexing errors |
-| Console (demo UI) | `apps/console` | Built, 3 pages, typechecked + built + screenshot-verified |
+| Maker console | `apps/console/app/strategies` | **Live** — connect a wallet and ship a real position from the browser |
+| Demo kit | `contracts/src/demo/` | **Live on Base Sepolia** — faucet tokens + taker helper the console drives |
+| Console (demo UI) | `apps/console` | Built, 5 pages, typechecked + built + screenshot-verified |
 
-24 Foundry tests, 4 SDK tests, all green as of the last commit.
+32 Foundry tests, 5 SDK tests, all green as of the last commit.
 
 ---
 
@@ -74,7 +78,8 @@ keel/
 │  │  ├─ instructions/KeelInstructions.sol # KeelInventorySkew, the SwapVM opcode
 │  │  ├─ routers/KeelRouter.sol           # append-only over AquaSwapVMRouter
 │  │  └─ uniswap/KeelSkewHook.sol         # same kernel, v4 dynamic-fee hook
-│  ├─ test/                 # AvellanedaStoikov, KeelRouter, QuoteSwapParity, KeelSkewHook, EncodingFixtures
+│  │  └─ demo/              # faucet token + taker helper, for the browser console only
+│  ├─ test/                 # AvellanedaStoikov, KeelRouter, QuoteSwapParity, KeelSkewHook, EncodingFixtures, KeelDemoKit
 │  └─ script/AdversarialFlow.s.sol        # the receipt generator
 ├─ packages/
 │  ├─ seam/                 # shared TS types mirroring the Solidity structs
@@ -142,7 +147,15 @@ cd apps/console && pnpm build && pnpm start
 pnpm --filter @keel/console dev
 ```
 
-Three pages: `/` (landing, PnL comparison + headline), `/simulate` (the full receipt table), `/position/[hash]` (the live tilt gauge, still rendering the AdversarialFlow simulation's final state as a stand-in pending a direct subgraph read — but now also showing a "Real evidence" panel with the actual shipped/filled Base Sepolia position's hashes, see above).
+Four pages:
+
+- `/` — landing, PnL comparison + headline
+- `/mechanism` — the long-form explanation, with the formulas typeset and an interactive skew lab
+- **`/strategies` — the maker console: connect a wallet and actually ship a position.** Mint faucet inventory, dial γ / σ² / δ₀ / target / soft bound while a live quote-curve preview and the literal SwapVM bytecode update underneath, read the strategy hash back from the router *before* signing, then approve and `ship()`. Shipped positions list below with balances and both-side quotes read live from the chain every few seconds, plus one-click test fills (watch the exposed-side quote walk away from mid as you hit it) and dock-and-withdraw. Nothing is mocked — it writes to the same Aqua + KeelRouter above.
+- `/simulate` — the full receipt table
+- `/position/[hash]` — the live tilt gauge, still rendering the AdversarialFlow simulation's final state as a stand-in pending a direct subgraph read, plus a "Real evidence" panel with the shipped/filled Base Sepolia position's hashes (see above)
+
+The maker console needs a browser wallet (MetaMask, Rabby, …) on Base Sepolia. The taker side of it goes through `KeelDemoTaker`, which builds `TakerTraits` with the real `swap-vm` library rather than re-implementing ~330 lines of variable-length slice packing in TypeScript — see `contracts/src/demo/KeelDemoTaker.sol` for why.
 
 ---
 

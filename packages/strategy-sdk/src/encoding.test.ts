@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { encodeKeelInventorySkew, encodeXYCSwap, encodeSalt } from "./instructions.js";
-import { buildOrder } from "./order.js";
+import { encodeKeelInventorySkew, encodeXYCSwap, encodeSalt } from "./instructions";
+import { buildOrder } from "./order";
+import { encodeOrder } from "./abi";
 
 /**
  * Every expected value below was captured verbatim from a live run of
@@ -54,5 +55,29 @@ test("buildOrder matches the Solidity fixture", () => {
   assert.equal(
     order.data,
     "0x222222222222222222222222222222222222222b333333333333333333333333333333333333333c500002080000000000000002",
+  );
+});
+
+/**
+ * The one that actually gets hashed. `Aqua.ship` files a strategy under
+ * `keccak256(strategy)` where `strategy` is exactly these bytes, so a
+ * mismatch here ships positions that can never be quoted, filled or docked
+ * -- it fails silently at ship time and only surfaces later. Fixture:
+ * contracts/test/EncodingFixtures.t.sol::test_LogEncodedOrderFixture.
+ */
+test("encodeOrder matches the Solidity abi.encode(order) fixture", () => {
+  const program = `0x${encodeXYCSwap().slice(2)}${encodeSalt(2n).slice(2)}` as `0x${string}`;
+
+  const order = buildOrder({
+    maker: "0x111111111111111111111111111111111111111A" as `0x${string}`,
+    tokenA: "0x222222222222222222222222222222222222222B" as `0x${string}`,
+    tokenB: "0x333333333333333333333333333333333333333C" as `0x${string}`,
+    useAquaInsteadOfSignature: true,
+    program,
+  });
+
+  assert.equal(
+    encodeOrder(order),
+    "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000111111111111111111111111111111111111111a400000000028002800280028000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000034222222222222222222222222222222222222222b333333333333333333333333333333333333333c500002080000000000000002000000000000000000000000",
   );
 });

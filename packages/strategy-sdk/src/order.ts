@@ -1,4 +1,4 @@
-import { type Hex, addressToHex, concatHex, toHexPadded } from "./hex.js";
+import { type Hex, addressToHex, concatHex, toHexPadded } from "./hex";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 

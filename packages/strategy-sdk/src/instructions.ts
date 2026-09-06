@@ -1,5 +1,5 @@
 import type { KeelProgramData } from "@keel/seam";
-import { type Hex, concatHex, instructionHeader, toHexPadded } from "./hex.js";
+import { type Hex, concatHex, instructionHeader, toHexPadded } from "./hex";
 
 /**
  * Opcode byte for Keel's InventorySkew instruction -- must match

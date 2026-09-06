@@ -1,4 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // This package is consumed by the Next console's bundler (and by tsx for
+    // its own tests), never loaded as raw Node ESM -- so it uses bundler
+    // resolution and extensionless relative imports. NodeNext's mandatory
+    // `.js` specifiers can't be mapped back to `.ts` by Turbopack without an
+    // experimental flag, and an experimental flag is a bad thing to have a
+    // live demo resting on.
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
   "include": ["src"]
 }

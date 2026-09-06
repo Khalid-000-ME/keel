@@ -1,9 +1,9 @@
 import { Address, HexString, type CallInfo, AquaProtocolContract } from "@1inch/aqua-sdk";
 import type { KeelStrategyConfig } from "@keel/seam";
 
-import { buildKeelProgram } from "./instructions.js";
-import { buildOrder } from "./order.js";
-import { encodeOrder } from "./abi.js";
+import { buildKeelProgram } from "./instructions";
+import { buildOrder } from "./order";
+import { encodeOrder } from "./abi";
 
 /**
  * Builds the calldata for shipping a Keel strategy on Aqua -- via the real
