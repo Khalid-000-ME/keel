@@ -65,25 +65,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Nav />
           {children}
           <footer className="border-hairline/60 relative mt-32 overflow-hidden border-t">
-            <div className="text-readout-dim relative z-10 mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-[12px] sm:flex-row sm:items-center sm:justify-between">
+            <div
+              aria-hidden
+              className="relative w-full max-w-full select-none overflow-hidden"
+              style={{
+                "--wm-size": "clamp(9rem, 40vw, 36rem)",
+                height: "calc(var(--wm-size) * 0.62)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 40%, transparent 92%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 40%, transparent 92%)",
+              } as React.CSSProperties}
+            >
+              <span
+                className="text-readout-dim absolute inset-x-0 top-0 text-center leading-none font-semibold whitespace-nowrap italic opacity-[0.09]"
+                style={{ fontFamily: "var(--font-montserrat)", fontSize: "var(--wm-size)" }}
+              >
+                keel
+              </span>
+            </div>
+            <div className="border-hairline/40 text-readout-dim relative z-10 mx-auto flex max-w-6xl flex-col gap-3 border-t px-6 py-6 text-[12px] sm:flex-row sm:items-center sm:justify-between">
               <span className="font-numeric">KEEL · ETHOnline 2026 · 1inch × The Graph × Uniswap</span>
               <span className="font-numeric">
                 Avellaneda-Stoikov reservation pricing, as a SwapVM opcode
-              </span>
-            </div>
-            <div
-              aria-hidden
-              className="border-hairline/30 relative h-36 w-full max-w-full select-none overflow-hidden border-t sm:h-44 md:h-52"
-              style={{
-                maskImage: "linear-gradient(to bottom, black 0%, black 35%, transparent 88%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 35%, transparent 88%)",
-              }}
-            >
-              <span
-                className="text-readout-dim absolute inset-x-0 top-6 text-center leading-none font-semibold whitespace-nowrap italic opacity-[0.09] sm:top-8"
-                style={{ fontFamily: "var(--font-montserrat)", fontSize: "clamp(4.5rem, 13vw, 10rem)" }}
-              >
-                keel
               </span>
             </div>
           </footer>
