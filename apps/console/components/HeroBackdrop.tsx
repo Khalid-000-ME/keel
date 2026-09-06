@@ -21,7 +21,7 @@ import { AmbientVideo } from "@/components/AmbientVideo";
  * movement is a response to the reader, not decoration running in the
  * background.
  */
-export function HeroBackdrop() {
+export function HeroBackdrop({ videoScale = 1.06 }: { videoScale?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [reduced, setReduced] = useState(false);
@@ -65,7 +65,7 @@ export function HeroBackdrop() {
         opacity={0.85}
         blend={false}
         grade="saturate(0.92) contrast(1.12) brightness(0.78)"
-        zoomOnScroll
+        scale={videoScale}
       />
 
       <div

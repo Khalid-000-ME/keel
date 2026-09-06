@@ -26,7 +26,7 @@ export function AmbientVideo({
   opacity = 0.55,
   blend = true,
   grade = "saturate(0.75) contrast(1.05) brightness(0.62)",
-  zoomOnScroll = false,
+  scale,
   children,
 }: {
   /** Basename under /media, without extension — e.g. "hero-keel". */
@@ -40,14 +40,13 @@ export function AmbientVideo({
   blend?: boolean;
   /** CSS filter chain. Dark footage with real blacks wants a lighter hand than a bright plate. */
   grade?: string;
-  /** Scale the frame up as its host section scrolls past the top of the viewport. Hero only. */
-  zoomOnScroll?: boolean;
+  /** Externally-driven zoom factor (e.g. from a scroll-linked pin). Overrides the default 1.06 baseline scale. */
+  scale?: number;
   children?: React.ReactNode;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [reduced, setReduced] = useState(false);
   const [visible, setVisible] = useState(eager);
-  const [scale, setScale] = useState(1.06);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -56,27 +55,6 @@ export function AmbientVideo({
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
-
-  useEffect(() => {
-    if (!zoomOnScroll || reduced) return;
-    const el = hostRef.current;
-    if (!el) return;
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const rect = el.getBoundingClientRect();
-        const progress = Math.min(Math.max(-rect.top / rect.height, 0), 1);
-        setScale(1.06 + progress * 0.16);
-      });
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [zoomOnScroll, reduced]);
 
   useEffect(() => {
     if (eager || visible) return;
@@ -102,12 +80,12 @@ export function AmbientVideo({
     <div ref={hostRef} className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden>
       {showVideo ? (
         <video
-          className={cn("h-full w-full object-cover", !zoomOnScroll && "scale-[1.06]", videoClassName)}
+          className={cn("h-full w-full object-cover", scale === undefined && "scale-[1.06]", videoClassName)}
           style={{
             opacity,
             filter: grade,
             mixBlendMode: blend ? "screen" : undefined,
-            transform: zoomOnScroll ? `scale(${scale})` : undefined,
+            transform: scale !== undefined ? `scale(${scale})` : undefined,
           }}
           poster={posterSrc}
           autoPlay
@@ -124,12 +102,12 @@ export function AmbientVideo({
         <img
           src={posterSrc}
           alt=""
-          className={cn("h-full w-full object-cover", !zoomOnScroll && "scale-[1.06]", videoClassName)}
+          className={cn("h-full w-full object-cover", scale === undefined && "scale-[1.06]", videoClassName)}
           style={{
             opacity,
             filter: grade,
             mixBlendMode: blend ? "screen" : undefined,
-            transform: zoomOnScroll ? `scale(${scale})` : undefined,
+            transform: scale !== undefined ? `scale(${scale})` : undefined,
           }}
         />
       )}

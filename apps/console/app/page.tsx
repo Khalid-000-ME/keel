@@ -1,7 +1,7 @@
 import { Activity, Eye, Scale, Zap } from "lucide-react";
 
 import { ButtonLink, InlineLink } from "@/components/ui/button";
-import { HeroBackdrop } from "@/components/HeroBackdrop";
+import { HeroSection } from "@/components/HeroSection";
 import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
 import { PnlChart } from "@/components/PnlChart";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
@@ -24,14 +24,13 @@ export default function LandingPage() {
   }));
 
   return (
-    <main className="relative overflow-hidden">
+    <main className="relative">
       {/* ---------- hero ---------- */}
-      {/* Full viewport height: the fixed, glass navbar floats over this
-          section rather than pushing it down, so the video reads as one
-          continuous frame from the very top of the page. */}
-      <section className="relative h-screen min-h-[640px] overflow-hidden">
-        <HeroBackdrop />
-
+      {/* Pinned to the viewport for an extra half-screen of scroll: the
+          video zooms in while the headline holds still, then the pin runs
+          out and the page continues scrolling normally. The fixed, glass
+          navbar floats over all of this. */}
+      <HeroSection>
         <div className="relative z-10 mx-auto flex h-full max-w-6xl items-center px-6">
           <div className="max-w-xl">
             <HeroHeadline />
@@ -52,7 +51,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </HeroSection>
 
       {/* ---------- the simple version ---------- */}
       <section className="relative py-24">
