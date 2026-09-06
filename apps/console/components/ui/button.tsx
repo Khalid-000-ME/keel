@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 type Variant = "primary" | "secondary" | "ghost";
 
 const BASE =
-  "group relative inline-flex items-center justify-center gap-2 text-[13px] font-medium " +
+  "font-numeric group relative inline-flex items-center justify-center gap-2 text-[13px] font-medium " +
   "transition-[transform,box-shadow,background,border-color] duration-300 ease-out " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-bright/60 focus-visible:ring-offset-2 focus-visible:ring-offset-graphite " +
   "active:scale-[0.985]";
