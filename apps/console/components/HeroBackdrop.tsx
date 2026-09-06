@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Grainient from "@/components/Grainient";
-import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
+import { AmbientVideo } from "@/components/AmbientVideo";
 
 /**
  * The hero's layer stack (spec §3.1), bottom to top:
@@ -70,8 +70,8 @@ export function HeroBackdrop() {
       <div
         className="absolute inset-0 opacity-[0.18] mix-blend-soft-light transition-transform duration-700 ease-out"
         style={{
-          maskImage: "radial-gradient(ellipse 70% 65% at 32% 46%, #000 25%, transparent 78%)",
-          WebkitMaskImage: "radial-gradient(ellipse 70% 65% at 32% 46%, #000 25%, transparent 78%)",
+          maskImage: "radial-gradient(ellipse 55% 60% at 22% 46%, #000 25%, transparent 78%)",
+          WebkitMaskImage: "radial-gradient(ellipse 55% 60% at 22% 46%, #000 25%, transparent 78%)",
         }}
       >
         <Grainient
@@ -95,23 +95,29 @@ export function HeroBackdrop() {
         />
       </div>
 
-      {/* nav legibility: the header floats over this section transparently,
-          so it needs its own dark bed independent of where the text sits */}
+      {/* nav legibility: the header is fully transparent (no bg/blur of its
+          own), so the links floating over the video on the right still need
+          contrast independent of the main left-side gradient below */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-32"
-        style={{ background: "linear-gradient(to bottom, rgba(12,14,18,0.65) 0%, transparent 100%)" }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-28"
+        style={{ background: "linear-gradient(to bottom, rgba(12,14,18,0.6) 0%, transparent 100%)" }}
       />
 
-      {/* carve the dark hole the (now left-aligned) headline sits in, then
-          dissolve into the page */}
+      {/* the actual composition move: video lives on the right, the left
+          side is swallowed into solid graphite so the headline sits on a
+          clean dark field rather than fighting the footage underneath it */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 42% 46% at 30% 48%, rgba(12,14,18,0.85) 0%, rgba(12,14,18,0.5) 55%, transparent 100%)",
+            "linear-gradient(90deg, var(--graphite) 0%, var(--graphite) 30%, rgba(12,14,18,0.88) 42%, rgba(12,14,18,0.45) 58%, transparent 74%)",
         }}
       />
-      <VideoScrim vignette="ellipse 65% 70% at 34% 46%" fadeFrom="58%" />
+      {/* dissolve the bottom edge into the page below, same as before */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "linear-gradient(to bottom, transparent 55%, var(--graphite) 100%)" }}
+      />
       <div className="grid-substrate absolute inset-0 opacity-70" />
     </div>
   );

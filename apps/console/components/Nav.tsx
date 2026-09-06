@@ -15,7 +15,7 @@ export function Nav() {
   const pathname = usePathname();
 
   return (
-    <header className="border-hairline/25 bg-graphite/20 fixed inset-x-0 top-0 z-50 h-16 border-b backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 h-16 bg-transparent">
       <nav className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="relative flex h-6 w-6 items-center justify-center">
@@ -35,19 +35,19 @@ export function Nav() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "group relative rounded-lg px-3 py-1.5 text-[13px] transition-colors duration-300",
+                  "group relative px-3 py-1.5 text-[13px] transition-colors duration-300",
                   active ? "text-readout" : "text-readout-dim hover:text-readout",
                 )}
               >
-                {active ? (
-                  <span className="bg-panel-raised ring-hairline/70 absolute inset-0 rounded-lg ring-1" />
-                ) : (
-                  <span className="bg-panel-raised/60 absolute inset-0 scale-95 rounded-lg opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100" />
-                )}
-                <span className="relative">{link.label}</span>
-                {active && (
-                  <span className="bg-amber-bright/80 absolute -bottom-px left-1/2 h-px w-6 -translate-x-1/2 rounded-full" />
-                )}
+                <span className="relative">
+                  {link.label}
+                  <span
+                    className={cn(
+                      "bg-current absolute -bottom-1 left-0 h-px origin-left transition-transform duration-300 ease-out",
+                      active ? "w-full scale-x-100" : "w-full scale-x-0 group-hover:scale-x-100",
+                    )}
+                  />
+                </span>
               </Link>
             );
           })}
