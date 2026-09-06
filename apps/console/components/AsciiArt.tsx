@@ -43,10 +43,4 @@ export const KEEL_HEELING = `                          /|
                             #
                              [#]`;
 
-export const OPCODE = `    0x92   =   1 0 0 1 0 0 1 0
-               \\__ __/ \\___ __/
-                  v        v
-              bank 0x90  slot 2
-           "balances tuning"  (free)`;
-
 export const WATERLINE = `    ----------------------------[#]----------------------------`;

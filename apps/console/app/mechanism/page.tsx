@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
 import { ButtonLink, InlineLink } from "@/components/ui/button";
-import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
+import { FieldLabel } from "@/components/NumericReadout";
 import { Reveal } from "@/components/landing-client";
-import { AsciiArt, KEEL_UPRIGHT, KEEL_HEELING, OPCODE, WATERLINE } from "@/components/AsciiArt";
+import { AsciiArt, KEEL_UPRIGHT, KEEL_HEELING, WATERLINE } from "@/components/AsciiArt";
 import { Formula } from "@/components/Formula";
 import { SkewLab } from "@/components/SkewLab";
 
@@ -68,12 +68,12 @@ export default function MechanismPage() {
                 No on-chain venue had ever implemented it — because on a pool AMM the inventory belongs to the pool,
                 not to any one maker. There&apos;s nothing for the formula to skew around.
               </p>
-              <div className="border-amber-bright/40 bg-panel/40 rounded-r-lg border-l-2 px-5 py-3">
-                <NumericReadout
-                  value="inventory belongs to the pool → no q → no r(s,q,t) → no skew"
-                  size="xs"
-                  sign="amber"
-                />
+              <div className="border-amber-bright/40 bg-panel/40 text-amber-bright font-numeric flex flex-wrap items-center gap-x-1.5 rounded-r-lg border-l-2 px-5 py-3 text-[11px]">
+                <span>inventory belongs to the pool → no</span>
+                <Formula tex="q" className="text-amber-bright" />
+                <span>→ no</span>
+                <Formula tex="r(s,q,t)" className="text-amber-bright" />
+                <span>→ no skew</span>
               </div>
             </div>
           </div>
@@ -159,8 +159,15 @@ export default function MechanismPage() {
           </h2>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-center">
-            <div className="border-hairline bg-panel/40 flex justify-center overflow-x-auto rounded-2xl border p-8">
-              <AsciiArt art={OPCODE} className="text-readout text-[11px] sm:text-[12px]" />
+            <div className="border-hairline bg-panel/40 flex flex-col items-center justify-center gap-6 overflow-x-auto rounded-2xl border p-8">
+              <Formula
+                display
+                tex="\texttt{0x92} = \underbrace{1001}_{\text{bank }\texttt{0x90}} \; \underbrace{0010}_{\text{slot }2}"
+                className="text-readout text-[16px] sm:text-[19px]"
+              />
+              <span className="text-readout-dim font-numeric text-[10px] tracking-[0.1em]">
+                &quot;balances tuning&quot; — reserved, unallocated
+              </span>
             </div>
             <div className="flex flex-col gap-5">
               <p className="text-readout-dim text-[14px] leading-relaxed">
