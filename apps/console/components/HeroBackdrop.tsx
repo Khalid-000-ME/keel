@@ -2,16 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import Grainient from "@/components/Grainient";
+import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
 
 /**
- * The hero's mesh gradient: a warped, grainy WebGL field in the terminal
- * palette (amber over graphite, with a cool green undertone so it reads as
- * instrumentation rather than a generic SaaS blur).
+ * The hero's layer stack (spec §3.1), bottom to top:
  *
- * Two things keep it from overwhelming a data-dense page: it's masked to
- * fade out toward the content, and it drifts with the cursor rather than
- * animating on its own budget -- the movement is a response to the reader,
- * not decoration running in the background.
+ *   1. "Beneath the Keel" -- underwater footage looking up at a hull and its
+ *      keel fin, which is the whole thesis of the project in one image: the
+ *      part nobody sees is the part keeping the boat upright.
+ *   2. A warped, grainy WebGL mesh in the terminal palette, at reduced
+ *      opacity. Its job here is to marry the footage to the page -- without
+ *      the grain the video reads as a pasted-in rectangle.
+ *   3. A vignette that carves the dark hole the headline sits in, plus a
+ *      bottom fade so the video dissolves into the page with no visible edge.
+ *   4. The grid substrate, dimmed, since the footage already carries texture.
+ *
+ * The mesh drifts with the cursor rather than animating on its own budget --
+ * movement is a response to the reader, not decoration running in the
+ * background.
  */
 export function HeroBackdrop() {
   const ref = useRef<HTMLDivElement>(null);
@@ -50,8 +58,17 @@ export function HeroBackdrop() {
 
   return (
     <div ref={ref} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <AmbientVideo
+        src="hero-keel"
+        poster="/media/hero-still.jpg"
+        eager
+        opacity={0.85}
+        blend={false}
+        grade="saturate(0.92) contrast(1.12) brightness(0.78)"
+      />
+
       <div
-        className="absolute inset-0 opacity-[0.55] transition-transform duration-700 ease-out"
+        className="absolute inset-0 opacity-[0.18] mix-blend-soft-light transition-transform duration-700 ease-out"
         style={{
           maskImage: "radial-gradient(ellipse 90% 75% at 50% 28%, #000 25%, transparent 78%)",
           WebkitMaskImage: "radial-gradient(ellipse 90% 75% at 50% 28%, #000 25%, transparent 78%)",
@@ -78,9 +95,17 @@ export function HeroBackdrop() {
         />
       </div>
 
-      {/* settle it back into the terminal: darken the base, keep the grid readable */}
-      <div className="from-graphite/40 via-graphite/10 to-graphite absolute inset-0 bg-gradient-to-b" />
-      <div className="grid-substrate absolute inset-0" />
+      {/* carve the dark hole the headline sits in, then dissolve into the page */}
+      {/* a soft bed directly under the type, so god rays never fight the headline */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 46% 34% at 50% 42%, rgba(12,14,18,0.82) 0%, rgba(12,14,18,0.45) 55%, transparent 100%)",
+        }}
+      />
+      <VideoScrim vignette="ellipse 72% 56% at 50% 40%" fadeFrom="46%" />
+      <div className="grid-substrate absolute inset-0 opacity-70" />
     </div>
   );
 }

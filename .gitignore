@@ -23,3 +23,6 @@ subgraph/build/
 *.tsbuildinfo
 .env*
 !.env.example
+apps/console/.media-source/
+.DS_Store
+**/.DS_Store
