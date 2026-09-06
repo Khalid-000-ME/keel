@@ -6,7 +6,7 @@ import "./globals.css";
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-ibm-plex-mono",
   display: "swap",
 });
@@ -53,11 +53,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SparkLayer>
           <Nav />
           {children}
-          <footer className="border-hairline/60 mt-32 border-t">
-            <div className="text-readout-dim mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-[12px] sm:flex-row sm:items-center sm:justify-between">
+          <footer className="border-hairline/60 relative mt-32 overflow-hidden border-t">
+            <div className="text-readout-dim relative z-10 mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-[12px] sm:flex-row sm:items-center sm:justify-between">
               <span className="font-numeric">KEEL · ETHOnline 2026 · 1inch × The Graph × Uniswap</span>
               <span className="font-numeric">
                 Avellaneda-Stoikov reservation pricing, as a SwapVM opcode
+              </span>
+            </div>
+            <div aria-hidden className="pointer-events-none relative h-20 select-none sm:h-32">
+              <span
+                className="font-numeric text-readout absolute inset-x-0 -bottom-8 text-center leading-none font-bold whitespace-nowrap opacity-[0.05] sm:-bottom-14"
+                style={{ fontSize: "clamp(4.5rem, 16vw, 12rem)" }}
+              >
+                KEEL
               </span>
             </div>
           </footer>
