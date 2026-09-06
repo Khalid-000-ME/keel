@@ -4,7 +4,8 @@ import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
 import { ButtonLink, InlineLink } from "@/components/ui/button";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { Reveal } from "@/components/landing-client";
-import { AsciiArt, KEEL_UPRIGHT, KEEL_HEELING, FORMULA, OPCODE, WATERLINE } from "@/components/AsciiArt";
+import { AsciiArt, KEEL_UPRIGHT, KEEL_HEELING, OPCODE, WATERLINE } from "@/components/AsciiArt";
+import { Formula } from "@/components/Formula";
 import { SkewLab } from "@/components/SkewLab";
 
 export const metadata: Metadata = {
@@ -90,17 +91,38 @@ export default function MechanismPage() {
             In Aqua, tokens never leave the maker&apos;s wallet. Multiple positions share the same approved balance,
             and <span className="font-numeric text-readout">aqua.safeBalances()</span> reads a maker&apos;s real,
             live, individual inventory. By the time any opcode runs, that number is already sitting in the VM&apos;s
-            balance registers — which is exactly the <span className="font-numeric text-readout">q</span> the
+            balance registers — which is exactly the <Formula tex="q" className="text-readout" /> the
             reservation price needs.
           </p>
 
-          <div className="border-hairline bg-panel/40 mt-10 flex justify-center overflow-x-auto rounded-2xl border p-8">
-            <AsciiArt art={FORMULA} className="text-readout text-[11px] sm:text-[13px]" />
+          <div className="border-hairline bg-panel/40 mt-10 flex flex-col items-center gap-10 overflow-x-auto rounded-2xl border p-8 sm:p-10">
+            <div className="flex flex-col items-center gap-3">
+              <Formula
+                display
+                tex="r(s,q,t) = s - q \, \gamma \, \sigma^2 \, (T - t)"
+                className="text-readout text-[18px] sm:text-[24px]"
+              />
+              <div className="text-readout-dim font-numeric flex gap-8 text-[10px] tracking-[0.14em] uppercase">
+                <span>mid</span>
+                <span>inventory skew</span>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <Formula
+                display
+                tex="\delta(t) = \delta_0 + \gamma \, \sigma^2 \, (T - t)"
+                className="text-readout text-[18px] sm:text-[24px]"
+              />
+              <div className="text-readout-dim font-numeric flex gap-8 text-[10px] tracking-[0.14em] uppercase">
+                <span>base spread</span>
+                <span>time-varying width</span>
+              </div>
+            </div>
           </div>
 
           <p className="text-readout-dim mt-4 text-center text-[12px]">
-            <span className="font-numeric text-readout">q</span> is the maker&apos;s live Aqua balance minus their
-            declared target. Everything else is a constant shipped with the strategy.
+            <Formula tex="q" className="text-readout" /> is the maker&apos;s live Aqua balance minus their declared
+            target. Everything else is a constant shipped with the strategy.
           </p>
         </Reveal>
       </section>

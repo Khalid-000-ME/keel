@@ -43,17 +43,6 @@ export const KEEL_HEELING = `                          /|
                             #
                              [#]`;
 
-export const FORMULA = `    r(s, q, t)  =   s   -   q · γ · σ² · (T - t)
-                    |       \\________ ________/
-                    |                v
-                   mid        inventory skew
-
-
-    δ(t)        =   δ₀  +   γ · σ² · (T - t)
-                    |       \\________ ________/
-                    |                v
-              base spread     time-varying width`;
-
 export const OPCODE = `    0x92   =   1 0 0 1 0 0 1 0
                \\__ __/ \\___ __/
                   v        v

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
+import { Formula } from "@/components/Formula";
 
 /**
  * The spirit level (spec §5.2) -- the one interaction on the site that lets
@@ -167,7 +168,7 @@ export function SkewLab() {
       <div className="border-hairline/60 grid gap-px border-t sm:grid-cols-2">
         <QuoteRow
           label="Exposed-side fill"
-          formula="r − δ"
+          formula="r - \delta"
           value={exposed}
           tone="short"
           note={
@@ -178,7 +179,7 @@ export function SkewLab() {
         />
         <QuoteRow
           label="Covered-side fill"
-          formula="r + δ"
+          formula="r + \delta"
           value={covered}
           tone="long"
           note="mean-reverts the position"
@@ -186,14 +187,14 @@ export function SkewLab() {
       </div>
 
       <div className="border-hairline/60 text-readout-dim flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t px-6 py-4 text-[11px]">
-        <span>
-          reservation price <NumericReadout value={r.toFixed(5)} size="xs" sign="amber" />
+        <span className="inline-flex items-center gap-1.5">
+          reservation price <Formula tex="r" /> <NumericReadout value={r.toFixed(5)} size="xs" sign="amber" />
         </span>
-        <span>
-          half-spread δ <NumericReadout value={halfSpread.toFixed(5)} size="xs" />
+        <span className="inline-flex items-center gap-1.5">
+          half-spread <Formula tex="\delta" /> <NumericReadout value={halfSpread.toFixed(5)} size="xs" />
         </span>
-        <span>
-          mid <NumericReadout value={MID.toFixed(5)} size="xs" />
+        <span className="inline-flex items-center gap-1.5">
+          mid <Formula tex="s" /> <NumericReadout value={MID.toFixed(5)} size="xs" />
         </span>
       </div>
     </div>
@@ -217,7 +218,7 @@ function QuoteRow({
     <div className="bg-panel-raised/40 px-6 py-5">
       <div className="flex items-center justify-between">
         <FieldLabel>{label}</FieldLabel>
-        <NumericReadout value={formula} size="xs" className="text-hairline-bright" />
+        <Formula tex={formula} className="text-hairline-bright" />
       </div>
       <div className="mt-2">
         <NumericReadout value={value.toFixed(5)} size="lg" sign={tone} />

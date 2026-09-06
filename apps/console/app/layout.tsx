@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans, Montserrat } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { SparkLayer } from "@/components/spark-layer";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 const ibmPlexMono = IBM_Plex_Mono({
