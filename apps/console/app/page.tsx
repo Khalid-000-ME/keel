@@ -200,7 +200,7 @@ export default function LandingPage() {
 
           <div className="relative flex h-full flex-col items-center justify-center px-6 text-center">
             <Reveal>
-              <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              <h2 className="font-display text-4xl font-normal text-balance sm:text-5xl">
                 The position defends itself.
               </h2>
               <p className="text-readout-dim mt-4 text-[15px] text-balance">

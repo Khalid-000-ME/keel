@@ -118,7 +118,6 @@ export function HeroBackdrop() {
         className="pointer-events-none absolute inset-0"
         style={{ background: "linear-gradient(to bottom, transparent 55%, var(--graphite) 100%)" }}
       />
-      <div className="grid-substrate absolute inset-0 opacity-70" />
     </div>
   );
 }

@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import Magnet from "@/components/Magnet";
 import { cn } from "@/lib/utils";
 
 type Variant = "primary" | "secondary" | "ghost";
 
 const BASE =
-  "group relative inline-flex items-center justify-center gap-2 rounded-xl text-[13px] font-medium " +
+  "group relative inline-flex items-center justify-center gap-2 text-[13px] font-medium " +
   "transition-[transform,box-shadow,background,border-color] duration-300 ease-out " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-bright/60 focus-visible:ring-offset-2 focus-visible:ring-offset-graphite " +
   "active:scale-[0.985]";
@@ -31,7 +30,7 @@ function Face({ variant, children }: { variant: Variant; children: React.ReactNo
     <>
       {/* sheen sweep on hover */}
       {variant !== "ghost" && (
-        <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+        <span className="pointer-events-none absolute inset-0 overflow-hidden">
           <span
             className={cn(
               "absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] transition-[left] duration-700 ease-out group-hover:left-[150%]",
@@ -52,7 +51,6 @@ export function ButtonLink({
   external,
   arrow = true,
   className,
-  magnetic = true,
 }: {
   href: string;
   children: React.ReactNode;
@@ -60,7 +58,6 @@ export function ButtonLink({
   external?: boolean;
   arrow?: boolean;
   className?: string;
-  magnetic?: boolean;
 }) {
   const inner = (
     <Face variant={variant}>
@@ -73,7 +70,7 @@ export function ButtonLink({
 
   const cls = cn(BASE, VARIANTS[variant], className);
 
-  const node = external ? (
+  return external ? (
     <a href={href} target="_blank" rel="noreferrer" className={cls}>
       {inner}
     </a>
@@ -81,13 +78,6 @@ export function ButtonLink({
     <Link href={href} className={cls}>
       {inner}
     </Link>
-  );
-
-  if (!magnetic) return node;
-  return (
-    <Magnet padding={40} magnetStrength={6} activeTransition="transform 0.25s cubic-bezier(0.2,0.8,0.2,1)">
-      {node}
-    </Magnet>
   );
 }
 
