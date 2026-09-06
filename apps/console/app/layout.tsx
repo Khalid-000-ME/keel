@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { SparkLayer } from "@/components/spark-layer";
 import "./globals.css";
@@ -14,6 +14,21 @@ const ibmPlexMono = IBM_Plex_Mono({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-dm-sans",
   display: "swap",
 });
 
@@ -33,7 +48,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ibmPlexMono.variable} ${inter.variable}`}>
+    <html lang="en" className={`${ibmPlexMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable}`}>
       <body className="bg-graphite text-readout min-h-screen antialiased">
         <SparkLayer>
           <Nav />

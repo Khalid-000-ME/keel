@@ -1,6 +1,5 @@
 import { Activity, Eye, Scale, Zap } from "lucide-react";
 
-import { Spotlight } from "@/components/ui/spotlight";
 import { ButtonLink, InlineLink } from "@/components/ui/button";
 import { HeroBackdrop } from "@/components/HeroBackdrop";
 import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
@@ -27,28 +26,22 @@ export default function LandingPage() {
   return (
     <main className="relative overflow-hidden">
       {/* ---------- hero ---------- */}
-      <section className="relative min-h-[92vh]">
+      {/* Full viewport height: the fixed, glass navbar floats over this
+          section rather than pushing it down, so the video reads as one
+          continuous frame from the very top of the page. */}
+      <section className="relative h-screen min-h-[640px] overflow-hidden">
         <HeroBackdrop />
-        <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="#d9a441" />
 
-        <div className="relative mx-auto max-w-6xl px-6 pt-32 pb-24">
-          <div className="flex flex-col items-center">
-            <div className="border-hairline/80 bg-panel/30 text-readout-dim mb-9 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] backdrop-blur-md">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="bg-amber-bright absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" />
-                <span className="bg-amber-bright relative inline-flex h-1.5 w-1.5 rounded-full" />
-              </span>
-              <span className="font-numeric tracking-[0.14em]">AVELLANEDA-STOIKOV · ON-CHAIN · FIRST</span>
-            </div>
-
+        <div className="relative z-10 mx-auto flex h-full max-w-6xl items-center px-6">
+          <div className="max-w-xl">
             <HeroHeadline />
 
-            <p className="text-readout-dim mt-8 max-w-xl text-center text-[17px] leading-relaxed text-balance">
-              A trading position that feels its own balance shift — and prices the next trade accordingly.
-              No keeper. No bot. It&apos;s in the curve itself.
+            <p className="font-explainer text-readout-dim mt-7 max-w-md text-[18px] leading-relaxed">
+              A trading position that feels its own balance shift — and prices the next trade accordingly. No
+              keeper. No bot. It&apos;s in the curve itself.
             </p>
 
-            <div className="mt-11 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-10 flex flex-wrap items-center gap-3">
               <ButtonLink href="/simulate" variant="primary">
                 See the receipt
               </ButtonLink>
@@ -57,14 +50,6 @@ export default function LandingPage() {
                 Watch a position lean
               </ButtonLink>
             </div>
-          </div>
-
-          {/* headline stat strip */}
-          <div className="border-hairline/70 bg-graphite/40 mt-24 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border backdrop-blur-sm md:grid-cols-4">
-            <StatBlock label="PnL saved" value={<StatCounter to={pnlImprovement} />} tone="long" unit="token1-equiv" />
-            <StatBlock label="Fills simulated" value={String(receipt.ticks)} tone="neutral" unit="adversarial" />
-            <StatBlock label="Trend endured" value={receipt.trendPct} tone="short" unit="mid drift" />
-            <StatBlock label="Fuzz runs" value="2,000" tone="amber" unit="quote = swap" />
           </div>
         </div>
       </section>
@@ -120,6 +105,13 @@ export default function LandingPage() {
       {/* ---------- the receipt ---------- */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <Reveal>
+          <div className="border-hairline/70 bg-panel/30 mb-14 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border backdrop-blur-sm md:grid-cols-4">
+            <StatBlock label="PnL saved" value={<StatCounter to={pnlImprovement} />} tone="long" unit="token1-equiv" />
+            <StatBlock label="Fills simulated" value={String(receipt.ticks)} tone="neutral" unit="adversarial" />
+            <StatBlock label="Trend endured" value={receipt.trendPct} tone="short" unit="mid drift" />
+            <StatBlock label="Fuzz runs" value="2,000" tone="amber" unit="quote = swap" />
+          </div>
+
           <div className="mb-8 flex items-end justify-between gap-6">
             <div>
               <FieldLabel>Evidence</FieldLabel>

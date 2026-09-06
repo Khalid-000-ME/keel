@@ -12,11 +12,11 @@ import DecryptedText from "@/components/DecryptedText";
 
 export function HeroHeadline() {
   return (
-    <h1 className="mx-auto max-w-4xl text-center text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-6xl">
+    <h1 className="font-display max-w-xl text-5xl leading-[1.06] font-normal text-balance sm:text-6xl lg:text-7xl">
       <span className="block">The first Aqua position</span>
       <span className="text-readout-dim mt-1 block">
         that knows{" "}
-        <span className="text-readout">
+        <span className="text-readout italic">
           <DecryptedText
             text="which way it's leaning"
             animateOn="view"

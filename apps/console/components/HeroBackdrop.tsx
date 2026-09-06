@@ -70,8 +70,8 @@ export function HeroBackdrop() {
       <div
         className="absolute inset-0 opacity-[0.18] mix-blend-soft-light transition-transform duration-700 ease-out"
         style={{
-          maskImage: "radial-gradient(ellipse 90% 75% at 50% 28%, #000 25%, transparent 78%)",
-          WebkitMaskImage: "radial-gradient(ellipse 90% 75% at 50% 28%, #000 25%, transparent 78%)",
+          maskImage: "radial-gradient(ellipse 70% 65% at 32% 46%, #000 25%, transparent 78%)",
+          WebkitMaskImage: "radial-gradient(ellipse 70% 65% at 32% 46%, #000 25%, transparent 78%)",
         }}
       >
         <Grainient
@@ -95,16 +95,23 @@ export function HeroBackdrop() {
         />
       </div>
 
-      {/* carve the dark hole the headline sits in, then dissolve into the page */}
-      {/* a soft bed directly under the type, so god rays never fight the headline */}
+      {/* nav legibility: the header floats over this section transparently,
+          so it needs its own dark bed independent of where the text sits */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-32"
+        style={{ background: "linear-gradient(to bottom, rgba(12,14,18,0.65) 0%, transparent 100%)" }}
+      />
+
+      {/* carve the dark hole the (now left-aligned) headline sits in, then
+          dissolve into the page */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 46% 34% at 50% 42%, rgba(12,14,18,0.82) 0%, rgba(12,14,18,0.45) 55%, transparent 100%)",
+            "radial-gradient(ellipse 42% 46% at 30% 48%, rgba(12,14,18,0.85) 0%, rgba(12,14,18,0.5) 55%, transparent 100%)",
         }}
       />
-      <VideoScrim vignette="ellipse 72% 56% at 50% 40%" fadeFrom="46%" />
+      <VideoScrim vignette="ellipse 65% 70% at 34% 46%" fadeFrom="58%" />
       <div className="grid-substrate absolute inset-0 opacity-70" />
     </div>
   );

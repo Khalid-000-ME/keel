@@ -20,7 +20,7 @@ export default function SimulatePage() {
     <main className="relative">
       <div className="grid-substrate pointer-events-none absolute inset-0 h-[400px]" />
 
-      <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-24">
+      <div className="relative mx-auto max-w-6xl px-6 pt-28 pb-24">
         <FieldLabel>Adversarial flow · pinned parameters</FieldLabel>
         <ReceiptHeading />
         <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">

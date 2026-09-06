@@ -19,7 +19,7 @@ export default function MechanismPage() {
       {/* ---------- header ---------- */}
       <section className="relative">
         <div className="grid-substrate pointer-events-none absolute inset-0 h-[420px]" />
-        <div className="relative mx-auto max-w-5xl px-6 pt-20 pb-4">
+        <div className="relative mx-auto max-w-5xl px-6 pt-28 pb-4">
           <FieldLabel>The mechanism</FieldLabel>
           <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
             Inventory risk, priced into the curve.

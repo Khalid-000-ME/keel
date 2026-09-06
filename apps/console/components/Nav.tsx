@@ -15,8 +15,8 @@ export function Nav() {
   const pathname = usePathname();
 
   return (
-    <header className="border-hairline/60 bg-graphite/80 sticky top-0 z-50 border-b backdrop-blur-xl">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
+    <header className="border-hairline/25 bg-graphite/20 fixed inset-x-0 top-0 z-50 h-16 border-b backdrop-blur-xl">
+      <nav className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="relative flex h-6 w-6 items-center justify-center">
             <span className="bg-neutral-amber/20 absolute inset-0 rounded-[5px] blur-[6px] transition-all group-hover:blur-[10px]" />
