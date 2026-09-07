@@ -4,8 +4,67 @@ import { useState } from "react";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { EIP1193Provider } from "viem";
 
 import { CHAIN } from "@/lib/chain";
+
+/**
+ * The subset of wallet self-identification flags injected providers set.
+ * Typed as `true | undefined` (never a literal `false`) to match how real
+ * providers behave -- and how wagmi's own equivalent `WalletProvider` type
+ * models it -- since a provider either sets a flag or omits it.
+ */
+type FlaggedProvider = EIP1193Provider & {
+  isMetaMask?: true;
+  isRabby?: true;
+  isCoinbaseWallet?: true;
+  isBraveWallet?: true;
+  _events?: unknown;
+  _state?: unknown;
+};
+
+/**
+ * Some wallets set `isBraveWallet` on their provider *and also* set flags
+ * like `isMetaMask` to look like other wallets, so that dApps which only
+ * check `isMetaMask` still work with them -- this is Brave's own built-in
+ * wallet doing this deliberately (see wagmi's own `injected({ target:
+ * "metaMask" })` implementation, which carries the identical check with the
+ * comment "Brave tries to make itself look like MetaMask"). In a profile
+ * with Brave's native wallet enabled *and* a real MetaMask extension
+ * installed, plain `window.ethereum` can resolve to Brave's impersonator
+ * instead of the real extension -- so a user connecting "MetaMask" is
+ * actually talking to a wallet that never had their key imported, and
+ * something about that mismatch reliably threw "Method Map.prototype.set
+ * called on incompatible receiver #<Map>" here. `_events`/`_state` are
+ * present on a real EventEmitter-based provider (MetaMask's SDK) but not on
+ * Brave's copy, which is what distinguishes them.
+ */
+function isBraveImpersonator(provider: FlaggedProvider): boolean {
+  return Boolean(provider.isBraveWallet) && !provider._events && !provider._state;
+}
+
+/**
+ * Prefers any genuine (non-impersonating) injected provider over Brave's,
+ * regardless of which real wallet it is -- MetaMask, Rabby, Coinbase
+ * Wallet's extension all inject fine and shouldn't require picking a
+ * specific `target` (which would exclude the others). Only falls back to
+ * Brave's own wallet if it's truly the only provider present, so someone
+ * who deliberately wants to use it still can.
+ */
+function pickInjectedProvider(win: typeof window): FlaggedProvider | undefined {
+  const ethereum = (win as unknown as { ethereum?: FlaggedProvider & { providers?: FlaggedProvider[] } }).ethereum;
+  const candidates = Array.isArray(ethereum?.providers) ? ethereum.providers : ethereum ? [ethereum] : [];
+  if (candidates.length === 0) return undefined;
+  return candidates.find((p) => !isBraveImpersonator(p)) ?? candidates[0];
+}
+
+function providerName(provider: FlaggedProvider): string {
+  if (provider.isMetaMask) return "MetaMask";
+  if (provider.isRabby) return "Rabby";
+  if (provider.isCoinbaseWallet) return "Coinbase Wallet";
+  if (provider.isBraveWallet) return "Brave Wallet";
+  return "Injected Wallet";
+}
 
 /**
  * Injected-wallet only, deliberately: WalletConnect would need a hosted
@@ -16,22 +75,26 @@ import { CHAIN } from "@/lib/chain";
  * `multiInjectedProviderDiscovery: false` turns off wagmi's automatic
  * EIP-6963 wallet discovery (the `mipd` dependency inside `createConfig`,
  * which listens for every installed wallet's "announce provider" broadcast
- * and tracks them in its own Map). We only ever offer one connector, so
- * that discovery buys nothing here. It's the standard mitigation for a
- * "Method Map.prototype.set called on incompatible receiver #<Map>" error
- * reported against this page with a real MetaMask connected -- a real
- * wallet's EIP-6963 announce is the specific trigger for that class of bug,
- * and a synthetic `window.ethereum` in a headless test doesn't emit one, so
- * it couldn't be locally reproduced to confirm the exact mechanism here.
- * Disabling it is safe regardless: `injected()` still finds `window.ethereum`
- * directly without it, which is all a single-connector setup needs. If the
- * error resurfaces, restart the dev server first -- a long-running
- * Turbopack session across many edits is the other common cause of exactly
- * this error, unrelated to this file's own logic.
+ * and tracks them in its own Map). We only ever offer one connector via a
+ * custom `target` (see pickInjectedProvider above), so that discovery buys
+ * nothing here and is one less thing touching window.ethereum.
  */
 export const wagmiConfig = createConfig({
   chains: [CHAIN],
-  connectors: [injected()],
+  connectors: [
+    injected({
+      target() {
+        if (typeof window === "undefined") return undefined;
+        const provider = pickInjectedProvider(window);
+        if (!provider) return undefined;
+        // wagmi's own `WalletProvider` type pins down every optional field's
+        // exact shape (down to `_events`'s member signature) for providers
+        // *it* introspects -- overly precise for a provider we've already
+        // narrowed to EIP1193Provider ourselves above.
+        return { id: "injected", name: providerName(provider), provider: provider as never };
+      },
+    }),
+  ],
   transports: { [CHAIN.id]: http() },
   multiInjectedProviderDiscovery: false,
   ssr: true,

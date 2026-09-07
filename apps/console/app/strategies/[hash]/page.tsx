@@ -1,40 +1,80 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
 import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
-import { markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
+import { loadStrategy, markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
+import { Web3Providers } from "@/components/web3/providers";
+import { WalletBar } from "@/components/web3/wallet-bar";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { TiltGauge } from "@/components/TiltGauge";
 import { Formula } from "@/components/Formula";
+import { InlineLink } from "@/components/ui/button";
+import { LiveSkewChart, type LiveSample } from "@/components/strategies/live-skew-chart";
 import { cn } from "@/lib/utils";
 
 const REFRESH_MS = 6_000;
 
-/**
- * One shipped strategy, read live.
- *
- * Every number below except the stored parameters comes from a contract call
- * on each refresh: balances from `aqua.safeBalances`, and both quotes from
- * `KeelDemoTaker.previewFill`, which is the same code path a real fill takes.
- * That's the point of this card -- the asymmetry it shows isn't computed in
- * the browser, it's what the deployed router says right now.
- */
-export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy; onChanged: () => void }) {
+export default function StrategyDetailPage() {
+  return (
+    <Web3Providers>
+      <DetailInner />
+    </Web3Providers>
+  );
+}
+
+function DetailInner() {
+  const params = useParams();
+  const hash = typeof params.hash === "string" ? params.hash : "";
+  const [strategy, setStrategy] = useState<StoredStrategy | null | undefined>(undefined);
+
+  useEffect(() => {
+    setStrategy(loadStrategy(hash) ?? null);
+  }, [hash]);
+
+  return (
+    <main className="relative">
+      <div className="grid-substrate pointer-events-none absolute inset-0 h-[420px]" />
+      <div className="relative mx-auto max-w-5xl px-6 pt-28 pb-24">
+        <InlineLink href="/strategies">Back to the console</InlineLink>
+
+        {strategy === undefined && <p className="text-readout-dim mt-8 text-[13px]">Loading…</p>}
+
+        {strategy === null && (
+          <div className="border-hairline/60 bg-panel/20 mt-8 border border-dashed p-8">
+            <FieldLabel>Not found</FieldLabel>
+            <p className="text-readout-dim mt-3 max-w-lg text-[13px] leading-relaxed">
+              This browser has no strategy shipped under <span className="font-numeric text-readout">{hash}</span>.
+              The order bytes only live in whichever browser shipped them (see /strategies for why) — open this link
+              in that browser, or ship a new one.
+            </p>
+          </div>
+        )}
+
+        {strategy && <StrategyDetail strategy={strategy} />}
+      </div>
+    </main>
+  );
+}
+
+function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const onRightChain = isConnected && chainId === CHAIN.id;
+
   const [fillSize, setFillSize] = useState(5);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<Hex | undefined>();
+  const [history, setHistory] = useState<LiveSample[]>([]);
 
   const orderTuple = toOrderTuple(strategy.order);
   const amountIn = parseUnits(String(fillSize), 18);
   const docked = Boolean(strategy.dockedTxHash);
+  const isMine = address?.toLowerCase() === strategy.order.maker.toLowerCase();
 
   const { data: balances, refetch: refetchBalances } = useReadContract({
     address: ADDRESSES.aqua,
@@ -46,18 +86,8 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
 
   const { data: quotes, refetch: refetchQuotes } = useReadContracts({
     contracts: [
-      {
-        address: ADDRESSES.demoTaker,
-        abi: DEMO_TAKER_ABI,
-        functionName: "previewFill" as const,
-        args: [ADDRESSES.keelRouter, orderTuple, amountIn, true],
-      },
-      {
-        address: ADDRESSES.demoTaker,
-        abi: DEMO_TAKER_ABI,
-        functionName: "previewFill" as const,
-        args: [ADDRESSES.keelRouter, orderTuple, amountIn, false],
-      },
+      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountIn, true] },
+      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountIn, false] },
     ],
     query: { refetchInterval: REFRESH_MS, enabled: !docked },
   });
@@ -73,12 +103,6 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, 18)) / fillSize : null;
   const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, 18)) / fillSize : null;
-  const asymmetry = exposedRate !== null && coveredRate !== null ? coveredRate - exposedRate : null;
-
-  async function refreshAll() {
-    await Promise.all([refetchBalances(), refetchQuotes()]);
-    onChanged();
-  }
 
   async function testFill(isAToB: boolean) {
     if (!address || !onRightChain) return;
@@ -105,9 +129,24 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
         chainId: CHAIN.id,
       });
       setTxHash(hash);
-      setStatus(`Filled ${label} — watch the quotes move.`);
+      setStatus(`Filled ${label} — watch the dot move.`);
       await new Promise((r) => setTimeout(r, 3_000));
-      await refreshAll();
+
+      const [balRes, quoteRes] = await Promise.all([refetchBalances(), refetchQuotes()]);
+      const newBal0 = balRes.data?.[0];
+      const newExposedOut = (quoteRes.data?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
+      const newCoveredOut = (quoteRes.data?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
+      if (newBal0 !== undefined && newExposedOut !== undefined && newCoveredOut !== undefined) {
+        setHistory((h) => [
+          ...h,
+          {
+            q: Number(formatUnits(newBal0, 18)) - strategy.params.targetInventory,
+            exposed: Number(formatUnits(newExposedOut, 18)) / fillSize,
+            covered: Number(formatUnits(newCoveredOut, 18)) / fillSize,
+            t: Date.now(),
+          },
+        ]);
+      }
     } catch (e) {
       setStatus(errorText(e));
     } finally {
@@ -131,7 +170,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
       markDocked(strategy.strategyHash, hash);
       setStatus("Docked. The allowance is released.");
       await new Promise((r) => setTimeout(r, 2_500));
-      await refreshAll();
+      await Promise.all([refetchBalances(), refetchQuotes()]);
     } catch (e) {
       setStatus(errorText(e));
     } finally {
@@ -139,21 +178,13 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
     }
   }
 
-  const isMine = address?.toLowerCase() === strategy.order.maker.toLowerCase();
-
   return (
-    <div className="border-hairline bg-panel/40 border">
-      {/* header */}
-      <div className="border-hairline/60 flex flex-wrap items-start justify-between gap-4 border-b p-5">
+    <div className="mt-8 flex flex-col gap-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <FieldLabel>{docked ? "Docked strategy" : "Live strategy"}</FieldLabel>
-          <Link
-            href={`/strategies/${strategy.strategyHash}`}
-            className="font-numeric text-readout hover:text-amber-bright mt-1.5 block text-[12px] break-all transition-colors"
-          >
-            {strategy.strategyHash}
-          </Link>
-          <p className="text-readout-dim mt-1 text-[11px]">
+          <h1 className="font-numeric text-readout mt-2 text-[15px] break-all sm:text-lg">{strategy.strategyHash}</h1>
+          <p className="text-readout-dim mt-1.5 text-[12px]">
             {strategy.symbol0} / {strategy.symbol1} · shipped{" "}
             <a
               href={explorerTx(strategy.shipTxHash)}
@@ -165,27 +196,32 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
             </a>
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/strategies/${strategy.strategyHash}`}
-            className="font-numeric border-hairline text-readout-dim hover:text-readout hover:border-hairline-bright border px-3 py-1 text-[10px] tracking-[0.1em] uppercase transition-colors"
-          >
-            Live curve →
-          </Link>
-          <span
-            className={cn(
-              "font-numeric border px-3 py-1 text-[10px] tracking-[0.12em] uppercase",
-              docked ? "border-hairline text-readout-dim" : "border-long/40 bg-long/[0.06] text-long-bright",
-            )}
-          >
-            {docked ? "closed" : "quoting"}
-          </span>
-        </div>
+        <span
+          className={cn(
+            "font-numeric border px-3 py-1 text-[10px] tracking-[0.12em] uppercase",
+            docked ? "border-hairline text-readout-dim" : "border-long/40 bg-long/[0.06] text-long-bright",
+          )}
+        >
+          {docked ? "closed" : "quoting"}
+        </span>
       </div>
 
-      <div className="grid gap-px lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-        {/* left: inventory */}
-        <div className="bg-panel-raised/30 p-5">
+      <WalletBar />
+
+      <LiveSkewChart
+        params={{
+          gamma: strategy.params.gamma,
+          sigmaSq: strategy.params.sigmaSq,
+          baseSpread: strategy.params.baseSpread,
+          horizonSecs: strategy.params.horizonSecs,
+        }}
+        bound={strategy.params.bound}
+        currentQ={drift}
+        history={history}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+        <div className="border-hairline bg-panel/40 border p-5">
           <FieldLabel>Live inventory</FieldLabel>
           <div className="mt-4 flex justify-center">
             <TiltGauge
@@ -206,10 +242,9 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
           </div>
         </div>
 
-        {/* right: live quotes + actions */}
-        <div className="p-5">
+        <div className="border-hairline bg-panel/40 border p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <FieldLabel>Live quotes — straight from the router</FieldLabel>
+            <FieldLabel>Make a fill — adjustable size</FieldLabel>
             <label className="text-readout-dim flex items-center gap-2 text-[11px]">
               fill size
               <input
@@ -242,16 +277,6 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
             />
           </div>
 
-          {asymmetry !== null && (
-            <p className="text-readout-dim mt-3 text-[12px]">
-              Asymmetry right now:{" "}
-              <span className="font-numeric text-amber-bright">{asymmetry.toFixed(6)}</span> better rate for the fill
-              that mean-reverts this position. {drift !== null && Math.abs(drift) < 0.01
-                ? "At target, so this is just the base spread."
-                : "That gap is the inventory skew doing its job."}
-            </p>
-          )}
-
           {!docked && (
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <button
@@ -260,7 +285,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
                 onClick={() => testFill(true)}
                 className="font-numeric border-short/40 text-short-bright hover:bg-short/[0.08] border px-3 py-2 text-[12px] transition-colors disabled:opacity-40"
               >
-                {busy === "exposed-side" ? "Filling…" : "Test fill · exposed"}
+                {busy === "exposed-side" ? "Filling…" : "Fill · exposed"}
               </button>
               <button
                 type="button"
@@ -268,7 +293,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
                 onClick={() => testFill(false)}
                 className="font-numeric border-long/40 text-long-bright hover:bg-long/[0.08] border px-3 py-2 text-[12px] transition-colors disabled:opacity-40"
               >
-                {busy === "covered-side" ? "Filling…" : "Test fill · covered"}
+                {busy === "covered-side" ? "Filling…" : "Fill · covered"}
               </button>
               {isMine && (
                 <button
@@ -309,6 +334,31 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
           </div>
         </div>
       </div>
+
+      {history.length > 0 && (
+        <div className="border-hairline bg-panel/40 border p-5">
+          <FieldLabel>Fill history — this session</FieldLabel>
+          <div className="mt-3 flex flex-col gap-1.5">
+            {history
+              .slice()
+              .reverse()
+              .map((h, i) => (
+                <div key={h.t} className="font-numeric text-readout-dim flex gap-4 text-[11px]">
+                  <span className="text-readout-dim/60 w-6">#{history.length - i}</span>
+                  <span>
+                    q <span className="text-readout">{h.q > 0 ? "+" : ""}{h.q.toFixed(2)}</span>
+                  </span>
+                  <span>
+                    exposed <span className="text-short-bright">{h.exposed.toFixed(5)}</span>
+                  </span>
+                  <span>
+                    covered <span className="text-long-bright">{h.covered.toFixed(5)}</span>
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -344,12 +394,7 @@ function QuoteBox({
 }
 
 function Mini({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "long" | "short" | "amber" }) {
-  const toneClass = {
-    neutral: "text-readout",
-    long: "text-long-bright",
-    short: "text-short-bright",
-    amber: "text-amber-bright",
-  }[tone];
+  const toneClass = { neutral: "text-readout", long: "text-long-bright", short: "text-short-bright", amber: "text-amber-bright" }[tone];
   return (
     <div className="px-2 text-center">
       <div className="text-readout-dim font-numeric text-[10px] tracking-[0.12em] uppercase">{label}</div>

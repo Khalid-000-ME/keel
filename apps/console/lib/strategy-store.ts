@@ -72,6 +72,10 @@ export function loadStrategies(chainId?: number): StoredStrategy[] {
   return scoped.sort((a, b) => b.shippedAt - a.shippedAt);
 }
 
+export function loadStrategy(strategyHash: string): StoredStrategy | undefined {
+  return read().find((s) => s.strategyHash.toLowerCase() === strategyHash.toLowerCase());
+}
+
 export function saveStrategy(entry: StoredStrategy) {
   const all = read().filter((s) => s.strategyHash !== entry.strategyHash);
   write([entry, ...all]);

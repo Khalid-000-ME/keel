@@ -42,7 +42,7 @@ Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethe
 | Subgraph | `subgraph/` | **Live**, indexing Base Sepolia, no indexing errors |
 | Maker console | `apps/console/app/strategies` | **Live** — connect a wallet and ship a real position from the browser |
 | Demo kit | `contracts/src/demo/` | **Live on Base Sepolia** — faucet tokens + taker helper the console drives |
-| Console (demo UI) | `apps/console` | Built, 6 pages, typechecked + built + screenshot-verified |
+| Console (demo UI) | `apps/console` | Built, 7 pages, typechecked + built + screenshot-verified |
 
 32 Foundry tests, 5 SDK tests, all green as of the last commit.
 
@@ -147,11 +147,12 @@ cd apps/console && pnpm build && pnpm start
 pnpm --filter @keel/console dev
 ```
 
-Six pages (five plus a guided fallback for the maker console):
+Seven pages (five plus a guided fallback and a per-position detail view for the maker console):
 
 - `/` — landing, PnL comparison + headline
 - `/mechanism` — the long-form explanation, with the formulas typeset and an interactive skew lab
 - **`/strategies` — the maker console: connect a wallet and actually ship a position, one screen.** Faucet balances, γ / σ² / δ₀ / target / soft bound, the live quote-curve preview, and the literal SwapVM bytecode all sit in one view — adjust a parameter and the curve and bytecode update immediately, ship in place, results appear below. Reads the strategy hash back from the router *before* signing, then approve + `ship()`. Shipped positions show balances and both-side quotes read live from the chain every few seconds, plus one-click test fills (watch the exposed-side quote walk away from mid as you hit it) and dock-and-withdraw. Nothing is mocked — it writes to the same Aqua + KeelRouter above. A step-by-step walkthrough of the identical flow (same hooks, same verified ship/fill logic) is kept at `/strategies/guided` as a fallback.
+- **`/strategies/[hash]` — a shipped position's own page**, linked from every card in the list above. A large version of the quote curve tracks the position's *real* on-chain drift as a marker riding along its own configured curve, leaving a fading trail behind it as fills land — so a sequence of fills reads as literal movement along the exposed/covered lines, not just numbers changing in a table. Adjustable-size fill buttons live right next to it, so the whole exercise (drift the position, watch the curve, fill again) happens on one page.
 - `/simulate` — the full receipt table
 - `/position/[hash]` — the live tilt gauge, still rendering the AdversarialFlow simulation's final state as a stand-in pending a direct subgraph read, plus a "Real evidence" panel with the shipped/filled Base Sepolia position's hashes (see above)
 
