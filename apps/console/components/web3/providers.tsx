@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { WagmiProvider, createConfig, http } from "wagmi";
+import { WagmiProvider, createConfig, fallback, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { EIP1193Provider } from "viem";
 
-import { CHAIN, RPC_URL } from "@/lib/chain";
+import { CHAIN, RPC_URLS } from "@/lib/chain";
 
 /**
  * The subset of wallet self-identification flags injected providers set.
@@ -95,7 +95,9 @@ export const wagmiConfig = createConfig({
       },
     }),
   ],
-  transports: { [CHAIN.id]: http(RPC_URL) },
+  // Round-robins/falls over across every URL in RPC_URLS on error, so one
+  // public endpoint's rate limit doesn't take the whole console down.
+  transports: { [CHAIN.id]: fallback(RPC_URLS.map((url) => http(url))) },
   multiInjectedProviderDiscovery: false,
   ssr: true,
 });

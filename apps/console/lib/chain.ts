@@ -10,18 +10,25 @@ import { baseSepolia } from "wagmi/chains";
 export const CHAIN = baseSepolia;
 
 /**
- * Base Sepolia's shared public RPC (the default fallback below) rate-/size-
- * limits requests -- "Request exceeds defined limit" is that endpoint
- * rejecting the aggregate `eth_call` wagmi's `useReadContracts` batches
- * together via Multicall3 (several previewFill/safeBalances reads per
- * polling tick, each embedding a full order's program bytes, across every
- * shipped strategy card polling every REFRESH_MS). Set
- * NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL in apps/console/.env.local to a real
- * provider (Alchemy/Infura/etc., same as SEPOLIA_RPC_URL's role for
- * contracts/ deploy scripts, but this one is read by the browser at
- * runtime, hence the NEXT_PUBLIC_ prefix) to get real limits.
+ * Base Sepolia's shared public RPC rate-/size-limits requests -- "Request
+ * exceeds defined limit" is that endpoint rejecting the aggregate `eth_call`
+ * wagmi's `useReadContracts` batches together via Multicall3 (several
+ * previewFill/safeBalances reads per polling tick, each embedding a full
+ * order's program bytes, across every shipped strategy card polling every
+ * REFRESH_MS).
+ *
+ * NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL (apps/console/.env.local) takes a
+ * comma-separated list of endpoints, wired below into a `fallback([...])`
+ * transport rather than a single `http()` -- wagmi tries them in order per
+ * request and moves to the next on any error, so no single public RPC's
+ * limit is the whole story, and there's no dependency on one provider
+ * staying up through a demo. Falls back to Base Sepolia's own default
+ * public RPC, unchanged, if the env var is unset.
  */
-export const RPC_URL = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || CHAIN.rpcUrls.default.http[0];
+export const RPC_URLS: string[] = (
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL?.split(",").map((u) => u.trim()).filter(Boolean) ?? []
+);
+if (RPC_URLS.length === 0) RPC_URLS.push(...CHAIN.rpcUrls.default.http);
 
 export const ADDRESSES = {
   aqua: "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",
