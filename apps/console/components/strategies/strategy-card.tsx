@@ -12,7 +12,7 @@ import { TiltGauge } from "@/components/TiltGauge";
 import { Formula } from "@/components/Formula";
 import { cn } from "@/lib/utils";
 
-const REFRESH_MS = 6_000;
+const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.ts's RPC_URL note
 
 /**
  * One shipped strategy, read live.

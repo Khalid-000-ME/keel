@@ -9,6 +9,20 @@ import { baseSepolia } from "wagmi/chains";
  */
 export const CHAIN = baseSepolia;
 
+/**
+ * Base Sepolia's shared public RPC (the default fallback below) rate-/size-
+ * limits requests -- "Request exceeds defined limit" is that endpoint
+ * rejecting the aggregate `eth_call` wagmi's `useReadContracts` batches
+ * together via Multicall3 (several previewFill/safeBalances reads per
+ * polling tick, each embedding a full order's program bytes, across every
+ * shipped strategy card polling every REFRESH_MS). Set
+ * NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL in apps/console/.env.local to a real
+ * provider (Alchemy/Infura/etc., same as SEPOLIA_RPC_URL's role for
+ * contracts/ deploy scripts, but this one is read by the browser at
+ * runtime, hence the NEXT_PUBLIC_ prefix) to get real limits.
+ */
+export const RPC_URL = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || CHAIN.rpcUrls.default.http[0];
+
 export const ADDRESSES = {
   aqua: "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",
   keelRouter: "0x1771093A5094FCc818775806eD8a729f6cF7DA0E",

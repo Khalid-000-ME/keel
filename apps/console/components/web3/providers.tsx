@@ -6,7 +6,7 @@ import { injected } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { EIP1193Provider } from "viem";
 
-import { CHAIN } from "@/lib/chain";
+import { CHAIN, RPC_URL } from "@/lib/chain";
 
 /**
  * The subset of wallet self-identification flags injected providers set.
@@ -95,7 +95,7 @@ export const wagmiConfig = createConfig({
       },
     }),
   ],
-  transports: { [CHAIN.id]: http() },
+  transports: { [CHAIN.id]: http(RPC_URL) },
   multiInjectedProviderDiscovery: false,
   ssr: true,
 });

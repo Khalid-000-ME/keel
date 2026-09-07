@@ -16,7 +16,7 @@ import { InlineLink } from "@/components/ui/button";
 import { LiveSkewChart, type LiveSample } from "@/components/strategies/live-skew-chart";
 import { cn } from "@/lib/utils";
 
-const REFRESH_MS = 6_000;
+const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.ts's RPC_URL note
 
 export default function StrategyDetailPage() {
   return (
