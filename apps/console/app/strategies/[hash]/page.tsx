@@ -15,6 +15,7 @@ import { Formula } from "@/components/Formula";
 import { InlineLink } from "@/components/ui/button";
 import { LiveSkewChart, type LiveSample } from "@/components/strategies/live-skew-chart";
 import { cn } from "@/lib/utils";
+import { txErrorText } from "@/lib/tx-error";
 
 const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.ts's RPC_URL note
 
@@ -148,7 +149,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
         ]);
       }
     } catch (e) {
-      setStatus(errorText(e));
+      setStatus(txErrorText(e));
     } finally {
       setBusy(null);
     }
@@ -172,7 +173,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
       await new Promise((r) => setTimeout(r, 2_500));
       await Promise.all([refetchBalances(), refetchQuotes()]);
     } catch (e) {
-      setStatus(errorText(e));
+      setStatus(txErrorText(e));
     } finally {
       setBusy(null);
     }
@@ -403,8 +404,3 @@ function Mini({ label, value, tone = "neutral" }: { label: string; value: string
   );
 }
 
-function errorText(e: unknown): string {
-  const message = e instanceof Error ? e.message : String(e);
-  if (/user rejected|denied/i.test(message)) return "Cancelled in wallet.";
-  return message.split("\n")[0].slice(0, 160);
-}

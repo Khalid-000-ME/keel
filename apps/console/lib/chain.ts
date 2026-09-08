@@ -1,34 +1,50 @@
 import { baseSepolia } from "wagmi/chains";
 
 /**
+ * Endpoints this app uses for **reads**. NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL
+ * (apps/console/.env.local) takes a comma-separated list, wired into a
+ * `fallback([...])` transport rather than a single `http()` -- wagmi tries
+ * them in order per request and moves to the next on error, so no single
+ * public RPC's rate limit or downtime is the whole story. Falls back to
+ * Base Sepolia's own default public RPC if the env var is unset.
+ *
+ * @dev This list does **not** govern writes. `writeContract` goes through
+ *      `getConnectorClient()` -- a wallet client over the injected
+ *      provider -- so `eth_sendTransaction` and the wallet's own gas
+ *      estimation run against whatever RPC *MetaMask* has configured for
+ *      this chain, which the page cannot override. A wallet-side rate
+ *      limit therefore surfaces on the fill/dock/ship buttons while every
+ *      read on the same screen keeps working; the fix for that is to
+ *      change the network's RPC inside the wallet. CHAIN below at least
+ *      hands these endpoints over when the wallet *adds* the network.
+ */
+export const RPC_URLS: readonly [string, ...string[]] = (() => {
+  const configured = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL?.split(",")
+    .map((u) => u.trim())
+    .filter(Boolean);
+  // Typed as a non-empty tuple because it is one by construction, and
+  // viem's Chain wants `rpcUrls.default.http` to guarantee at least one.
+  return configured?.length ? (configured as [string, ...string[]]) : baseSepolia.rpcUrls.default.http;
+})();
+
+/**
  * The live Base Sepolia deployment the strategy console drives. Aqua and
  * KeelRouter are the real mechanism (see README's deployment table); the
  * demo token pair and taker helper are conveniences deployed alongside it
  * so a visitor can drive the whole flow from a browser without being
  * hand-funded first (contracts/src/demo/).
- */
-export const CHAIN = baseSepolia;
-
-/**
- * Base Sepolia's shared public RPC rate-/size-limits requests -- "Request
- * exceeds defined limit" is that endpoint rejecting the aggregate `eth_call`
- * wagmi's `useReadContracts` batches together via Multicall3 (several
- * previewFill/safeBalances reads per polling tick, each embedding a full
- * order's program bytes, across every shipped strategy card polling every
- * REFRESH_MS).
  *
- * NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL (apps/console/.env.local) takes a
- * comma-separated list of endpoints, wired below into a `fallback([...])`
- * transport rather than a single `http()` -- wagmi tries them in order per
- * request and moves to the next on any error, so no single public RPC's
- * limit is the whole story, and there's no dependency on one provider
- * staying up through a demo. Falls back to Base Sepolia's own default
- * public RPC, unchanged, if the env var is unset.
+ * Declares RPC_URLS as the chain's own endpoints so that when a wallet
+ * adds this network through the app (`wallet_addEthereumChain`, which
+ * wagmi issues on a chain switch the wallet doesn't already know), it's
+ * handed the same vetted list the app reads through -- rather than viem's
+ * single default public URL. The spread keeps `id` a literal 84532, which
+ * wagmi's chain-id generics depend on.
  */
-export const RPC_URLS: string[] = (
-  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL?.split(",").map((u) => u.trim()).filter(Boolean) ?? []
-);
-if (RPC_URLS.length === 0) RPC_URLS.push(...CHAIN.rpcUrls.default.http);
+export const CHAIN = {
+  ...baseSepolia,
+  rpcUrls: { ...baseSepolia.rpcUrls, default: { http: RPC_URLS } },
+};
 
 export const ADDRESSES = {
   aqua: "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",

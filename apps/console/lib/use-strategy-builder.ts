@@ -8,6 +8,7 @@ import { buildKeelProgram, buildOrder, encodeOrder } from "@keel/strategy-sdk/en
 import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, DEMO_TOKENS, ERC20_ABI } from "@/lib/chain";
 import { toWad } from "@/lib/keel-math";
 import { saveStrategy } from "@/lib/strategy-store";
+import { txErrorText } from "@/lib/tx-error";
 
 export interface StrategyDraft {
   amount0: number;
@@ -160,7 +161,7 @@ export function useStrategyBuilder(onShipped: () => void) {
       await refetchAllowances();
       setStatus(`${DEMO_TOKENS[index].symbol} approved.`);
     } catch (e) {
-      setStatus(errorText(e));
+      setStatus(txErrorText(e));
     } finally {
       setBusy(false);
     }
@@ -213,7 +214,7 @@ export function useStrategyBuilder(onShipped: () => void) {
       await new Promise((r) => setTimeout(r, 2_500));
       onShipped();
     } catch (e) {
-      setStatus(errorText(e));
+      setStatus(txErrorText(e));
     } finally {
       setBusy(false);
     }
@@ -243,8 +244,3 @@ export function useStrategyBuilder(onShipped: () => void) {
   };
 }
 
-function errorText(e: unknown): string {
-  const message = e instanceof Error ? e.message : String(e);
-  if (/user rejected|denied/i.test(message)) return "Cancelled in wallet.";
-  return message.split("\n")[0].slice(0, 160);
-}
