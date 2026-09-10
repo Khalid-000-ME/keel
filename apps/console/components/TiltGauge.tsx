@@ -1,7 +1,7 @@
 "use client";
 
-import { useId } from "react";
-import { motion } from "motion/react";
+import { useEffect, useId } from "react";
+import { motion, useSpring, useTransform } from "motion/react";
 
 /**
  * The one functional motion instrument in this product (design system's
@@ -10,10 +10,15 @@ import { motion } from "motion/react";
  * reading. Real SVG, real trigonometry, bound to currentInventoryWad vs
  * targetInventoryWad.
  *
- * @dev The needle rotates via a CSS transform on a wrapper <g> rather
- *      than animating its own x2/y2 coordinates -- SVG geometry
- *      attributes aren't reliably CSS-transitionable across browsers,
- *      transform is (react-best-practices' rendering-animate-svg-wrapper).
+ * @dev The needle's endpoints are computed with trigonometry from a
+ *      spring-driven angle rather than rotated with a CSS transform. A
+ *      CSS transform on an SVG <g> resolves `transform-origin` against
+ *      the group's own bounding box, so the needle pivoted about its own
+ *      midpoint instead of the hub -- measured in Chromium as
+ *      `transform-origin: 0px 41.392px` (half the needle's height), which
+ *      swung it like a see-saw. Driving the geometry from a MotionValue
+ *      keeps the animation off the React render path while making the
+ *      pivot exact by construction.
  */
 export function TiltGauge({
   inventoryWad,
@@ -39,6 +44,18 @@ export function TiltGauge({
   const atTarget = Math.abs(ratio) < 0.08;
   const needleColor = atTarget ? "var(--amber-bright)" : ratio > 0 ? "var(--short-bright)" : "var(--long-bright)";
 
+  // 0deg points straight up; positive swings clockwise, toward EXPOSED on
+  // the right. Starting the spring at 0 preserves the sweep-in on mount.
+  const angle = useSpring(0, { stiffness: 45, damping: 14, mass: 0.9 });
+  useEffect(() => {
+    angle.set(angleDeg);
+  }, [angle, angleDeg]);
+  const rad = useTransform(angle, (deg) => (deg * Math.PI) / 180);
+  const tipX = useTransform(rad, (r) => needleLength * Math.sin(r));
+  const tipY = useTransform(rad, (r) => -needleLength * Math.cos(r));
+  const tailX = useTransform(rad, (r) => -TAIL_LENGTH * Math.sin(r));
+  const tailY = useTransform(rad, (r) => TAIL_LENGTH * Math.cos(r));
+
   const arcStart = polar(cx, cy, radius, -180);
   const arcEnd = polar(cx, cy, radius, 0);
   const labelY = cy + 42;
@@ -63,14 +80,16 @@ export function TiltGauge({
             a perfectly vertical line, so its own bbox has zero width and a
             percentage-based filter region collapses to nothing -- the
             element then renders blank. Coordinates are in the needle
-            group's local space, where the pivot sits at (0,0). */}
+            group's local space, where the pivot sits at (0,0). The region
+            is square because the needle sweeps the full semicircle -- a
+            tall, thin box would clip the glow at the horizontal extremes. */}
         <filter
           id={`${uid}-needleglow`}
           filterUnits="userSpaceOnUse"
-          x={-30}
+          x={-needleLength - 20}
           y={-needleLength - 20}
-          width={60}
-          height={needleLength + 50}
+          width={2 * needleLength + 40}
+          height={2 * needleLength + 40}
         >
           <feGaussianBlur stdDeviation="3.5" result="b" />
           <feMerge>
@@ -140,29 +159,18 @@ export function TiltGauge({
         EXPOSED
       </text>
 
-      {/* Needle. The pivot is moved to the local origin by the outer
-          translate, so the inner rotation happens about (0,0) -- i.e. the
-          pivot -- without depending on `transform-origin`, which motion
-          normalises away on SVG groups (the computed matrix comes back
-          with no translation component, flinging the needle to rotate
-          about the SVG's top-left corner instead). */}
+      {/* Needle. Local space, pivot at (0,0) -- see the filter above. */}
       <g transform={`translate(${cx} ${cy})`}>
-        <motion.g
-          initial={{ rotate: 0 }}
-          animate={{ rotate: angleDeg }}
-          transition={{ type: "spring", stiffness: 45, damping: 14, mass: 0.9 }}
-        >
-          <line
-            x1={0}
-            y1={8}
-            x2={0}
-            y2={-needleLength}
-            stroke={needleColor}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            filter={`url(#${uid}-needleglow)`}
-          />
-        </motion.g>
+        <motion.line
+          x1={tailX}
+          y1={tailY}
+          x2={tipX}
+          y2={tipY}
+          stroke={needleColor}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          filter={`url(#${uid}-needleglow)`}
+        />
       </g>
 
       <circle cx={cx} cy={cy} r={7} fill="var(--panel-raised)" stroke={needleColor} strokeWidth={1.5} />
@@ -182,6 +190,8 @@ export function TiltGauge({
     </svg>
   );
 }
+
+const TAIL_LENGTH = 8;
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = (angleDeg * Math.PI) / 180;
