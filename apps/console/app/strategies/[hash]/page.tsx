@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
@@ -13,7 +13,7 @@ import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { TiltGauge } from "@/components/TiltGauge";
 import { Formula } from "@/components/Formula";
 import { InlineLink } from "@/components/ui/button";
-import { LiveSkewChart, type LiveSample } from "@/components/strategies/live-skew-chart";
+import { LivePriceChart, MAX_SAMPLES, type LiveSample } from "@/components/strategies/live-price-chart";
 import { cn } from "@/lib/utils";
 import { txErrorText } from "@/lib/tx-error";
 
@@ -71,6 +71,9 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<Hex | undefined>();
   const [history, setHistory] = useState<LiveSample[]>([]);
+  // Set just before a fill's refetch so the sample that refetch produces is
+  // tagged as fill-driven -- the fill and its resulting quote are one event.
+  const fillPending = useRef(false);
 
   const orderTuple = toOrderTuple(strategy.order);
   const amountIn = parseUnits(String(fillSize), 18);
@@ -85,7 +88,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
     query: { refetchInterval: REFRESH_MS },
   });
 
-  const { data: quotes, refetch: refetchQuotes } = useReadContracts({
+  const { data: quotes, dataUpdatedAt: quotesUpdatedAt, refetch: refetchQuotes } = useReadContracts({
     contracts: [
       { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountIn, true] },
       { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountIn, false] },
@@ -104,6 +107,32 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, 18)) / fillSize : null;
   const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, 18)) / fillSize : null;
+
+  // The series carries poll samples too; the table below is only about fills.
+  const fills = history.filter((h) => h.kind === "fill");
+
+  // Record a sample on *every* successful poll, not just on fills: the chart's
+  // x-axis is time, so a line that only advances when the user clicks would be
+  // a lie about how the quote behaves while idle. Keyed on the query's own
+  // update timestamp so a re-render with unchanged data can't duplicate a point.
+  useEffect(() => {
+    if (!quotesUpdatedAt || exposedRate === null || coveredRate === null || drift === null) return;
+    const wasFill = fillPending.current;
+    fillPending.current = false;
+    setHistory((h) => {
+      const last = h[h.length - 1];
+      if (last && last.t === quotesUpdatedAt) return h;
+      const next: LiveSample = {
+        q: drift,
+        exposed: exposedRate,
+        covered: coveredRate,
+        t: quotesUpdatedAt,
+        kind: wasFill ? "fill" : "poll",
+      };
+      // Bounded: a tab left open for hours must not accumulate forever.
+      return [...h, next].slice(-MAX_SAMPLES);
+    });
+  }, [quotesUpdatedAt, exposedRate, coveredRate, drift]);
 
   async function testFill(isAToB: boolean) {
     if (!address || !onRightChain) return;
@@ -130,25 +159,14 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
         chainId: CHAIN.id,
       });
       setTxHash(hash);
-      setStatus(`Filled ${label} — watch the dot move.`);
+      setStatus(`Filled ${label} — watch the lines step.`);
       await new Promise((r) => setTimeout(r, 3_000));
 
-      const [balRes, quoteRes] = await Promise.all([refetchBalances(), refetchQuotes()]);
-      const newBal0 = balRes.data?.[0];
-      const newExposedOut = (quoteRes.data?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
-      const newCoveredOut = (quoteRes.data?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
-      if (newBal0 !== undefined && newExposedOut !== undefined && newCoveredOut !== undefined) {
-        setHistory((h) => [
-          ...h,
-          {
-            q: Number(formatUnits(newBal0, 18)) - strategy.params.targetInventory,
-            exposed: Number(formatUnits(newExposedOut, 18)) / fillSize,
-            covered: Number(formatUnits(newCoveredOut, 18)) / fillSize,
-            t: Date.now(),
-          },
-        ]);
-      }
+      // The sampling effect turns this refetch into the timeline's fill marker.
+      fillPending.current = true;
+      await Promise.all([refetchBalances(), refetchQuotes()]);
     } catch (e) {
+      fillPending.current = false;
       setStatus(txErrorText(e));
     } finally {
       setBusy(null);
@@ -209,17 +227,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
       <WalletBar />
 
-      <LiveSkewChart
-        params={{
-          gamma: strategy.params.gamma,
-          sigmaSq: strategy.params.sigmaSq,
-          baseSpread: strategy.params.baseSpread,
-          horizonSecs: strategy.params.horizonSecs,
-        }}
-        bound={strategy.params.bound}
-        currentQ={drift}
-        history={history}
-      />
+      <LivePriceChart history={history} currentQ={drift} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <div className="border-hairline bg-panel/40 border p-5">
@@ -336,16 +344,16 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
         </div>
       </div>
 
-      {history.length > 0 && (
+      {fills.length > 0 && (
         <div className="border-hairline bg-panel/40 border p-5">
           <FieldLabel>Fill history — this session</FieldLabel>
           <div className="mt-3 flex flex-col gap-1.5">
-            {history
+            {fills
               .slice()
               .reverse()
               .map((h, i) => (
                 <div key={h.t} className="font-numeric text-readout-dim flex gap-4 text-[11px]">
-                  <span className="text-readout-dim/60 w-6">#{history.length - i}</span>
+                  <span className="text-readout-dim/60 w-6">#{fills.length - i}</span>
                   <span>
                     q <span className="text-readout">{h.q > 0 ? "+" : ""}{h.q.toFixed(2)}</span>
                   </span>
