@@ -7,7 +7,7 @@ import AnimatedContent from "@/components/AnimatedContent";
 export function GaugePanel({ children }: { children: React.ReactNode }) {
   return (
     <SpotlightCard
-      className="border-hairline bg-panel/50 rounded-2xl border p-8"
+      className="border-hairline bg-panel/50 border p-8"
       spotlightColor="rgba(217, 164, 65, 0.14)"
     >
       {children}

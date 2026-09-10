@@ -51,8 +51,8 @@ export function Nav() {
       <nav className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="relative flex h-6 w-6 items-center justify-center">
-            <span className="bg-neutral-amber/20 absolute inset-0 rounded-[5px] blur-[6px] transition-all group-hover:blur-[10px]" />
-            <span className="border-neutral-amber/60 text-neutral-amber relative flex h-6 w-6 items-center justify-center rounded-[5px] border text-[11px] font-semibold">
+            <span className="bg-neutral-amber/20 absolute inset-0 blur-[6px] transition-all group-hover:blur-[10px]" />
+            <span className="border-neutral-amber/60 text-neutral-amber relative flex h-6 w-6 items-center justify-center border text-[11px] font-semibold">
               K
             </span>
           </span>

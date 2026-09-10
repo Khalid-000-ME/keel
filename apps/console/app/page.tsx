@@ -86,7 +86,7 @@ export default function LandingPage() {
       {/* ---------- the receipt ---------- */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <Reveal>
-          <div className="border-hairline/70 bg-panel/30 mb-14 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border backdrop-blur-sm md:grid-cols-4">
+          <div className="border-hairline/70 bg-panel/30 mb-14 grid grid-cols-2 gap-px overflow-hidden border backdrop-blur-sm md:grid-cols-4">
             <StatBlock label="PnL saved" value={<StatCounter to={pnlImprovement} />} tone="long" unit="token1-equiv" />
             <StatBlock label="Fills simulated" value={String(receipt.ticks)} tone="neutral" unit="adversarial" />
             <StatBlock label="Trend endured" value={receipt.trendPct} tone="short" unit="mid drift" />
@@ -103,7 +103,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="border-hairline bg-panel/50 relative overflow-hidden rounded-2xl border p-8 backdrop-blur">
+          <div className="border-hairline bg-panel/50 relative overflow-hidden border p-8 backdrop-blur">
             <div className="from-long/[0.07] pointer-events-none absolute inset-0 bg-gradient-to-br via-transparent to-transparent" />
             <div className="relative">
               <PnlChart series={series} />
@@ -120,7 +120,7 @@ export default function LandingPage() {
       {/* ---------- live deployment ---------- */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <Reveal>
-          <div className="border-hairline relative overflow-hidden rounded-2xl border">
+          <div className="border-hairline relative overflow-hidden border">
             <AmbientVideo src="drift" opacity={0.14} className="h-full" />
             <div className="from-long/[0.06] pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent" />
             <div className="bg-graphite/60 pointer-events-none absolute inset-0" />
@@ -141,7 +141,7 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-px overflow-hidden rounded-xl">
+              <div className="flex flex-col gap-px overflow-hidden">
                 {DEPLOYMENTS.map((d) => (
                   <a
                     key={d.label}

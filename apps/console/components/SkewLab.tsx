@@ -71,7 +71,7 @@ export function SkewLab() {
   const cx = W / 2 + ratio * travel;
 
   return (
-    <div className="border-hairline bg-panel/50 overflow-hidden rounded-2xl border backdrop-blur">
+    <div className="border-hairline bg-panel/50 overflow-hidden border backdrop-blur">
       {/* the level */}
       <div className="flex justify-center px-6 pt-8 pb-2">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[640px]" role="img" aria-label="Inventory drift level">

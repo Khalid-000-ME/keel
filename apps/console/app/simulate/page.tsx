@@ -32,7 +32,7 @@ export default function SimulatePage() {
         </p>
 
         {/* summary */}
-        <div className="border-hairline mt-10 grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-3">
+        <div className="border-hairline mt-10 grid gap-px overflow-hidden border sm:grid-cols-3">
           <SummaryCard
             label="Stock XYCSwap"
             value={formatWad(receipt.stockEndPnlWad, 4)}
@@ -57,20 +57,20 @@ export default function SimulatePage() {
         </div>
 
         <Reveal>
-          <div className="border-hairline bg-panel/50 mt-6 rounded-2xl border p-8">
+          <div className="border-hairline bg-panel/50 mt-6 border p-8">
             <PnlChart series={series} height={260} />
           </div>
         </Reveal>
 
         <Reveal>
-          <p className="border-neutral-amber/30 bg-neutral-amber/[0.04] text-readout-dim mt-6 rounded-xl border-l-2 p-5 text-[13px] leading-relaxed">
+          <p className="border-neutral-amber/30 bg-neutral-amber/[0.04] text-readout-dim mt-6 border-l-2 p-5 text-[13px] leading-relaxed">
             {receipt.headline}
           </p>
         </Reveal>
 
         {/* table */}
         <Reveal>
-          <div className="border-hairline mt-10 overflow-hidden rounded-2xl border">
+          <div className="border-hairline mt-10 overflow-hidden border">
             <div className="border-hairline bg-panel-raised/60 flex items-center justify-between border-b px-5 py-3">
               <FieldLabel>Per-fill ledger</FieldLabel>
               <NumericReadout value={`${receipt.series.length} rows`} size="xs" className="text-readout-dim" />

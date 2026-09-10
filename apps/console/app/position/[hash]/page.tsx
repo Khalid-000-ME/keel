@@ -35,7 +35,7 @@ export default async function PositionPage({ params }: { params: Promise<{ hash:
             <FieldLabel>Keel position</FieldLabel>
             <h1 className="font-numeric mt-2 text-lg break-all sm:text-xl">{hash}</h1>
           </div>
-          <div className="border-neutral-amber/30 bg-neutral-amber/[0.06] text-amber-bright rounded-full border px-3 py-1 text-[11px]">
+          <div className="border-neutral-amber/30 bg-neutral-amber/[0.06] text-amber-bright border px-3 py-1 text-[11px]">
             <span className="font-numeric">SIMULATED STATE</span>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default async function PositionPage({ params }: { params: Promise<{ hash:
             <div className="flex flex-col items-center">
               <TiltGauge inventoryWad={inventory} targetWad={target} boundWad={bound} size={320} />
 
-              <div className="border-hairline/60 mt-6 grid w-full grid-cols-3 gap-px overflow-hidden rounded-xl border">
+              <div className="border-hairline/60 mt-6 grid w-full grid-cols-3 gap-px overflow-hidden border">
                 <MiniStat label="Inventory" value={inventory.toFixed(2)} />
                 <MiniStat label="Target" value={target.toFixed(2)} />
                 <MiniStat label="Drift q" value={`${q > 0 ? "+" : ""}${q.toFixed(2)}`} tone={q > 0 ? "short" : "long"} />
@@ -56,7 +56,7 @@ export default async function PositionPage({ params }: { params: Promise<{ hash:
 
           {/* readouts */}
           <div className="flex flex-col gap-6">
-            <div className="border-hairline bg-panel/50 rounded-2xl border p-6">
+            <div className="border-hairline bg-panel/50 border p-6">
               <FieldLabel>Live readouts</FieldLabel>
               <dl className="mt-5 flex flex-col gap-4">
                 <Row label="Mid (last fill)" value={wadToNumber(last.midWad).toFixed(4)} />
@@ -70,7 +70,7 @@ export default async function PositionPage({ params }: { params: Promise<{ hash:
               </dl>
             </div>
 
-            <div className="border-hairline bg-panel/50 rounded-2xl border p-6">
+            <div className="border-hairline bg-panel/50 border p-6">
               <FieldLabel>What the needle means</FieldLabel>
               <p className="text-readout-dim mt-4 text-[13px] leading-relaxed">
                 The needle is the position&apos;s inventory drift against its own declared target. Tilted{" "}
@@ -90,7 +90,7 @@ export default async function PositionPage({ params }: { params: Promise<{ hash:
         </div>
 
         <Reveal>
-          <div className="border-hairline bg-panel/30 mt-6 rounded-2xl border p-6">
+          <div className="border-hairline bg-panel/30 mt-6 border p-6">
             <FieldLabel>Wiring this to live data</FieldLabel>
             <p className="text-readout-dim mt-3 text-[13px] leading-relaxed">
               <span className="font-numeric text-readout">KeelRouter</span> is live on Base Sepolia and the subgraph
@@ -105,10 +105,10 @@ export default async function PositionPage({ params }: { params: Promise<{ hash:
         </Reveal>
 
         <Reveal delay={0.05}>
-          <div className="border-hairline bg-panel/30 mt-6 rounded-2xl border p-6">
+          <div className="border-hairline bg-panel/30 mt-6 border p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <FieldLabel>Real evidence — Base Sepolia</FieldLabel>
-              <span className="border-long/30 bg-long/[0.06] text-long-bright rounded-full border px-3 py-1 text-[11px]">
+              <span className="border-long/30 bg-long/[0.06] text-long-bright border px-3 py-1 text-[11px]">
                 <span className="font-numeric">{onchainDemo.fills.length} real fills, all confirmed</span>
               </span>
             </div>

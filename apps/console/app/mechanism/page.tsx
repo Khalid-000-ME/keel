@@ -58,7 +58,7 @@ export default function MechanismPage() {
               No on-chain venue had ever implemented it — because on a pool AMM the inventory belongs to the pool,
               not to any one maker. There&apos;s nothing for the formula to skew around.
             </p>
-            <div className="border-amber-bright/40 bg-panel/40 text-amber-bright font-numeric flex flex-wrap items-center gap-x-1.5 rounded-r-lg border-l-2 px-5 py-3 text-[11px]">
+            <div className="border-amber-bright/40 bg-panel/40 text-amber-bright font-numeric flex flex-wrap items-center gap-x-1.5 border-l-2 px-5 py-3 text-[11px]">
               <span>inventory belongs to the pool → no</span>
               <Formula tex="q" className="text-amber-bright" />
               <span>→ no</span>
@@ -84,7 +84,7 @@ export default function MechanismPage() {
             reservation price needs.
           </p>
 
-          <div className="border-hairline bg-panel/40 mt-10 flex flex-col items-center gap-10 overflow-x-auto rounded-2xl border p-8 sm:p-10">
+          <div className="border-hairline bg-panel/40 mt-10 flex flex-col items-center gap-10 overflow-x-auto border p-8 sm:p-10">
             <div className="flex flex-col items-center gap-3">
               <Formula
                 display
@@ -170,7 +170,7 @@ export default function MechanismPage() {
           </h2>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-center">
-            <div className="border-hairline bg-panel/40 flex flex-col items-center justify-center gap-6 overflow-x-auto rounded-2xl border p-8">
+            <div className="border-hairline bg-panel/40 flex flex-col items-center justify-center gap-6 overflow-x-auto border p-8">
               <Formula
                 display
                 tex="\texttt{0x92} = \underbrace{1001}_{\text{bank }\texttt{0x90}} \; \underbrace{0010}_{\text{slot }2}"
@@ -210,7 +210,7 @@ export default function MechanismPage() {
             reverts. So parity isn&apos;t asserted in a comment; it&apos;s fuzzed.
           </p>
 
-          <div className="border-hairline bg-graphite-raised mt-8 overflow-hidden rounded-2xl border">
+          <div className="border-hairline bg-graphite-raised mt-8 overflow-hidden border">
             <div className="border-hairline/70 flex items-center gap-1.5 border-b px-4 py-2.5">
               <span className="bg-hairline h-2.5 w-2.5 rounded-full" />
               <span className="bg-hairline h-2.5 w-2.5 rounded-full" />
@@ -242,7 +242,7 @@ export default function MechanismPage() {
             {["24 contract tests", "2,000 fuzz runs/property", "real Aqua contract, not a mock"].map((chip) => (
               <span
                 key={chip}
-                className="border-hairline text-readout-dim font-numeric rounded-full border px-3 py-1 text-[11px]"
+                className="border-hairline text-readout-dim font-numeric border px-3 py-1 text-[11px]"
               >
                 {chip}
               </span>
@@ -257,7 +257,7 @@ export default function MechanismPage() {
           <FieldLabel>06 · Portability</FieldLabel>
           <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">One pricing kernel. Two venues.</h2>
 
-          <div className="border-hairline mt-10 grid gap-px overflow-hidden rounded-2xl border md:grid-cols-2">
+          <div className="border-hairline mt-10 grid gap-px overflow-hidden border md:grid-cols-2">
             <div className="bg-panel/40 hover:bg-panel/70 p-8 transition-colors">
               <FieldLabel>Aqua / SwapVM</FieldLabel>
               <h3 className="mt-3 text-lg font-display font-normal">Re-centres the constant-product curve</h3>
@@ -304,7 +304,7 @@ export default function MechanismPage() {
             you get the number a live <span className="font-numeric text-readout">quote()</span> would return.
           </p>
 
-          <div className="border-hairline bg-graphite-raised mt-8 overflow-hidden rounded-2xl border">
+          <div className="border-hairline bg-graphite-raised mt-8 overflow-hidden border">
             <div className="border-hairline/70 flex items-center gap-2 border-b px-4 py-2.5">
               <span className="text-readout-dim font-numeric text-[11px]">subgraph · keel-subgraph</span>
             </div>
@@ -328,11 +328,11 @@ export default function MechanismPage() {
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-2">
-            <span className="border-hairline text-readout-dim font-numeric rounded-full border px-3 py-1 text-[11px]">
+            <span className="border-hairline text-readout-dim font-numeric border px-3 py-1 text-[11px]">
               Subgraph
             </span>
             <span className="text-hairline-bright">+</span>
-            <span className="border-hairline text-readout-dim font-numeric rounded-full border px-3 py-1 text-[11px]">
+            <span className="border-hairline text-readout-dim font-numeric border px-3 py-1 text-[11px]">
               Subgraph MCP
             </span>
             <span className="text-readout-dim ml-2 text-[12px]">
