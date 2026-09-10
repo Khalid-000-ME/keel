@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -11,9 +12,42 @@ const LINKS = [
   { href: "/position/live", label: "Position" },
 ];
 
+// One nav-height of scroll. Deliberately not tied to the hero: the landing
+// page's hero is pinned inside a 150vh wrapper, but /mechanism, /strategies
+// and /simulate have no hero at all, so a viewport-sized threshold would
+// leave their nav unreadable over content that starts right at the top.
+const SCROLLED_PAST = 64;
+
 export function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        // derived boolean, so the nav only re-renders on a state flip
+        setScrolled(window.scrollY > SCROLLED_PAST);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-16 bg-transparent">
+    <header
+      className={cn(
+        // border is always present so crossing the threshold never shifts layout
+        "fixed inset-x-0 top-0 z-50 h-16 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ease-out motion-reduce:transition-none",
+        scrolled
+          ? "bg-graphite/70 border-hairline backdrop-blur-md"
+          : "border-transparent bg-transparent",
+      )}
+    >
       <nav className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="relative flex h-6 w-6 items-center justify-center">
