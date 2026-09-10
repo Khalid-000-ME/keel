@@ -4,7 +4,6 @@ import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
 import { ButtonLink, InlineLink } from "@/components/ui/button";
 import { FieldLabel } from "@/components/NumericReadout";
 import { Reveal } from "@/components/landing-client";
-import { AsciiArt, KEEL_UPRIGHT, KEEL_HEELING, WATERLINE } from "@/components/AsciiArt";
 import { Formula } from "@/components/Formula";
 import { SkewLab } from "@/components/SkewLab";
 
@@ -43,38 +42,27 @@ export default function MechanismPage() {
             Quote symmetrically, and a trend grinds you down.
           </h2>
 
-          <div className="mt-10 grid items-center gap-8 lg:grid-cols-2">
-            <div className="border-hairline relative aspect-[4/3] overflow-hidden rounded-2xl border">
-              <AmbientVideo src="heeling" opacity={0.42} blend={false} className="h-full" />
-              <div className="bg-graphite/30 pointer-events-none absolute inset-0" />
-              <VideoScrim vignette="ellipse 90% 80% at 50% 45%" fadeFrom="70%" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <AsciiArt art={KEEL_HEELING} className="text-readout text-[9px] drop-shadow-[0_2px_12px_rgba(12,14,18,0.9)] sm:text-[11px]" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-5">
-              <p className="text-readout-dim text-[14px] leading-relaxed">
-                Every market maker&apos;s real enemy is inventory risk, not spread. Quote symmetrically around mid and
-                a trending market fills you on one side over and over — you earn the spread on every fill and lose
-                money on the position, because you&apos;re accumulating the asset that&apos;s falling.
-              </p>
-              <p className="text-readout-dim text-[14px] leading-relaxed">
-                Every professional desk fixes this with a <span className="text-readout">reservation price</span>: skew
-                your quotes away from mid as inventory drifts from target. Avellaneda &amp; Stoikov formalised it in
-                2008.
-              </p>
-              <p className="text-readout text-[14px] leading-relaxed">
-                No on-chain venue had ever implemented it — because on a pool AMM the inventory belongs to the pool,
-                not to any one maker. There&apos;s nothing for the formula to skew around.
-              </p>
-              <div className="border-amber-bright/40 bg-panel/40 text-amber-bright font-numeric flex flex-wrap items-center gap-x-1.5 rounded-r-lg border-l-2 px-5 py-3 text-[11px]">
-                <span>inventory belongs to the pool → no</span>
-                <Formula tex="q" className="text-amber-bright" />
-                <span>→ no</span>
-                <Formula tex="r(s,q,t)" className="text-amber-bright" />
-                <span>→ no skew</span>
-              </div>
+          <div className="mt-8 flex max-w-2xl flex-col gap-5">
+            <p className="text-readout-dim text-[14px] leading-relaxed">
+              Every market maker&apos;s real enemy is inventory risk, not spread. Quote symmetrically around mid and
+              a trending market fills you on one side over and over — you earn the spread on every fill and lose
+              money on the position, because you&apos;re accumulating the asset that&apos;s falling.
+            </p>
+            <p className="text-readout-dim text-[14px] leading-relaxed">
+              Every professional desk fixes this with a <span className="text-readout">reservation price</span>: skew
+              your quotes away from mid as inventory drifts from target. Avellaneda &amp; Stoikov formalised it in
+              2008.
+            </p>
+            <p className="text-readout text-[14px] leading-relaxed">
+              No on-chain venue had ever implemented it — because on a pool AMM the inventory belongs to the pool,
+              not to any one maker. There&apos;s nothing for the formula to skew around.
+            </p>
+            <div className="border-amber-bright/40 bg-panel/40 text-amber-bright font-numeric flex flex-wrap items-center gap-x-1.5 rounded-r-lg border-l-2 px-5 py-3 text-[11px]">
+              <span>inventory belongs to the pool → no</span>
+              <Formula tex="q" className="text-amber-bright" />
+              <span>→ no</span>
+              <Formula tex="r(s,q,t)" className="text-amber-bright" />
+              <span>→ no skew</span>
             </div>
           </div>
         </Reveal>
@@ -344,7 +332,6 @@ export default function MechanismPage() {
           />
           <div className="relative flex h-full flex-col items-center justify-center px-6 text-center">
             <Reveal>
-              <AsciiArt art={WATERLINE} className="text-readout-dim mb-8 text-[10px]" />
               <h2 className="text-2xl font-display font-normal text-balance sm:text-3xl">
                 Now go look at the numbers.
               </h2>
