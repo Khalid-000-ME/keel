@@ -24,6 +24,17 @@ const BOUND = wadToNumber(onchainDemo.params.boundWad);
 const FILL_SIZE = wadToNumber(onchainDemo.params.fillSize);
 
 /**
+ * The three risk params are recorded in exponent shorthand ("5e14"), unlike
+ * every other *Wad field in that file, which is a plain integer string.
+ * wadToNumber goes through BigInt(), which rejects that notation outright --
+ * routing these through it 500s the whole page. They're display-only
+ * scalars, so a float parse is exact enough here.
+ */
+function shorthandWadToNumber(value: string): number {
+  return Number(value) / 1e18;
+}
+
+/**
  * q is the maker's inventory drift *before* the fill (balance0 - target);
  * the realised rate is what the taker actually received per unit sent, so
  * it carries the re-centred constant-product curve's own price impact as
@@ -241,9 +252,9 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
           </div>
 
           <div className="border-hairline/70 grid gap-px border-t sm:grid-cols-4">
-            <ParamCell label="γ" value={wadToNumber(onchainDemo.params.gammaWad).toString()} />
-            <ParamCell label="σ²" value={wadToNumber(onchainDemo.params.sigmaSqWad).toString()} />
-            <ParamCell label="base spread" value={wadToNumber(onchainDemo.params.baseSpreadWad).toString()} />
+            <ParamCell label="γ" value={shorthandWadToNumber(onchainDemo.params.gammaWad).toString()} />
+            <ParamCell label="σ²" value={shorthandWadToNumber(onchainDemo.params.sigmaSqWad).toString()} />
+            <ParamCell label="base spread" value={shorthandWadToNumber(onchainDemo.params.baseSpreadWad).toString()} />
             <ParamCell label="horizon" value={`${onchainDemo.params.horizonSecs}s`} />
           </div>
 
