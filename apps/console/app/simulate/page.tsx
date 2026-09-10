@@ -5,6 +5,7 @@ import { formatWad, wadToNumber } from "@/lib/wad";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { PnlChart } from "@/components/PnlChart";
 import { ReceiptHeading, Reveal } from "@/components/landing-client";
+import { OnchainFillCurve } from "@/components/onchain-fill-curve";
 
 export default function SimulatePage() {
   const series = receipt.series.map((s) => ({
@@ -123,7 +124,29 @@ export default function SimulatePage() {
           </div>
         </Reveal>
 
-        <p className="text-readout-dim mt-6 text-center text-[12px]">
+        {/* everything above this line is the LOCAL forge simulation; everything
+            below is a real chain. Kept visually separate on purpose. */}
+        <Reveal>
+          <div className="border-hairline mt-20 border-t pt-16">
+            <FieldLabel>Not a simulation · live Base Sepolia</FieldLabel>
+            <h2 className="mt-3 max-w-2xl text-2xl font-display font-normal">
+              The same mechanism, off the simulator and on a chain.
+            </h2>
+            <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
+              Everything above came out of{" "}
+              <span className="font-numeric text-readout">AdversarialFlow.s.sol</span> running locally against a forge
+              VM — real contract execution, but a local one. Below is a separate, smaller run: a Keel strategy actually
+              shipped to Base Sepolia and hit with eight real fills, each a confirmable transaction. Different run,
+              different parameters, different scale — shown side by side because a local receipt and a public one prove
+              different things.
+            </p>
+            <div className="mt-8">
+              <OnchainFillCurve variant="compact" />
+            </div>
+          </div>
+        </Reveal>
+
+        <p className="text-readout-dim mt-10 text-center text-[12px]">
           Reproduce:{" "}
           <span className="font-numeric text-readout">forge script script/AdversarialFlow.s.sol --tc AdversarialFlow</span>
         </p>

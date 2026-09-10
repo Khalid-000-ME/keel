@@ -6,6 +6,7 @@ import { FieldLabel } from "@/components/NumericReadout";
 import { Reveal } from "@/components/landing-client";
 import { Formula } from "@/components/Formula";
 import { SkewLab } from "@/components/SkewLab";
+import { OnchainFillCurve } from "@/components/onchain-fill-curve";
 
 export const metadata: Metadata = {
   title: "Keel — the mechanism",
@@ -133,6 +134,28 @@ export default function MechanismPage() {
 
             <div className="mt-10">
               <SkewLab />
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="mt-16">
+              <FieldLabel>03b · The same behaviour, measured</FieldLabel>
+              <h3 className="mt-3 max-w-2xl text-xl font-display font-normal">
+                And here it is, actually happening on Base Sepolia.
+              </h3>
+              <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
+                The lab above is a computed toy — it evaluates the formula in your browser. This is the same strategy
+                shipped to a live chain and hit with eight identical fills, each one leaning the position further out.
+                The rate a taker got fell on every single one, exactly as the mechanism says it should.
+              </p>
+              <div className="mt-8">
+                <OnchainFillCurve />
+              </div>
+              <p className="text-readout-dim mt-4 max-w-2xl text-[12px] leading-relaxed">
+                Honest caveat: all eight recorded fills are exposed-side, so this measures only the side that gets
+                worse. The covered side in the lab above is what the formula computes, not something these
+                transactions demonstrate.
+              </p>
             </div>
           </Reveal>
         </div>

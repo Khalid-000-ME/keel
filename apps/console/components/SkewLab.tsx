@@ -11,8 +11,8 @@ import { Formula } from "@/components/Formula";
  * and both quoted prices move apart, asymmetrically.
  *
  * The maths here mirrors contracts/src/libs/AvellanedaStoikov.sol exactly,
- * with the same parameters AdversarialFlow.s.sol runs with, so the numbers
- * on screen are the numbers the contract would quote:
+ * with the parameters of the strategy actually shipped to Base Sepolia, so
+ * the numbers on screen are the numbers that deployed position would quote:
  *
  *   r(s,q,t) = s - q·γ·σ²·(T-t)
  *   δ(t)     = δ₀ + γ·σ²·(T-t)
@@ -23,14 +23,21 @@ import { Formula } from "@/components/Formula";
  */
 
 const MID = 1.0;
+// These are the parameters of the strategy actually shipped to Base Sepolia
+// (data/onchain-demo.json) -- gamma/sigma^2/base spread already matched, and
+// the horizon and bound are now the shipped ones too, so the lab quotes what
+// the deployed position quotes rather than a flattering calibration.
 const GAMMA = 5e-4;
 const SIGMA_SQ = 5e-5;
 const BASE_SPREAD = 1e-3;
-// Calibrated so a full-bound drift moves the reservation price ~5% -- the
-// asymmetry needs to be visible, but a demo that collapses the price to zero
-// is showing a mis-configured strategy, not the mechanism.
-const REMAINING_SECS = 5_000;
-const BOUND = 400;
+// The shipped horizon. The earlier value (5,000s, bound 400) was chosen so a
+// full-bound drift moved the reservation price ~5%; at the real horizon that
+// term is ~0.18% instead, which still reads at the 5dp these readouts use,
+// and the visible asymmetry comes mostly from the soft-bound penalty -- which
+// is an honest fact about this strategy, not a broken demo. The reason for
+// the original calibration still stands: nothing here collapses the price.
+const REMAINING_SECS = 3_600;
+const BOUND = 20;
 
 function quote(q: number) {
   const skew = q * GAMMA * SIGMA_SQ * REMAINING_SECS;
@@ -48,7 +55,7 @@ function quote(q: number) {
 }
 
 export function SkewLab() {
-  const [q, setQ] = useState(140);
+  const [q, setQ] = useState(7);
   const { r, halfSpread, penaltyBps, exposed, covered } = quote(q);
 
   const ratio = Math.max(-1, Math.min(1, q / BOUND));
@@ -149,14 +156,14 @@ export function SkewLab() {
             type="range"
             min={-BOUND}
             max={BOUND}
-            step={1}
+            step={0.5}
             value={q}
             onChange={(e) => setQ(Number(e.target.value))}
             aria-label="Inventory drift q"
             className="accent-amber-bright h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--hairline)]"
           />
           <NumericReadout
-            value={`${q > 0 ? "+" : ""}${q}`}
+            value={`${q > 0 ? "+" : ""}${q.toFixed(1)}`}
             size="sm"
             sign={tone as "long" | "short" | "amber"}
             className="w-16 text-right"
