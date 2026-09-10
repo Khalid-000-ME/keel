@@ -1,4 +1,4 @@
-import { Activity, Eye, Scale, Zap } from "lucide-react";
+import { Activity } from "lucide-react";
 
 import { ButtonLink, InlineLink } from "@/components/ui/button";
 import { HeroSection } from "@/components/HeroSection";
@@ -6,6 +6,7 @@ import { AmbientVideo, VideoScrim } from "@/components/AmbientVideo";
 import { PnlChart } from "@/components/PnlChart";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { HeroHeadline, StatCounter, Reveal } from "@/components/landing-client";
+import { LandingTimeline } from "@/components/landing-timeline";
 import { receipt } from "@/lib/receipt";
 import { wadToNumber } from "@/lib/wad";
 
@@ -71,26 +72,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="mt-14 grid gap-4 md:grid-cols-3">
-              <SimpleBeat
-                icon={<Eye className="h-4 w-4" />}
-                step="01"
-                title="It sees what it holds"
-                body="At the moment it quotes a price, the position can read its own real balance — not a pool's, its own."
-              />
-              <SimpleBeat
-                icon={<Scale className="h-4 w-4" />}
-                step="02"
-                title="It leans against the risk"
-                body="The more it's already holding, the more expensive it makes the trade that would hand it even more."
-              />
-              <SimpleBeat
-                icon={<Zap className="h-4 w-4" />}
-                step="03"
-                title="It never has to act"
-                body="No keeper, no rebalancing transaction, no delay. By the time the next trade arrives, the price has already moved."
-              />
-            </div>
+            <LandingTimeline />
 
             <div className="mt-12 flex justify-center">
               <ButtonLink href="/mechanism" variant="secondary">
@@ -244,34 +226,6 @@ function StatBlock({
       <FieldLabel>{label}</FieldLabel>
       <div className={`font-numeric mt-2 text-2xl ${toneClass}`}>{value}</div>
       <div className="text-readout-dim font-numeric mt-1 text-[10px]">{unit}</div>
-    </div>
-  );
-}
-
-function SimpleBeat({
-  icon,
-  step,
-  title,
-  body,
-}: {
-  icon: React.ReactNode;
-  step: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="border-hairline bg-panel/40 hover:border-hairline-bright group relative overflow-hidden rounded-xl border p-6 backdrop-blur transition-colors">
-      <div className="from-amber-bright/[0.05] pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-      <div className="relative">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="border-hairline bg-panel-raised text-amber-bright inline-flex h-8 w-8 items-center justify-center rounded-lg border">
-            {icon}
-          </div>
-          <NumericReadout value={step} size="xs" className="text-hairline-bright" />
-        </div>
-        <h3 className="mb-2 text-[15px] font-medium">{title}</h3>
-        <p className="text-readout-dim text-[13px] leading-relaxed">{body}</p>
-      </div>
     </div>
   );
 }
