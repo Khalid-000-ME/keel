@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
-import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
+import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, DEMO_TOKENS, ERC20_ABI, explorerTx } from "@/lib/chain";
 import { loadStrategy, markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
 import { Web3Providers } from "@/components/web3/providers";
 import { WalletBar } from "@/components/web3/wallet-bar";
@@ -76,7 +76,12 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   const fillPending = useRef(false);
 
   const orderTuple = toOrderTuple(strategy.order);
-  const amountIn = parseUnits(String(fillSize), 18);
+  // fillSize is a human amount of "the token being sold in this direction" --
+  // token0 (exposed side, sold in) and token1 (covered side, sold in) can
+  // have different decimals (USDC 6, WETH 18), so each direction parses it
+  // against its own token's decimals rather than assuming 18 for both.
+  const amountInExposed = parseUnits(String(fillSize), DEMO_TOKENS[0].decimals);
+  const amountInCovered = parseUnits(String(fillSize), DEMO_TOKENS[1].decimals);
   const docked = Boolean(strategy.dockedTxHash);
   const isMine = address?.toLowerCase() === strategy.order.maker.toLowerCase();
 
@@ -90,8 +95,8 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
   const { data: quotes, dataUpdatedAt: quotesUpdatedAt, refetch: refetchQuotes } = useReadContracts({
     contracts: [
-      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountIn, true] },
-      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountIn, false] },
+      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountInExposed, true] },
+      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountInCovered, false] },
     ],
     query: { refetchInterval: REFRESH_MS, enabled: !docked },
   });
@@ -100,13 +105,13 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
   const bal0 = balances?.[0];
   const bal1 = balances?.[1];
-  const inventory = bal0 !== undefined ? Number(formatUnits(bal0, 18)) : null;
+  const inventory = bal0 !== undefined ? Number(formatUnits(bal0, DEMO_TOKENS[0].decimals)) : null;
   const drift = inventory !== null ? inventory - strategy.params.targetInventory : null;
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
-  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, 18)) / fillSize : null;
-  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, 18)) / fillSize : null;
+  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, DEMO_TOKENS[1].decimals)) / fillSize : null;
+  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, DEMO_TOKENS[0].decimals)) / fillSize : null;
 
   // The series carries poll samples too; the table below is only about fills.
   const fills = history.filter((h) => h.kind === "fill");
@@ -137,6 +142,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   async function testFill(isAToB: boolean) {
     if (!address || !onRightChain) return;
     const tokenIn = isAToB ? strategy.token0 : strategy.token1;
+    const amountIn = isAToB ? amountInExposed : amountInCovered;
     const label = isAToB ? "exposed-side" : "covered-side";
     setBusy(label);
     try {
@@ -241,8 +247,8 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
             />
           </div>
           <div className="border-hairline/60 mt-4 grid grid-cols-3 gap-px border-t pt-4">
-            <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, 18)).toFixed(2) : "—"} />
-            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, 18)).toFixed(2) : "—"} />
+            <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, DEMO_TOKENS[0].decimals)).toFixed(2) : "—"} />
+            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, DEMO_TOKENS[1].decimals)).toFixed(4) : "—"} />
             <Mini
               label="drift q"
               value={drift !== null ? `${drift > 0 ? "+" : ""}${drift.toFixed(2)}` : "—"}
