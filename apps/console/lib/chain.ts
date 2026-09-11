@@ -48,27 +48,26 @@ export const CHAIN = {
 
 export const ADDRESSES = {
   aqua: "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",
-  keelRouter: "0x1771093A5094FCc818775806eD8a729f6cF7DA0E",
+  keelRouter: "0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2",
   demoTaker: "0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763",
 } as const;
 
 /**
- * Ballast and Draft -- both nautical terms for a hull's own stability, which
- * is the whole thesis of this project (see README). Named this way rather
- * than something like "Keel Demo Token A" specifically so a wallet's sign
- * prompt reads as a real asset pair, not a test fixture -- these are still
- * permissionless testnet faucet tokens with no value (KeelDemoToken.sol),
- * just not named to advertise that in the UI.
+ * Real WETH/USDC on Base Sepolia -- replaces the DRFT/BALT mock pair now
+ * that KeelInventorySkew normalizes non-18-decimal tokens to WAD itself
+ * (KeelInstructions.sol's tokenInDecimals/tokenOutDecimals), so a real,
+ * 6-decimal USDC is safe to quote against.
  *
  * Aqua/SwapVM require tokenA < tokenB numerically, and these are stored in
- * that order -- token0 is the pair's tokenA. CREATE addresses don't respect
- * deployment order, so which symbol lands as token0 is coincidence; the
- * ordering below is the one the contracts enforce, so it's the one the UI
- * uses.
+ * that order -- token0 is the pair's tokenA, and USDC happens to sort
+ * first on this chain (not a choice, an address-comparison fact), which
+ * makes USDC the inventory-tracked ("in") side and WETH the quoted
+ * ("out") side. `decimals` is what lets every amount field below format
+ * and parse each token correctly instead of assuming 18 for both.
  */
 export const DEMO_TOKENS = [
-  { address: "0x0ECf96941D2c5FE408E021F9e078FeC6484B235b", symbol: "DRFT", label: "Draft — base asset" },
-  { address: "0x6d56c9975130822012e97A163d39Bf5e0D96A3f3", symbol: "BALT", label: "Ballast — quote asset" },
+  { address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", symbol: "USDC", label: "USDC — quote asset", decimals: 6 },
+  { address: "0x4200000000000000000000000000000000000006", symbol: "WETH", label: "Wrapped ETH — base asset", decimals: 18 },
 ] as const;
 
 export const explorerTx = (hash: string) => `${CHAIN.blockExplorers.default.url}/tx/${hash}`;
@@ -83,8 +82,11 @@ export const ERC20_ABI = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "allowance", stateMutability: "view", inputs: [{ name: "o", type: "address" }, { name: "s", type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "s", type: "address" }, { name: "v", type: "uint256" }], outputs: [{ type: "bool" }] },
-  { type: "function", name: "mint", stateMutability: "nonpayable", inputs: [{ name: "a", type: "address" }, { name: "v", type: "uint256" }], outputs: [] },
   { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  // WETH9-only -- deposit() wraps msg.value 1:1, standing in for a "faucet"
+  // mint since real WETH has no permissionless mint. Harmless to include in
+  // the shared ABI for USDC reads/writes, which never call it.
+  { type: "function", name: "deposit", stateMutability: "payable", inputs: [], outputs: [] },
 ] as const;
 
 export const AQUA_ABI = [
