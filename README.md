@@ -15,15 +15,24 @@ The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kerne
 | Contract | Address |
 |---|---|
 | Aqua | [`0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD`](https://sepolia.basescan.org/address/0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD) |
-| KeelRouter | [`0x1771093A5094FCc818775806eD8a729f6cF7DA0E`](https://sepolia.basescan.org/address/0x1771093A5094FCc818775806eD8a729f6cF7DA0E) |
+| KeelRouter | [`0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2`](https://sepolia.basescan.org/address/0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2) — redeployed to add `tokenInDecimals`/`tokenOutDecimals` normalization, so it's safe to quote non-18-decimal tokens like USDC (see below) |
 | KeelSkewHook | [`0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0`](https://sepolia.basescan.org/address/0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0) (against Base Sepolia's real, already-deployed v4 `PoolManager`) |
 | Subgraph | [thegraph.com/studio/subgraph/keel-subgraph](https://thegraph.com/studio/subgraph/keel-subgraph) — indexing live, `hasIndexingErrors: false` |
 | KeelDemoTaker | [`0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763`](https://sepolia.basescan.org/address/0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763) — quote/fill helper for the browser console |
-| Demo tokens | [`Draft`](https://sepolia.basescan.org/address/0x0ECf96941D2c5FE408E021F9e078FeC6484B235b) (DRFT, tokenA) · [`Ballast`](https://sepolia.basescan.org/address/0x6d56c9975130822012e97A163d39Bf5e0D96A3f3) (BALT, tokenB) — permissionless faucets, named as a real asset pair rather than "Test Token A/B" |
+| Pair | [`WETH`](https://sepolia.basescan.org/address/0x4200000000000000000000000000000000000006) / [`USDC`](https://sepolia.basescan.org/address/0x036CbD53842c5426634e7929541eC2318f3dCF7e) — real tokens, not mocks; WETH funds via `deposit()`, USDC via [Circle's faucet](https://faucet.circle.com) |
 
-Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethereum Sepolia and Arbitrum Sepolia deployments are pending a working RPC (see Deploying below) — both scripts are network-agnostic and dry-run clean against both chains already, just blocked on every free/anonymous RPC endpoint tried so far rate-limiting `eth_sendRawTransaction`.
+**Also live on Ethereum Sepolia** (chain 11155111) and **Arbitrum Sepolia** (chain 421614), same `KeelInstructions` build as Base Sepolia's current router:
 
-**A real Keel position has been shipped and filled against this deployment** — 8 real fills, real `safeTransferFrom` calls, real inventory drift, real soft-bound clamp — via `contracts/script/ShipKeelDemo.s.sol`. Every hash is independently re-verified against the live chain (not just copied from forge's own broadcast log — see `docs/onchain-demo/base-sepolia-run-1.json`'s `verificationNote` for why that mattered here) and checked in at `docs/onchain-demo/base-sepolia-run-1.json`, with the same data rendered on `/position/live`'s "Real evidence" panel as a fallback if the live RPC or subgraph is unreachable during a demo. [Ship tx](https://sepolia.basescan.org/tx/0xbc055d7c9a9decbf8f73b85612aa9ee48dd7fa4d7811f2725f9e248b8aedb260) · strategy hash `0x21851573476bedbc0ca391536e394a1566be94ff1515a7ec07d81f7dd1961cd8`.
+| Contract | Ethereum Sepolia | Arbitrum Sepolia |
+|---|---|---|
+| Aqua | [`0x20592B28...669cE`](https://sepolia.etherscan.io/address/0x20592B28fCaa6ADa4097bDB03f31d76bE13669cE) | [`0x2dDc814a...8b1b3`](https://sepolia.arbiscan.io/address/0x2dDc814a107e8F982f356E3b409DC2D00F68b1b3) |
+| KeelRouter | [`0x2854Fa99...16fBb`](https://sepolia.etherscan.io/address/0x2854Fa991680bd7bBfC660D197B883e025C16fBb) | [`0x2e8697Ef...3B744`](https://sepolia.arbiscan.io/address/0x2e8697EfCe447002d0056445645932020023B744) |
+| KeelDemoTaker | [`0x9d8219a0...a6a`](https://sepolia.etherscan.io/address/0x9d8219a05C14a5232502da77F93227615b750a6a) | [`0x6559F59d...Ab8`](https://sepolia.arbiscan.io/address/0x6559F59dC0Bc3Fa80B2E33B1957D30ed17507Ab8) |
+| Pair | WETH `0xfFf99767...4d6B14` / USDC `0x1c7D4B19...9C7238` | WETH `0x980B62Da...af17c73` / USDC `0x75faf114...E46AA4d` |
+
+These two chains have Aqua + KeelRouter + KeelDemoTaker deployed but no shipped position yet — the console currently drives Base Sepolia only (`apps/console/lib/chain.ts`); pointing it at either of these is a config change, not a contract one.
+
+**A real Keel position has been shipped and filled against Base Sepolia** — 8 real fills, real `safeTransferFrom` calls, real inventory drift, real soft-bound clamp — via `contracts/script/ShipKeelDemo.s.sol`. That run predates the WETH/USDC switch and the router redeploy above, so it was against the DRFT/BALT pair and the prior `KeelRouter` address — still real, still independently re-verified against the live chain (not just copied from forge's own broadcast log — see `docs/onchain-demo/base-sepolia-run-1.json`'s `verificationNote` for why that mattered here) and checked in at `docs/onchain-demo/base-sepolia-run-1.json`, with the same data rendered on `/position/live`'s "Real evidence" panel as a fallback if the live RPC or subgraph is unreachable during a demo. [Ship tx](https://sepolia.basescan.org/tx/0xbc055d7c9a9decbf8f73b85612aa9ee48dd7fa4d7811f2725f9e248b8aedb260) · strategy hash `0x21851573476bedbc0ca391536e394a1566be94ff1515a7ec07d81f7dd1961cd8`.
 
 ---
 
@@ -41,6 +50,7 @@ Deployed at block 46398488 (Aqua + KeelRouter) and 46398524 (KeelSkewHook). Ethe
 | Off-chain SDK | `packages/strategy-sdk` | Built, byte-verified against live Solidity fixtures |
 | Subgraph | `subgraph/` | **Live**, indexing Base Sepolia, no indexing errors |
 | Maker console | `apps/console/app/strategies` | **Live** — connect a wallet and ship a real position from the browser |
+| Market page | `apps/console/app/market` | **Live** — every live strategy's quote curve overlaid, swap routes to the best real `previewFill` |
 | Demo kit | `contracts/src/demo/` | **Live on Base Sepolia** — faucet tokens + taker helper the console drives |
 | Console (demo UI) | `apps/console` | Built, 7 pages, typechecked + built + screenshot-verified |
 
@@ -247,7 +257,7 @@ pnpm exec graph deploy <your-subgraph-name> --version-label v0.1.0
 
 ## What's deferred
 
-Ethereum Sepolia and Arbitrum Sepolia deployments, blocked on a working (non-rate-limited) RPC for those two chains specifically — see the note above. The Uniswap Developer Feedback Form submission is a manual step outside this repo (content ready in `FEEDBACK/UNISWAP.md`).
+Ethereum Sepolia and Arbitrum Sepolia have Aqua + KeelRouter + KeelDemoTaker live (see the deployment table above), but the console is still wired to Base Sepolia only — no strategy has been shipped against either yet. The Uniswap Developer Feedback Form submission is a manual step outside this repo (content ready in `FEEDBACK/UNISWAP.md`).
 
 ## License
 
