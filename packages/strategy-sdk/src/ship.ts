@@ -43,6 +43,8 @@ export function buildShipKeelStrategyTx(
       boundWad: config.boundWad,
       horizonSecs: config.params.horizonSecs,
       startTimestamp: Math.floor(Date.now() / 1000),
+      tokenInDecimals: config.tokenInDecimals,
+      tokenOutDecimals: config.tokenOutDecimals,
     },
     saltSeed,
   );

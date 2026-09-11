@@ -20,7 +20,8 @@ export const SALT_OPCODE = 0x02;
  * [int128 gammaWad][int128 sigmaSqWad][int128 baseSpreadWad]
  * [int256 targetInventoryWad][int256 boundWad]
  * [uint32 horizonSecs][uint40 startTimestamp]
- * (121 args bytes + the 2-byte instruction header = 123 bytes total).
+ * [uint8 tokenInDecimals][uint8 tokenOutDecimals]
+ * (123 args bytes + the 2-byte instruction header = 125 bytes total).
  *
  * Verified against a live Solidity fixture -- see
  * contracts/test/EncodingFixtures.t.sol::test_LogKeelProgramDataFixture --
@@ -35,8 +36,10 @@ export function encodeKeelInventorySkew(d: KeelProgramData): Hex {
     toHexPadded(d.boundWad, 32),
     toHexPadded(BigInt(d.horizonSecs), 4),
     toHexPadded(BigInt(d.startTimestamp), 5),
+    toHexPadded(BigInt(d.tokenInDecimals), 1),
+    toHexPadded(BigInt(d.tokenOutDecimals), 1),
   ]);
-  return concatHex([instructionHeader(KEEL_INVENTORY_SKEW_OPCODE, 121), args]);
+  return concatHex([instructionHeader(KEEL_INVENTORY_SKEW_OPCODE, 123), args]);
 }
 
 /** swap-vm/src/instructions/XYCSwap.sol: no args. */
