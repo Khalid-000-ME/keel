@@ -21,32 +21,43 @@ export interface StrategyDraft {
   horizonSecs: number;
 }
 
+/**
+ * Calibrated for the real WETH/USDC pair, not the old DRFT/BALT mocks'
+ * ~1.0 mid. USDC sorts first on-chain (tokenA, see lib/chain.ts), so
+ * KeelInventorySkew's mid = balanceOut/balanceIn works out to WETH-per-USDC
+ * -- roughly 1/3500 at a ~$3500 ETH price, not ~1 -- and every gamma/sigma/
+ * baseSpread below is sized as a fraction of *that* mid so the half-spread
+ * and inventory skew stay comfortably below it (see the note in
+ * KeelInventorySkewDecimals.t.sol about a mismatched-scale spread clamping
+ * the effective price to 1 wei). These are demo-legible values, not a
+ * calibrated market-making model.
+ */
 export const STRATEGY_PRESETS: { name: string; note: string; apply: (d: StrategyDraft) => StrategyDraft }[] = [
   {
     name: "Gentle",
     note: "wide bound, soft skew — quotes stay close to mid",
-    apply: (d) => ({ ...d, gamma: 0.0002, sigmaSq: 0.00005, baseSpread: 0.0005, bound: d.amount0 * 0.5 }),
+    apply: (d) => ({ ...d, gamma: 4e-10, sigmaSq: 1e-3, baseSpread: 1.5e-5, bound: d.amount0 * 0.5 }),
   },
   {
     name: "Balanced",
     note: "the parameters the on-chain demo run shipped with",
-    apply: (d) => ({ ...d, gamma: 0.0005, sigmaSq: 0.00005, baseSpread: 0.001, bound: d.amount0 * 0.2 }),
+    apply: (d) => ({ ...d, gamma: 1e-9, sigmaSq: 1e-3, baseSpread: 3e-5, bound: d.amount0 * 0.2 }),
   },
   {
     name: "Defensive",
     note: "tight bound, hard skew — defends inventory aggressively",
-    apply: (d) => ({ ...d, gamma: 0.0015, sigmaSq: 0.0001, baseSpread: 0.002, bound: d.amount0 * 0.1 }),
+    apply: (d) => ({ ...d, gamma: 3e-9, sigmaSq: 2e-3, baseSpread: 6e-5, bound: d.amount0 * 0.1 }),
   },
 ];
 
 export const DEFAULT_STRATEGY_DRAFT: StrategyDraft = {
-  amount0: 100,
-  amount1: 100,
-  target: 100,
-  bound: 20,
-  gamma: 0.0005,
-  sigmaSq: 0.00005,
-  baseSpread: 0.001,
+  amount0: 3500, // USDC (tokenIn) -- roughly 1 WETH's worth at a ~$3500 mid
+  amount1: 1, // WETH (tokenOut)
+  target: 3500,
+  bound: 700,
+  gamma: 1e-9,
+  sigmaSq: 1e-3,
+  baseSpread: 3e-5,
   horizonSecs: 3600,
 };
 
@@ -95,6 +106,8 @@ export function useStrategyBuilder(onShipped: () => void) {
         boundWad: toWad(draft.bound),
         horizonSecs: draft.horizonSecs,
         startTimestamp: nonce.startedAt,
+        tokenInDecimals: DEMO_TOKENS[0].decimals,
+        tokenOutDecimals: DEMO_TOKENS[1].decimals,
       },
       nonce.salt,
     ) as Hex;
@@ -136,7 +149,10 @@ export function useStrategyBuilder(onShipped: () => void) {
     query: { enabled: Boolean(address) },
   });
 
-  const amounts = [parseUnits(String(draft.amount0), 18), parseUnits(String(draft.amount1), 18)] as const;
+  const amounts = [
+    parseUnits(String(draft.amount0), DEMO_TOKENS[0].decimals),
+    parseUnits(String(draft.amount1), DEMO_TOKENS[1].decimals),
+  ] as const;
   const needsApproval = DEMO_TOKENS.map((_, i) => {
     const current = allowances?.[i]?.result as bigint | undefined;
     return current === undefined || current < amounts[i];
@@ -193,8 +209,8 @@ export function useStrategyBuilder(onShipped: () => void) {
         token1: DEMO_TOKENS[1].address,
         symbol0: DEMO_TOKENS[0].symbol,
         symbol1: DEMO_TOKENS[1].symbol,
-        amount0: formatUnits(amounts[0], 18),
-        amount1: formatUnits(amounts[1], 18),
+        amount0: formatUnits(amounts[0], DEMO_TOKENS[0].decimals),
+        amount1: formatUnits(amounts[1], DEMO_TOKENS[1].decimals),
         params: {
           gamma: draft.gamma,
           sigmaSq: draft.sigmaSq,

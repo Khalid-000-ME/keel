@@ -70,21 +70,21 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
             label="γ · risk aversion"
             hint="how hard it leans against drift"
             value={b.draft.gamma}
-            step={0.0001}
+            step={1e-10}
             onChange={(v) => b.set("gamma", Math.max(0, v))}
           />
           <NumberField
             label="σ² · variance"
             hint="scales skew and spread together"
             value={b.draft.sigmaSq}
-            step={0.00001}
+            step={1e-4}
             onChange={(v) => b.set("sigmaSq", Math.max(0, v))}
           />
           <NumberField
             label="δ₀ · base spread"
             hint="the spread floor, always charged"
             value={b.draft.baseSpread}
-            step={0.0005}
+            step={1e-6}
             onChange={(v) => b.set("baseSpread", Math.max(0, v))}
           />
           <NumberField
@@ -102,7 +102,7 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
             value={b.skewPerToken.toExponential(2)}
             note="γ · σ² · (T−t) — the whole skew term"
           />
-          <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(5)} note="δ₀ + γ · σ² · (T−t)" />
+          <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(8)} note="δ₀ + γ · σ² · (T−t)" />
         </div>
       </div>
 
