@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -51,10 +52,15 @@ export function Nav() {
       <nav className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="relative flex h-6 w-6 items-center justify-center">
-            <span className="bg-neutral-amber/20 absolute inset-0 blur-[6px] transition-all group-hover:blur-[10px]" />
-            <span className="border-neutral-amber/60 text-neutral-amber relative flex h-6 w-6 items-center justify-center border text-[11px] font-semibold">
-              K
-            </span>
+            <span className="bg-neutral-amber/20 absolute inset-0 rounded-md blur-[6px] transition-all group-hover:blur-[10px]" />
+            <Image
+              src="/logo.png"
+              alt=""
+              width={24}
+              height={24}
+              priority
+              className="border-neutral-amber/60 relative h-6 w-6 rounded-md border object-cover"
+            />
           </span>
           <span className="font-numeric text-readout text-sm tracking-[0.2em]">KEEL</span>
         </Link>
@@ -76,7 +82,7 @@ export function Nav() {
         </div>
 
         <a
-          href="https://sepolia.basescan.org/address/0x1771093A5094FCc818775806eD8a729f6cF7DA0E"
+          href="https://sepolia.basescan.org/address/0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2"
           target="_blank"
           rel="noreferrer"
           className="border-hairline hover:border-long/50 hover:bg-long/5 group hidden items-center gap-2 border px-3 py-1.5 text-[12px] transition-colors sm:flex"
