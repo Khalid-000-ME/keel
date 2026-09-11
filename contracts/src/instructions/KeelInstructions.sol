@@ -54,12 +54,30 @@ library KeelInventorySkew {
     uint8 internal constant OPCODE = 0x92;
 
     /// @notice Packed into the program's immediate bytes at ship time.
-    /// @dev Encoding (121 bytes, well under the VM's 255-byte args-per-
+    /// @dev Encoding (123 bytes, well under the VM's 255-byte args-per-
     ///      instruction limit -- see swap-vm/src/libs/VM.sol ContextLib.runLoop,
     ///      which packs args length into a single byte):
     ///      [int128 gammaWad][int128 sigmaSqWad][int128 baseSpreadWad]
     ///      [int256 targetInventoryWad][int256 boundWad]
     ///      [uint32 horizonSecs][uint40 startTimestamp]
+    ///      [uint8 tokenInDecimals][uint8 tokenOutDecimals]
+    /// @dev tokenInDecimals/tokenOutDecimals exist because `ctx.swap.balanceIn/
+    ///      balanceOut` are the maker's *raw* Aqua balances, in whichever
+    ///      decimals the actual ERC-20 uses -- not WAD by construction, just
+    ///      by convention when every token happens to be 18-decimal (as
+    ///      every token this project shipped against, until real USDC).
+    ///      AvellanedaStoikov's math is unconditionally WAD (see its own
+    ///      library-level @dev note) -- `mid` is explicitly WAD-scaled via
+    ///      `midFromBalancesWad`'s `* WAD`, so `q` (and therefore
+    ///      `targetInventoryWad`) must be WAD-scaled too for `skew = q *
+    ///      gamma * sigma^2 * (T-t)` to land in the same units as `mid`
+    ///      before `r = mid - skew`. A maker declares each token's decimals
+    ///      once at ship time (never guessed on-chain, no external
+    ///      `decimals()` call -- keeps this instruction a pure function of
+    ///      its own args, like every other opcode here); `exec` below
+    ///      normalizes to WAD before pricing and denormalizes back to native
+    ///      decimals before handing balances to the next opcode (e.g.
+    ///      XYCSwap), which prices real settlement and must see real units.
     struct ProgramData {
         int128 gammaWad;
         int128 sigmaSqWad;
@@ -68,10 +86,12 @@ library KeelInventorySkew {
         int256 boundWad;
         uint32 horizonSecs;
         uint40 startTimestamp;
+        uint8 tokenInDecimals;
+        uint8 tokenOutDecimals;
     }
 
     function sizeOf() internal pure returns (uint256) {
-        return InstructionBuilder.sizeOf() + 16 + 16 + 16 + 32 + 32 + 4 + 5;
+        return InstructionBuilder.sizeOf() + 16 + 16 + 16 + 32 + 32 + 4 + 5 + 1 + 1;
     }
 
     /// @notice Encodes a ProgramData struct as instruction bytes, following
@@ -90,6 +110,8 @@ library KeelInventorySkew {
         ptr = ptr.push(uint256(d.boundWad), 32);
         ptr = ptr.push(uint256(d.horizonSecs), 4);
         ptr = ptr.push(uint256(d.startTimestamp), 5);
+        ptr = ptr.push(d.tokenInDecimals);
+        ptr = ptr.push(d.tokenOutDecimals);
         start.patchLength(ptr);
         return ptr.resolve();
     }
@@ -110,6 +132,8 @@ library KeelInventorySkew {
         d.boundWad = int256(uint256(args.at(80).asU256()));
         d.horizonSecs = args.at(112).asU32();
         d.startTimestamp = args.at(116).asU40();
+        d.tokenInDecimals = args.at(121).asU8();
+        d.tokenOutDecimals = args.at(122).asU8();
     }
 
     /// @notice Reads the maker's live Aqua safe balance -- already sitting
@@ -128,7 +152,17 @@ library KeelInventorySkew {
     function exec(Context memory ctx, bytes calldata args) internal view {
         ProgramData memory d = parse(args);
 
-        int256 inventoryQWad = int256(ctx.swap.balanceIn) - d.targetInventoryWad;
+        // Reverts on underflow (Solidity 0.8's checked arithmetic) if a
+        // maker declares >18 decimals for either token -- correctly, since
+        // no real ERC-20 does and this instruction has no other way to
+        // reject a nonsensical value without an external call.
+        uint256 inScale = 10 ** (18 - uint256(d.tokenInDecimals));
+        uint256 outScale = 10 ** (18 - uint256(d.tokenOutDecimals));
+
+        uint256 balanceInWad = ctx.swap.balanceIn * inScale;
+        uint256 balanceOutWad = ctx.swap.balanceOut * outScale;
+
+        int256 inventoryQWad = int256(balanceInWad) - d.targetInventoryWad;
         uint256 elapsedSecs = block.timestamp > d.startTimestamp ? block.timestamp - d.startTimestamp : 0;
 
         AvellanedaStoikov.Params memory p = AvellanedaStoikov.Params({
@@ -138,8 +172,14 @@ library KeelInventorySkew {
             horizonSecs: uint256(d.horizonSecs)
         });
 
-        (ctx.swap.balanceIn, ctx.swap.balanceOut) = AvellanedaStoikov.applyInventorySkew(
-            ctx.swap.balanceIn, ctx.swap.balanceOut, inventoryQWad, p, elapsedSecs, d.boundWad
+        (uint256 newBalanceInWad, uint256 newBalanceOutWad) = AvellanedaStoikov.applyInventorySkew(
+            balanceInWad, balanceOutWad, inventoryQWad, p, elapsedSecs, d.boundWad
         );
+
+        // Denormalized back to native decimals: XYCSwap (or whatever
+        // swap-curve opcode runs next) prices real settlement against
+        // these balances and must see real, native-decimal units.
+        ctx.swap.balanceIn = newBalanceInWad / inScale;
+        ctx.swap.balanceOut = newBalanceOutWad / outScale;
     }
 }

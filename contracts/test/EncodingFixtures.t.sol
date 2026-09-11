@@ -27,7 +27,9 @@ contract EncodingFixturesTest is Test {
             targetInventoryWad: 1_000e18,
             boundWad: 400e18,
             horizonSecs: 2_592_000,
-            startTimestamp: 1_700_000_000
+            startTimestamp: 1_700_000_000,
+            tokenInDecimals: 18,
+            tokenOutDecimals: 18
         });
         console2.logBytes(KeelInventorySkew.build(d));
     }

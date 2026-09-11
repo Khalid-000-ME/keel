@@ -38,7 +38,9 @@ abstract contract KeelTestBase is AquaSwapVMTest {
             targetInventoryWad: targetInventoryWad,
             boundWad: boundWad,
             horizonSecs: 7 days,
-            startTimestamp: startTimestamp
+            startTimestamp: startTimestamp,
+            tokenInDecimals: 18,
+            tokenOutDecimals: 18
         });
     }
 }

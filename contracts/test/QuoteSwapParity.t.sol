@@ -39,7 +39,9 @@ contract QuoteSwapParityTest is KeelTestBase {
             targetInventoryWad: targetInventoryWad,
             boundWad: boundWad,
             horizonSecs: 30 days,
-            startTimestamp: startTimestamp
+            startTimestamp: startTimestamp,
+            tokenInDecimals: 18,
+            tokenOutDecimals: 18
         });
 
         order = createStrategy(buildKeelProgram(d));

@@ -135,7 +135,9 @@ contract AdversarialFlow is Script {
             targetInventoryWad: int256(STARTING_BALANCE0),
             boundWad: BOUND_WAD,
             horizonSecs: uint32(TICKS * TICK_INTERVAL_SECS),
-            startTimestamp: uint40(block.timestamp)
+            startTimestamp: uint40(block.timestamp),
+            tokenInDecimals: 18,
+            tokenOutDecimals: 18
         });
         bytes memory program = bytes.concat(KeelInventorySkew.build(d), XYCSwap.build(), Salt.build(abi.encodePacked(uint256(2))));
         order = _buildOrder(maker, token0, token1, program);

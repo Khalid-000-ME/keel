@@ -158,7 +158,9 @@ contract KeelDemoKitTest is Test {
             targetInventoryWad: int256(START_BALANCE),
             boundWad: BOUND_WAD,
             horizonSecs: 1 hours,
-            startTimestamp: uint40(block.timestamp)
+            startTimestamp: uint40(block.timestamp),
+            tokenInDecimals: 18,
+            tokenOutDecimals: 18
         });
 
         bytes memory program =
