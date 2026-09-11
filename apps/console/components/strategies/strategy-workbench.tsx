@@ -5,7 +5,7 @@ import type { Hex } from "viem";
 import { useAccount } from "wagmi";
 
 import { CHAIN, DEMO_TOKENS, explorerTx } from "@/lib/chain";
-import { useFaucet } from "@/lib/use-faucet";
+import { USDC_FAUCET_URL, useFaucet } from "@/lib/use-faucet";
 import { STRATEGY_PRESETS, useStrategyBuilder } from "@/lib/use-strategy-builder";
 import { loadStrategies, type StoredStrategy } from "@/lib/strategy-store";
 import { Web3Providers } from "@/components/web3/providers";
@@ -54,7 +54,7 @@ function WorkbenchInner() {
       {!isConnected && (
         <div className="border-hairline/60 bg-panel/20 border border-dashed p-5">
           <p className="text-readout-dim text-[13px] leading-relaxed">
-            Connect a wallet on {CHAIN.name} to drive this — mint inventory, ship a strategy, fill against it. It
+            Connect a wallet on {CHAIN.name} to drive this — fund inventory, ship a strategy, fill against it. It
             writes to the same live Aqua + KeelRouter deployment the rest of this site documents. There's no sandbox.
           </p>
         </div>
@@ -67,16 +67,27 @@ function WorkbenchInner() {
           <div key={t.address} className="flex items-center gap-2">
             <span className="font-numeric text-readout text-[12px]">{t.symbol}</span>
             <span className="font-numeric text-readout-dim text-[12px]">
-              {t.formatted !== null ? t.formatted.toFixed(2) : "—"}
+              {t.formatted !== null ? t.formatted.toFixed(t.symbol === "USDC" ? 2 : 4) : "—"}
             </span>
-            <button
-              type="button"
-              disabled={!faucet.onRightChain || faucet.minting !== null}
-              onClick={() => faucet.mint(t)}
-              className="font-numeric border-hairline text-readout-dim hover:text-readout hover:border-hairline-bright border px-2 py-1 text-[11px] transition-colors disabled:opacity-40"
-            >
-              {faucet.minting === t.symbol ? "…" : `+${faucet.mintAmount}`}
-            </button>
+            {t.symbol === "WETH" ? (
+              <button
+                type="button"
+                disabled={!faucet.onRightChain || faucet.minting !== null}
+                onClick={() => faucet.wrapEth(t)}
+                className="font-numeric border-hairline text-readout-dim hover:text-readout hover:border-hairline-bright border px-2 py-1 text-[11px] transition-colors disabled:opacity-40"
+              >
+                {faucet.minting === t.symbol ? "…" : `+${faucet.wrapAmountEth}`}
+              </button>
+            ) : (
+              <a
+                href={USDC_FAUCET_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="font-numeric border-hairline text-readout-dim hover:text-readout hover:border-hairline-bright border px-2 py-1 text-[11px] transition-colors"
+              >
+                Get ↗
+              </a>
+            )}
           </div>
         ))}
         {faucet.txHash && (
@@ -148,21 +159,21 @@ function WorkbenchInner() {
               label="γ · risk aversion"
               hint="how hard it leans against drift"
               value={b.draft.gamma}
-              step={0.0001}
+              step={1e-10}
               onChange={(v) => b.set("gamma", Math.max(0, v))}
             />
             <NumberField
               label="σ² · variance"
               hint="scales skew and spread together"
               value={b.draft.sigmaSq}
-              step={0.00001}
+              step={1e-4}
               onChange={(v) => b.set("sigmaSq", Math.max(0, v))}
             />
             <NumberField
               label="δ₀ · base spread"
               hint="the spread floor, always charged"
               value={b.draft.baseSpread}
-              step={0.0005}
+              step={1e-6}
               onChange={(v) => b.set("baseSpread", Math.max(0, v))}
             />
             <NumberField
@@ -180,7 +191,7 @@ function WorkbenchInner() {
               value={b.skewPerToken.toExponential(2)}
               note="γ · σ² · (T−t)"
             />
-            <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(5)} note="δ₀ + γ · σ² · (T−t)" />
+            <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(8)} note="δ₀ + γ · σ² · (T−t)" />
           </div>
 
           <div className="border-hairline/60 flex flex-wrap items-center gap-3 border-t pt-5">

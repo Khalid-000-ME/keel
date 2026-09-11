@@ -1,15 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, parseEther } from "viem";
 import { useAccount, useChainId, useReadContracts, useWriteContract } from "wagmi";
 
 import { CHAIN, DEMO_TOKENS, ERC20_ABI } from "@/lib/chain";
 
-const MINT_AMOUNT = 2_000;
+export const WRAP_AMOUNT_ETH = "0.01";
+export const USDC_FAUCET_URL = "https://faucet.circle.com";
 
 /**
- * Faucet balances + minting, shared by every layout the console renders.
+ * Faucet balances + funding, shared by every layout the console renders.
+ * Real WETH/USDC (see lib/chain.ts) have no permissionless mint like the old
+ * DRFT/BALT mocks did, so "funding" now means two different things per
+ * token: WETH wraps the wallet's own testnet ETH via `deposit()`, while USDC
+ * has to come from an external faucet (Circle's) -- there's no on-chain call
+ * that can hand out real USDC.
  *
  * `chainId: CHAIN.id` is passed on every write deliberately: without it,
  * `writeContract` submits on whatever network the wallet's extension
@@ -38,15 +44,15 @@ export function useFaucet() {
 
   const { mutateAsync: write } = useWriteContract();
 
-  async function mint(token: (typeof DEMO_TOKENS)[number]) {
-    if (!address || !onRightChain) return;
+  async function wrapEth(token: (typeof DEMO_TOKENS)[number]) {
+    if (!address || !onRightChain || token.symbol !== "WETH") return;
     setMinting(token.symbol);
     try {
       const hash = await write({
         address: token.address,
         abi: ERC20_ABI,
-        functionName: "mint",
-        args: [address, parseUnits(String(MINT_AMOUNT), 18)],
+        functionName: "deposit",
+        value: parseEther(WRAP_AMOUNT_ETH),
         chainId: CHAIN.id,
       });
       setTxHash(hash);
@@ -61,8 +67,8 @@ export function useFaucet() {
 
   const readable = DEMO_TOKENS.map((t, i) => {
     const raw = balances?.[i]?.result as bigint | undefined;
-    return { ...t, raw, formatted: raw !== undefined ? Number(formatUnits(raw, 18)) : null };
+    return { ...t, raw, formatted: raw !== undefined ? Number(formatUnits(raw, t.decimals)) : null };
   });
 
-  return { tokens: readable, minting, txHash, mint, onRightChain, mintAmount: MINT_AMOUNT, refetch };
+  return { tokens: readable, minting, txHash, wrapEth, onRightChain, wrapAmountEth: WRAP_AMOUNT_ETH, refetch };
 }

@@ -1,16 +1,17 @@
 "use client";
 
 import { explorerTx } from "@/lib/chain";
-import { useFaucet } from "@/lib/use-faucet";
+import { USDC_FAUCET_URL, useFaucet } from "@/lib/use-faucet";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 
 /**
- * Get play money. `KeelDemoToken.mint` is permissionless precisely so this
- * needs nobody's help -- a visitor funds their own wallet and can drive the
- * rest of the page without us pre-funding them.
+ * Get inventory. Real WETH/USDC replaced the old permissionless-mint mocks,
+ * so funding each side now looks different: WETH wraps the wallet's own
+ * testnet ETH in one click, while USDC has to come from Circle's own
+ * faucet -- there's no contract call that can hand out real USDC.
  */
 export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?: string }) {
-  const { tokens, minting, txHash, mint, onRightChain, mintAmount } = useFaucet();
+  const { tokens, minting, txHash, wrapEth, onRightChain, wrapAmountEth } = useFaucet();
 
   return (
     <div className="border-hairline bg-panel/40 border p-6">
@@ -18,8 +19,9 @@ export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?
         <div>
           <FieldLabel>{heading}</FieldLabel>
           <p className="text-readout-dim mt-2 max-w-lg text-[13px] leading-relaxed">
-            A strategy has to hold something to lean on. Ballast and Draft are permissionless faucet ERC-20s on Base
-            Sepolia — mint yourself a balance, then commit some of it as the position&apos;s inventory below.
+            A strategy has to hold something to lean on. WETH and USDC are the real Base Sepolia pair this console
+            quotes against — wrap some testnet ETH and grab USDC from Circle&apos;s faucet, then commit some of each
+            as the position&apos;s inventory below.
           </p>
         </div>
       </div>
@@ -34,27 +36,38 @@ export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?
               </div>
               <div className="mt-2">
                 <NumericReadout
-                  value={token.formatted !== null ? token.formatted.toFixed(2) : "—"}
+                  value={token.formatted !== null ? token.formatted.toFixed(token.symbol === "USDC" ? 2 : 4) : "—"}
                   size="sm"
                   sign={token.formatted && token.formatted > 0 ? "long" : "neutral"}
                 />
               </div>
             </div>
-            <button
-              type="button"
-              disabled={!onRightChain || minting !== null}
-              onClick={() => mint(token)}
-              className="font-numeric border-hairline text-readout hover:border-hairline-bright hover:bg-panel-raised border px-3 py-2 text-[12px] transition-colors disabled:opacity-40"
-            >
-              {minting === token.symbol ? "Minting…" : `Mint ${mintAmount}`}
-            </button>
+            {token.symbol === "WETH" ? (
+              <button
+                type="button"
+                disabled={!onRightChain || minting !== null}
+                onClick={() => wrapEth(token)}
+                className="font-numeric border-hairline text-readout hover:border-hairline-bright hover:bg-panel-raised border px-3 py-2 text-[12px] transition-colors disabled:opacity-40"
+              >
+                {minting === token.symbol ? "Wrapping…" : `Wrap ${wrapAmountEth} ETH`}
+              </button>
+            ) : (
+              <a
+                href={USDC_FAUCET_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="font-numeric border-hairline text-readout hover:border-hairline-bright hover:bg-panel-raised border px-3 py-2 text-[12px] transition-colors"
+              >
+                Get USDC ↗
+              </a>
+            )}
           </div>
         ))}
       </div>
 
       {txHash && (
         <p className="text-readout-dim mt-3 text-[12px]">
-          Minted{" "}
+          Wrapped{" "}
           <a
             href={explorerTx(txHash)}
             target="_blank"
