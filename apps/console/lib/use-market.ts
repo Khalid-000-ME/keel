@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContracts, useWriteContract } from "wagmi";
 
-import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, DEMO_TOKENS, ERC20_ABI } from "@/lib/chain";
+import { AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI, type Network } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { loadStrategies, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
 
 export interface LiveStrategy extends StoredStrategy {
@@ -17,32 +18,33 @@ export interface LiveStrategy extends StoredStrategy {
 const REFRESH_MS = 15_000; // same cadence as the strategy detail page -- see lib/chain.ts's RPC_URL note
 
 /**
- * Every strategy this browser has shipped on the current chain and not yet
- * docked, with live balances -- the "market" is exactly this set: whichever
- * positions are still quoting. Balances come from `Aqua.safeBalances`, not a
+ * Every strategy this browser has shipped on the *selected* network (the
+ * navbar's switcher, lib/use-network.tsx) and not yet docked, with live
+ * balances -- the "market" is exactly this set: whichever positions are
+ * still quoting. Balances come from `Aqua.safeBalances`, not a
  * re-derivation, for the same reason the strategy detail page reads it live.
  */
 export function useLiveStrategies() {
-  const chainId = useChainId();
+  const { network } = useNetwork();
   const strategies = useMemo(
-    () => loadStrategies(chainId ?? CHAIN.id).filter((s) => !s.dockedTxHash),
-    [chainId],
+    () => loadStrategies(network.chain.id).filter((s) => !s.dockedTxHash),
+    [network.chain.id],
   );
 
   const { data: balances, dataUpdatedAt } = useReadContracts({
     contracts: strategies.map((s) => ({
-      address: ADDRESSES.aqua,
+      address: network.addresses.aqua,
       abi: AQUA_ABI,
       functionName: "safeBalances" as const,
-      args: [s.order.maker, ADDRESSES.keelRouter, s.strategyHash, s.token0, s.token1] as const,
+      args: [s.order.maker, network.addresses.keelRouter, s.strategyHash, s.token0, s.token1] as const,
     })),
     query: { enabled: strategies.length > 0, refetchInterval: REFRESH_MS },
   });
 
   const live: LiveStrategy[] = strategies.map((s, i) => {
     const result = balances?.[i]?.result as readonly [bigint, bigint] | undefined;
-    const balance0 = result ? Number(formatUnits(result[0], DEMO_TOKENS[0].decimals)) : null;
-    const balance1 = result ? Number(formatUnits(result[1], DEMO_TOKENS[1].decimals)) : null;
+    const balance0 = result ? Number(formatUnits(result[0], network.tokens[0].decimals)) : null;
+    const balance1 = result ? Number(formatUnits(result[1], network.tokens[1].decimals)) : null;
     return { ...s, balance0, balance1, q: balance0 !== null ? balance0 - s.params.targetInventory : null };
   });
 
@@ -62,12 +64,13 @@ export interface QuoteResult {
  * call is evidence").
  */
 export function useBestQuote(strategies: LiveStrategy[], amountIn: bigint, isAToB: boolean) {
+  const { network } = useNetwork();
   const { data, dataUpdatedAt } = useReadContracts({
     contracts: strategies.map((s) => ({
-      address: ADDRESSES.demoTaker,
+      address: network.addresses.demoTaker,
       abi: DEMO_TAKER_ABI,
       functionName: "previewFill" as const,
-      args: [ADDRESSES.keelRouter, toOrderTuple(s.order), amountIn, isAToB] as const,
+      args: [network.addresses.keelRouter, toOrderTuple(s.order), amountIn, isAToB] as const,
     })),
     query: { enabled: strategies.length > 0 && amountIn > 0n, refetchInterval: REFRESH_MS },
   });
@@ -95,7 +98,8 @@ export function useBestQuote(strategies: LiveStrategy[], amountIn: bigint, isATo
 export function useMarketSwap() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const onRightChain = isConnected && chainId === CHAIN.id;
+  const { network } = useNetwork();
+  const onRightChain = isConnected && chainId === network.chain.id;
   const { mutateAsync: write } = useWriteContract();
 
   async function swap(best: QuoteResult, tokenIn: Hex, amountIn: bigint, isAToB: boolean) {
@@ -105,25 +109,25 @@ export function useMarketSwap() {
       address: tokenIn,
       abi: ERC20_ABI,
       functionName: "approve",
-      args: [ADDRESSES.demoTaker, amountIn],
-      chainId: CHAIN.id,
+      args: [network.addresses.demoTaker, amountIn],
+      chainId: network.chain.id,
     });
     await new Promise((r) => setTimeout(r, 2_500));
 
     return write({
-      address: ADDRESSES.demoTaker,
+      address: network.addresses.demoTaker,
       abi: DEMO_TAKER_ABI,
       functionName: "fill",
-      args: [ADDRESSES.keelRouter, toOrderTuple(best.strategy.order), amountIn, isAToB],
-      chainId: CHAIN.id,
+      args: [network.addresses.keelRouter, toOrderTuple(best.strategy.order), amountIn, isAToB],
+      chainId: network.chain.id,
     });
   }
 
   return { swap, onRightChain, isConnected };
 }
 
-export function parseSide(amount: string, isAToB: boolean): bigint {
-  const decimals = isAToB ? DEMO_TOKENS[0].decimals : DEMO_TOKENS[1].decimals;
+export function parseSide(network: Network, amount: string, isAToB: boolean): bigint {
+  const decimals = isAToB ? network.tokens[0].decimals : network.tokens[1].decimals;
   try {
     return parseUnits(amount || "0", decimals);
   } catch {

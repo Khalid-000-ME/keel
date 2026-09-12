@@ -2,7 +2,8 @@
 
 import type { Hex } from "viem";
 
-import { DEMO_TOKENS, explorerTx } from "@/lib/chain";
+import { explorerTx } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { STRATEGY_PRESETS, useStrategyBuilder } from "@/lib/use-strategy-builder";
 import { FieldLabel } from "@/components/NumericReadout";
 import { SkewPreview } from "@/components/strategies/skew-preview";
@@ -10,6 +11,7 @@ import { ProgramInspector } from "@/components/strategies/program-inspector";
 
 export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
   const b = useStrategyBuilder(onShipped);
+  const { network } = useNetwork();
 
   return (
     <div className="flex flex-col gap-6">
@@ -36,7 +38,7 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <NumberField
-            label={`Inventory ${DEMO_TOKENS[0].symbol}`}
+            label={`Inventory ${network.tokens[0].symbol}`}
             hint="committed to the position"
             value={b.draft.amount0}
             step={10}
@@ -46,7 +48,7 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
             }}
           />
           <NumberField
-            label={`Inventory ${DEMO_TOKENS[1].symbol}`}
+            label={`Inventory ${network.tokens[1].symbol}`}
             hint="the other side of the pair"
             value={b.draft.amount1}
             step={10}
@@ -133,7 +135,7 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          {DEMO_TOKENS.map((t, i) =>
+          {network.tokens.map((t, i) =>
             b.needsApproval[i] ? (
               <button
                 key={t.address}
@@ -166,7 +168,7 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
             {b.status}{" "}
             {b.txHash && (
               <a
-                href={explorerTx(b.txHash)}
+                href={explorerTx(network, b.txHash)}
                 target="_blank"
                 rel="noreferrer"
                 className="font-numeric text-amber-bright hover:underline"

@@ -1,6 +1,6 @@
 "use client";
 
-import { CHAIN } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { useLiveStrategies } from "@/lib/use-market";
 import { Web3Providers } from "@/components/web3/providers";
 import { WalletBar } from "@/components/web3/wallet-bar";
@@ -10,7 +10,7 @@ import { MarketCurves } from "@/components/strategies/market-curves";
 import { MarketSwapPanel } from "@/components/strategies/market-swap-panel";
 
 /**
- * Every shipped, still-quoting strategy on {@link CHAIN}, compared on one
+ * Every shipped, still-quoting strategy on the selected network, compared on one
  * screen: their quote curves overlaid on the left, a real swap that checks
  * all of them and routes to the best price on the right. Strategies only
  * exist in the browser that shipped them (see strategy-store.ts), so "the
@@ -26,6 +26,7 @@ export default function MarketPage() {
 }
 
 function MarketInner() {
+  const { network } = useNetwork();
   const { strategies } = useLiveStrategies();
 
   return (
@@ -34,7 +35,7 @@ function MarketInner() {
       <div className="relative mx-auto max-w-6xl px-6 pt-28 pb-24">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <FieldLabel>Market — {CHAIN.name}</FieldLabel>
+            <FieldLabel>Market — {network.chain.name}</FieldLabel>
             <h1 className="font-numeric text-readout mt-2 text-lg sm:text-xl">
               Every live Keel position, one price
             </h1>

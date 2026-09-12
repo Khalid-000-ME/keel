@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { formatUnits, type Hex } from "viem";
 
-import { DEMO_TOKENS, explorerTx } from "@/lib/chain";
+import { explorerTx } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { parseSide, useBestQuote, useMarketSwap, type LiveStrategy } from "@/lib/use-market";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { txErrorText } from "@/lib/tx-error";
@@ -23,9 +24,10 @@ export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) 
   const [txHash, setTxHash] = useState<Hex | undefined>();
   const [busy, setBusy] = useState(false);
 
-  const tokenIn = DEMO_TOKENS[isAToB ? 0 : 1];
-  const tokenOut = DEMO_TOKENS[isAToB ? 1 : 0];
-  const amountIn = parseSide(amount, isAToB);
+  const { network } = useNetwork();
+  const tokenIn = network.tokens[isAToB ? 0 : 1];
+  const tokenOut = network.tokens[isAToB ? 1 : 0];
+  const amountIn = parseSide(network, amount, isAToB);
 
   const { quotes, best } = useBestQuote(strategies, amountIn, isAToB);
   const { swap, onRightChain, isConnected } = useMarketSwap();
@@ -131,7 +133,7 @@ export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) 
         <p className="text-readout-dim mt-3 text-[12px]">
           {status}{" "}
           {txHash && (
-            <a href={explorerTx(txHash)} target="_blank" rel="noreferrer" className="font-numeric text-amber-bright hover:underline">
+            <a href={explorerTx(network, txHash)} target="_blank" rel="noreferrer" className="font-numeric text-amber-bright hover:underline">
               {txHash.slice(0, 10)}…
             </a>
           )}

@@ -6,7 +6,7 @@ import { injected } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { EIP1193Provider } from "viem";
 
-import { CHAIN, RPC_URLS } from "@/lib/chain";
+import { BASE_SEPOLIA_RPC_URLS, NETWORKS } from "@/lib/chain";
 
 /**
  * The subset of wallet self-identification flags injected providers set.
@@ -80,7 +80,7 @@ function providerName(provider: FlaggedProvider): string {
  * nothing here and is one less thing touching window.ethereum.
  */
 export const wagmiConfig = createConfig({
-  chains: [CHAIN],
+  chains: [NETWORKS[0].chain, NETWORKS[1].chain, NETWORKS[2].chain],
   connectors: [
     injected({
       target() {
@@ -95,9 +95,16 @@ export const wagmiConfig = createConfig({
       },
     }),
   ],
-  // Round-robins/falls over across every URL in RPC_URLS on error, so one
-  // public endpoint's rate limit doesn't take the whole console down.
-  transports: { [CHAIN.id]: fallback(RPC_URLS.map((url) => http(url))) },
+  // Base Sepolia round-robins/falls over across every URL in
+  // BASE_SEPOLIA_RPC_URLS on error, so one public endpoint's rate limit
+  // doesn't take the whole console down; the other two chains aren't
+  // console-primary yet (see README's "What's deferred"), so they use a
+  // single default http() transport each.
+  transports: {
+    [NETWORKS[0].chain.id]: fallback(BASE_SEPOLIA_RPC_URLS.map((url) => http(url))),
+    [NETWORKS[1].chain.id]: http(),
+    [NETWORKS[2].chain.id]: http(),
+  },
   multiInjectedProviderDiscovery: false,
   ssr: true,
 });

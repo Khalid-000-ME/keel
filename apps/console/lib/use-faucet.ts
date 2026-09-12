@@ -4,7 +4,8 @@ import { useState } from "react";
 import { formatUnits, parseEther } from "viem";
 import { useAccount, useChainId, useReadContracts, useWriteContract } from "wagmi";
 
-import { CHAIN, DEMO_TOKENS, ERC20_ABI } from "@/lib/chain";
+import { ERC20_ABI, type TokenDef } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 
 export const WRAP_AMOUNT_ETH = "0.01";
 export const USDC_FAUCET_URL = "https://faucet.circle.com";
@@ -17,7 +18,7 @@ export const USDC_FAUCET_URL = "https://faucet.circle.com";
  * has to come from an external faucet (Circle's) -- there's no on-chain call
  * that can hand out real USDC.
  *
- * `chainId: CHAIN.id` is passed on every write deliberately: without it,
+ * `chainId: network.chain.id` is passed on every write deliberately: without it,
  * `writeContract` submits on whatever network the wallet's extension
  * currently has active, not the one this page is built for. A wallet
  * sitting on an unrelated chain would otherwise sign a transaction there
@@ -27,13 +28,14 @@ export const USDC_FAUCET_URL = "https://faucet.circle.com";
 export function useFaucet() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const onRightChain = isConnected && chainId === CHAIN.id;
+  const { network } = useNetwork();
+  const onRightChain = isConnected && chainId === network.chain.id;
 
   const [minting, setMinting] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
 
   const { data: balances, refetch } = useReadContracts({
-    contracts: DEMO_TOKENS.map((t) => ({
+    contracts: network.tokens.map((t) => ({
       address: t.address,
       abi: ERC20_ABI,
       functionName: "balanceOf" as const,
@@ -44,7 +46,7 @@ export function useFaucet() {
 
   const { mutateAsync: write } = useWriteContract();
 
-  async function wrapEth(token: (typeof DEMO_TOKENS)[number]) {
+  async function wrapEth(token: TokenDef) {
     if (!address || !onRightChain || token.symbol !== "WETH") return;
     setMinting(token.symbol);
     try {
@@ -53,7 +55,7 @@ export function useFaucet() {
         abi: ERC20_ABI,
         functionName: "deposit",
         value: parseEther(WRAP_AMOUNT_ETH),
-        chainId: CHAIN.id,
+        chainId: network.chain.id,
       });
       setTxHash(hash);
       await new Promise((r) => setTimeout(r, 3_000));
@@ -65,7 +67,7 @@ export function useFaucet() {
     }
   }
 
-  const readable = DEMO_TOKENS.map((t, i) => {
+  const readable = network.tokens.map((t, i) => {
     const raw = balances?.[i]?.result as bigint | undefined;
     return { ...t, raw, formatted: raw !== undefined ? Number(formatUnits(raw, t.decimals)) : null };
   });

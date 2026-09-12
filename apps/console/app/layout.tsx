@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans, Montserrat } from "next/font/google";
 import { Nav } from "@/components/Nav";
+import { NetworkProvider } from "@/lib/use-network";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
@@ -61,8 +62,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${ibmPlexMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${montserrat.variable}`}
     >
       <body className="bg-graphite text-readout min-h-screen antialiased">
-        <Nav />
-        {children}
+        <NetworkProvider>
+          <Nav />
+          {children}
+        </NetworkProvider>
         <footer className="border-hairline/60 relative mt-32 overflow-hidden border-t">
           <div
             aria-hidden

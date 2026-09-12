@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
 import { FieldLabel } from "@/components/NumericReadout";
-import { InlineLink } from "@/components/ui/button";
 import { StrategyWorkbench } from "@/components/strategies/strategy-workbench";
-import { ADDRESSES, CHAIN, explorerAddress } from "@/lib/chain";
+import { NetworkInfoBar } from "@/components/strategies/network-info";
 
 export const metadata: Metadata = {
   title: "Keel — ship a strategy",
@@ -26,33 +25,7 @@ export default function StrategiesPage() {
           right, ship, and manage what's shipped below. One screen, nothing mocked.
         </p>
 
-        <div className="text-readout-dim mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]">
-          <span>
-            Aqua{" "}
-            <a
-              href={explorerAddress(ADDRESSES.aqua)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-numeric text-readout hover:text-amber-bright transition-colors"
-            >
-              {ADDRESSES.aqua.slice(0, 10)}…
-            </a>
-          </span>
-          <span>
-            KeelRouter{" "}
-            <a
-              href={explorerAddress(ADDRESSES.keelRouter)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-numeric text-readout hover:text-amber-bright transition-colors"
-            >
-              {ADDRESSES.keelRouter.slice(0, 10)}…
-            </a>
-          </span>
-          <span className="font-numeric">{CHAIN.name}</span>
-          <InlineLink href="/mechanism">What the parameters mean</InlineLink>
-          <InlineLink href="/strategies/guided">Prefer a guided walkthrough?</InlineLink>
-        </div>
+        <NetworkInfoBar />
 
         <div className="mt-12">
           <StrategyWorkbench />

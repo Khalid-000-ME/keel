@@ -2,7 +2,8 @@
 
 import { useAccount, useChainId, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 
-import { CHAIN, explorerAddress } from "@/lib/chain";
+import { explorerAddress } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { FieldLabel } from "@/components/NumericReadout";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +13,9 @@ export function shortAddress(address?: string) {
 
 /**
  * Connect / network state for the strategy console. Everything downstream
- * assumes a connected wallet on the right chain, so this is the one gate --
- * it renders the reason it's blocking rather than silently disabling forms.
+ * assumes a connected wallet on the *selected* chain (the navbar's network
+ * switcher, see Nav.tsx), so this is the one gate -- it renders the reason
+ * it's blocking rather than silently disabling forms.
  */
 export function WalletBar() {
   const { address, isConnected } = useAccount();
@@ -21,9 +23,10 @@ export function WalletBar() {
   const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const { network } = useNetwork();
 
   const injectedConnector = connectors[0];
-  const wrongChain = isConnected && chainId !== CHAIN.id;
+  const wrongChain = isConnected && chainId !== network.chain.id;
 
   return (
     <div className="border-hairline bg-panel/50 flex flex-wrap items-center justify-between gap-4 border p-4 backdrop-blur">
@@ -31,7 +34,7 @@ export function WalletBar() {
         <FieldLabel>Wallet</FieldLabel>
         {isConnected ? (
           <a
-            href={explorerAddress(address!)}
+            href={explorerAddress(network, address!)}
             target="_blank"
             rel="noreferrer"
             className="font-numeric text-readout hover:text-amber-bright text-[13px] transition-colors"
@@ -57,7 +60,7 @@ export function WalletBar() {
               !isConnected ? "bg-hairline-bright" : wrongChain ? "bg-short-bright" : "bg-long-bright",
             )}
           />
-          {isConnected ? (wrongChain ? `Chain ${chainId} — wrong network` : CHAIN.name) : CHAIN.name}
+          {isConnected ? (wrongChain ? `Chain ${chainId} — wrong network` : network.chain.name) : network.chain.name}
         </span>
       </div>
 
@@ -75,11 +78,11 @@ export function WalletBar() {
         {wrongChain && (
           <button
             type="button"
-            onClick={() => switchChain({ chainId: CHAIN.id })}
+            onClick={() => switchChain({ chainId: network.chain.id })}
             disabled={isSwitching}
             className="font-numeric bg-amber-bright text-graphite px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {isSwitching ? "Switching…" : `Switch to ${CHAIN.name}`}
+            {isSwitching ? "Switching…" : `Switch to ${network.chain.name}`}
           </button>
         )}
         {isConnected && (

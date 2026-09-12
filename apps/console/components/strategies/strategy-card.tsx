@@ -5,7 +5,8 @@ import Link from "next/link";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
-import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
+import { AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { TiltGauge } from "@/components/TiltGauge";
@@ -27,37 +28,42 @@ const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.t
 export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy; onChanged: () => void }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const onRightChain = isConnected && chainId === CHAIN.id;
+  const { network } = useNetwork();
+  const onRightChain = isConnected && chainId === network.chain.id;
   const [fillSize, setFillSize] = useState(5);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<Hex | undefined>();
 
   const orderTuple = toOrderTuple(strategy.order);
-  const amountIn = parseUnits(String(fillSize), 18);
+  // fillSize is a human amount of "the token being sold in this direction" --
+  // token0/token1 can have different decimals (USDC 6, WETH 18), so each
+  // direction parses it against its own token's decimals.
+  const amountInExposed = parseUnits(String(fillSize), network.tokens[0].decimals);
+  const amountInCovered = parseUnits(String(fillSize), network.tokens[1].decimals);
   const docked = Boolean(strategy.dockedTxHash);
 
   const { data: balances, refetch: refetchBalances } = useReadContract({
-    address: ADDRESSES.aqua,
+    address: network.addresses.aqua,
     abi: AQUA_ABI,
     functionName: "safeBalances",
-    args: [strategy.order.maker, ADDRESSES.keelRouter, strategy.strategyHash, strategy.token0, strategy.token1],
+    args: [strategy.order.maker, network.addresses.keelRouter, strategy.strategyHash, strategy.token0, strategy.token1],
     query: { refetchInterval: REFRESH_MS },
   });
 
   const { data: quotes, refetch: refetchQuotes } = useReadContracts({
     contracts: [
       {
-        address: ADDRESSES.demoTaker,
+        address: network.addresses.demoTaker,
         abi: DEMO_TAKER_ABI,
         functionName: "previewFill" as const,
-        args: [ADDRESSES.keelRouter, orderTuple, amountIn, true],
+        args: [network.addresses.keelRouter, orderTuple, amountInExposed, true],
       },
       {
-        address: ADDRESSES.demoTaker,
+        address: network.addresses.demoTaker,
         abi: DEMO_TAKER_ABI,
         functionName: "previewFill" as const,
-        args: [ADDRESSES.keelRouter, orderTuple, amountIn, false],
+        args: [network.addresses.keelRouter, orderTuple, amountInCovered, false],
       },
     ],
     query: { refetchInterval: REFRESH_MS, enabled: !docked },
@@ -67,13 +73,13 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
 
   const bal0 = balances?.[0];
   const bal1 = balances?.[1];
-  const inventory = bal0 !== undefined ? Number(formatUnits(bal0, 18)) : null;
+  const inventory = bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)) : null;
   const drift = inventory !== null ? inventory - strategy.params.targetInventory : null;
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
-  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, 18)) / fillSize : null;
-  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, 18)) / fillSize : null;
+  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize : null;
+  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) / fillSize : null;
   const asymmetry = exposedRate !== null && coveredRate !== null ? coveredRate - exposedRate : null;
 
   async function refreshAll() {
@@ -84,6 +90,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   async function testFill(isAToB: boolean) {
     if (!address || !onRightChain) return;
     const tokenIn = isAToB ? strategy.token0 : strategy.token1;
+    const amountIn = isAToB ? amountInExposed : amountInCovered;
     const label = isAToB ? "exposed-side" : "covered-side";
     setBusy(label);
     try {
@@ -92,18 +99,18 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
         address: tokenIn,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [ADDRESSES.demoTaker, amountIn],
-        chainId: CHAIN.id,
+        args: [network.addresses.demoTaker, amountIn],
+        chainId: network.chain.id,
       });
       await new Promise((r) => setTimeout(r, 2_500));
 
       setStatus(`Filling ${label}…`);
       const hash = await write({
-        address: ADDRESSES.demoTaker,
+        address: network.addresses.demoTaker,
         abi: DEMO_TAKER_ABI,
         functionName: "fill",
-        args: [ADDRESSES.keelRouter, orderTuple, amountIn, isAToB],
-        chainId: CHAIN.id,
+        args: [network.addresses.keelRouter, orderTuple, amountIn, isAToB],
+        chainId: network.chain.id,
       });
       setTxHash(hash);
       setStatus(`Filled ${label} — watch the quotes move.`);
@@ -122,11 +129,11 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
     setStatus("Docking — returning the inventory…");
     try {
       const hash = await write({
-        address: ADDRESSES.aqua,
+        address: network.addresses.aqua,
         abi: AQUA_ABI,
         functionName: "dock",
-        args: [ADDRESSES.keelRouter, strategy.strategyHash, [strategy.token0, strategy.token1]],
-        chainId: CHAIN.id,
+        args: [network.addresses.keelRouter, strategy.strategyHash, [strategy.token0, strategy.token1]],
+        chainId: network.chain.id,
       });
       setTxHash(hash);
       markDocked(strategy.strategyHash, hash);
@@ -157,7 +164,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
           <p className="text-readout-dim mt-1 text-[11px]">
             {strategy.symbol0} / {strategy.symbol1} · shipped{" "}
             <a
-              href={explorerTx(strategy.shipTxHash)}
+              href={explorerTx(network, strategy.shipTxHash)}
               target="_blank"
               rel="noreferrer"
               className="font-numeric text-amber-bright hover:underline"
@@ -197,8 +204,8 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
             />
           </div>
           <div className="border-hairline/60 mt-4 grid grid-cols-3 gap-px border-t pt-4">
-            <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, 18)).toFixed(2) : "—"} />
-            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, 18)).toFixed(2) : "—"} />
+            <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)).toFixed(2) : "—"} />
+            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, network.tokens[1].decimals)).toFixed(4) : "—"} />
             <Mini
               label="drift q"
               value={drift !== null ? `${drift > 0 ? "+" : ""}${drift.toFixed(2)}` : "—"}
@@ -289,7 +296,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
               {status}{" "}
               {txHash && (
                 <a
-                  href={explorerTx(txHash)}
+                  href={explorerTx(network, txHash)}
                   target="_blank"
                   rel="noreferrer"
                   className="font-numeric text-amber-bright hover:underline"

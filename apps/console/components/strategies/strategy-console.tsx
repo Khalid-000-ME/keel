@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
-import { CHAIN } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { loadStrategies, type StoredStrategy } from "@/lib/strategy-store";
 import { Web3Providers } from "@/components/web3/providers";
 import { WalletBar } from "@/components/web3/wallet-bar";
@@ -22,12 +22,13 @@ export function StrategyConsole() {
 
 function ConsoleInner() {
   const { isConnected } = useAccount();
+  const { network } = useNetwork();
   const [strategies, setStrategies] = useState<StoredStrategy[]>([]);
   // localStorage is client-only, so the first paint has to match the server's
   // empty list or React will complain about the mismatch.
   const [hydrated, setHydrated] = useState(false);
 
-  const refresh = useCallback(() => setStrategies(loadStrategies(CHAIN.id)), []);
+  const refresh = useCallback(() => setStrategies(loadStrategies(network.chain.id)), [network.chain.id]);
 
   useEffect(() => {
     refresh();
@@ -41,7 +42,7 @@ function ConsoleInner() {
       {!isConnected && (
         <div className="border-hairline/60 bg-panel/20 border border-dashed p-6">
           <p className="text-readout-dim text-[13px] leading-relaxed">
-            Connect a wallet on {CHAIN.name} to mint test inventory, ship a strategy, and fill against it. Everything
+            Connect a wallet on {network.chain.name} to fund inventory, ship a strategy, and fill against it. Everything
             below writes to the same live Aqua + KeelRouter deployment the rest of this site documents — there is no
             sandbox mode and no mocked state.
           </p>

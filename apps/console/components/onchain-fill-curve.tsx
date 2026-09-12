@@ -1,5 +1,5 @@
 import { onchainDemo } from "@/lib/onchain-demo";
-import { explorerTx } from "@/lib/chain";
+import { DEFAULT_NETWORK, explorerTx } from "@/lib/chain";
 import { wadToNumber } from "@/lib/wad";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 
@@ -86,7 +86,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
           <FieldLabel>Measured on-chain · {onchainDemo.chain}</FieldLabel>
         </div>
         <a
-          href={explorerTx(onchainDemo.shipTxHash)}
+          href={explorerTx(DEFAULT_NETWORK, onchainDemo.shipTxHash)}
           target="_blank"
           rel="noreferrer"
           className="text-readout-dim hover:text-readout font-numeric text-[11px] underline decoration-dotted underline-offset-4 transition-colors"
@@ -172,7 +172,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
           {/* every point is a link to its own transaction -- the whole claim
               of this chart is that a reader can go check it */}
           {POINTS.map((p) => (
-            <a key={p.txHash} href={explorerTx(p.txHash)} target="_blank" rel="noreferrer">
+            <a key={p.txHash} href={explorerTx(DEFAULT_NETWORK, p.txHash)} target="_blank" rel="noreferrer">
               <title>{`tick ${p.tick} · q ${p.q >= 0 ? "+" : ""}${p.q.toFixed(0)} · rate ${p.rate.toFixed(6)} · block ${p.blockNumber} · ${p.txHash}`}</title>
               <circle cx={xFor(p.q)} cy={yFor(p.rate)} r={10} fill="transparent" />
               <circle
@@ -286,7 +286,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
                     </td>
                     <td className="px-5 py-2 text-right">
                       <a
-                        href={explorerTx(p.txHash)}
+                        href={explorerTx(DEFAULT_NETWORK, p.txHash)}
                         target="_blank"
                         rel="noreferrer"
                         className="text-readout-dim hover:text-readout font-numeric text-[12px] underline decoration-dotted underline-offset-4 transition-colors"
@@ -306,7 +306,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
           {POINTS.slice(0, 2).map((p) => (
             <a
               key={p.txHash}
-              href={explorerTx(p.txHash)}
+              href={explorerTx(DEFAULT_NETWORK, p.txHash)}
               target="_blank"
               rel="noreferrer"
               className="text-readout-dim hover:text-readout font-numeric underline decoration-dotted underline-offset-4 transition-colors"
@@ -315,7 +315,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
             </a>
           ))}
           <a
-            href={explorerTx(POINTS[POINTS.length - 1].txHash)}
+            href={explorerTx(DEFAULT_NETWORK, POINTS[POINTS.length - 1].txHash)}
             target="_blank"
             rel="noreferrer"
             className="text-readout-dim hover:text-readout font-numeric underline decoration-dotted underline-offset-4 transition-colors"

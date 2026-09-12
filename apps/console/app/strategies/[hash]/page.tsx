@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
-import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, DEMO_TOKENS, ERC20_ABI, explorerTx } from "@/lib/chain";
+import { AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { loadStrategy, markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
 import { Web3Providers } from "@/components/web3/providers";
 import { WalletBar } from "@/components/web3/wallet-bar";
@@ -64,7 +65,8 @@ function DetailInner() {
 function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const onRightChain = isConnected && chainId === CHAIN.id;
+  const { network } = useNetwork();
+  const onRightChain = isConnected && chainId === network.chain.id;
 
   const [fillSize, setFillSize] = useState(5);
   const [busy, setBusy] = useState<string | null>(null);
@@ -80,23 +82,23 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   // token0 (exposed side, sold in) and token1 (covered side, sold in) can
   // have different decimals (USDC 6, WETH 18), so each direction parses it
   // against its own token's decimals rather than assuming 18 for both.
-  const amountInExposed = parseUnits(String(fillSize), DEMO_TOKENS[0].decimals);
-  const amountInCovered = parseUnits(String(fillSize), DEMO_TOKENS[1].decimals);
+  const amountInExposed = parseUnits(String(fillSize), network.tokens[0].decimals);
+  const amountInCovered = parseUnits(String(fillSize), network.tokens[1].decimals);
   const docked = Boolean(strategy.dockedTxHash);
   const isMine = address?.toLowerCase() === strategy.order.maker.toLowerCase();
 
   const { data: balances, refetch: refetchBalances } = useReadContract({
-    address: ADDRESSES.aqua,
+    address: network.addresses.aqua,
     abi: AQUA_ABI,
     functionName: "safeBalances",
-    args: [strategy.order.maker, ADDRESSES.keelRouter, strategy.strategyHash, strategy.token0, strategy.token1],
+    args: [strategy.order.maker, network.addresses.keelRouter, strategy.strategyHash, strategy.token0, strategy.token1],
     query: { refetchInterval: REFRESH_MS },
   });
 
   const { data: quotes, dataUpdatedAt: quotesUpdatedAt, refetch: refetchQuotes } = useReadContracts({
     contracts: [
-      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountInExposed, true] },
-      { address: ADDRESSES.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [ADDRESSES.keelRouter, orderTuple, amountInCovered, false] },
+      { address: network.addresses.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [network.addresses.keelRouter, orderTuple, amountInExposed, true] },
+      { address: network.addresses.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [network.addresses.keelRouter, orderTuple, amountInCovered, false] },
     ],
     query: { refetchInterval: REFRESH_MS, enabled: !docked },
   });
@@ -105,13 +107,13 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
   const bal0 = balances?.[0];
   const bal1 = balances?.[1];
-  const inventory = bal0 !== undefined ? Number(formatUnits(bal0, DEMO_TOKENS[0].decimals)) : null;
+  const inventory = bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)) : null;
   const drift = inventory !== null ? inventory - strategy.params.targetInventory : null;
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
-  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, DEMO_TOKENS[1].decimals)) / fillSize : null;
-  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, DEMO_TOKENS[0].decimals)) / fillSize : null;
+  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize : null;
+  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) / fillSize : null;
 
   // The series carries poll samples too; the table below is only about fills.
   const fills = history.filter((h) => h.kind === "fill");
@@ -151,18 +153,18 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
         address: tokenIn,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [ADDRESSES.demoTaker, amountIn],
-        chainId: CHAIN.id,
+        args: [network.addresses.demoTaker, amountIn],
+        chainId: network.chain.id,
       });
       await new Promise((r) => setTimeout(r, 2_500));
 
       setStatus(`Filling ${label}…`);
       const hash = await write({
-        address: ADDRESSES.demoTaker,
+        address: network.addresses.demoTaker,
         abi: DEMO_TAKER_ABI,
         functionName: "fill",
-        args: [ADDRESSES.keelRouter, orderTuple, amountIn, isAToB],
-        chainId: CHAIN.id,
+        args: [network.addresses.keelRouter, orderTuple, amountIn, isAToB],
+        chainId: network.chain.id,
       });
       setTxHash(hash);
       setStatus(`Filled ${label} — watch the lines step.`);
@@ -185,11 +187,11 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
     setStatus("Docking — returning the inventory…");
     try {
       const hash = await write({
-        address: ADDRESSES.aqua,
+        address: network.addresses.aqua,
         abi: AQUA_ABI,
         functionName: "dock",
-        args: [ADDRESSES.keelRouter, strategy.strategyHash, [strategy.token0, strategy.token1]],
-        chainId: CHAIN.id,
+        args: [network.addresses.keelRouter, strategy.strategyHash, [strategy.token0, strategy.token1]],
+        chainId: network.chain.id,
       });
       setTxHash(hash);
       markDocked(strategy.strategyHash, hash);
@@ -212,7 +214,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
           <p className="text-readout-dim mt-1.5 text-[12px]">
             {strategy.symbol0} / {strategy.symbol1} · shipped{" "}
             <a
-              href={explorerTx(strategy.shipTxHash)}
+              href={explorerTx(network, strategy.shipTxHash)}
               target="_blank"
               rel="noreferrer"
               className="font-numeric text-amber-bright hover:underline"
@@ -247,8 +249,8 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
             />
           </div>
           <div className="border-hairline/60 mt-4 grid grid-cols-3 gap-px border-t pt-4">
-            <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, DEMO_TOKENS[0].decimals)).toFixed(2) : "—"} />
-            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, DEMO_TOKENS[1].decimals)).toFixed(4) : "—"} />
+            <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)).toFixed(2) : "—"} />
+            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, network.tokens[1].decimals)).toFixed(4) : "—"} />
             <Mini
               label="drift q"
               value={drift !== null ? `${drift > 0 ? "+" : ""}${drift.toFixed(2)}` : "—"}
@@ -328,7 +330,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
               {status}{" "}
               {txHash && (
                 <a
-                  href={explorerTx(txHash)}
+                  href={explorerTx(network, txHash)}
                   target="_blank"
                   rel="noreferrer"
                   className="font-numeric text-amber-bright hover:underline"

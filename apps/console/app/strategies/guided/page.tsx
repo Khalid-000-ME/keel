@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
 import { FieldLabel } from "@/components/NumericReadout";
-import { InlineLink } from "@/components/ui/button";
 import { StrategyConsole } from "@/components/strategies/strategy-console";
-import { ADDRESSES, CHAIN, explorerAddress } from "@/lib/chain";
+import { NetworkInfoBar } from "@/components/strategies/network-info";
 
 export const metadata: Metadata = {
   title: "Keel — ship a strategy (guided)",
@@ -33,33 +32,7 @@ export default function GuidedStrategiesPage() {
           respond, inspect the exact bytecode, then ship it — and hit it with fills to watch the price defend itself.
         </p>
 
-        <div className="text-readout-dim mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]">
-          <span>
-            Aqua{" "}
-            <a
-              href={explorerAddress(ADDRESSES.aqua)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-numeric text-readout hover:text-amber-bright transition-colors"
-            >
-              {ADDRESSES.aqua.slice(0, 10)}…
-            </a>
-          </span>
-          <span>
-            KeelRouter{" "}
-            <a
-              href={explorerAddress(ADDRESSES.keelRouter)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-numeric text-readout hover:text-amber-bright transition-colors"
-            >
-              {ADDRESSES.keelRouter.slice(0, 10)}…
-            </a>
-          </span>
-          <span className="font-numeric">{CHAIN.name}</span>
-          <InlineLink href="/mechanism">What the parameters mean</InlineLink>
-          <InlineLink href="/strategies">Try the single-screen version</InlineLink>
-        </div>
+        <NetworkInfoBar alternateLink={{ href: "/strategies", label: "Try the single-screen version" }} />
 
         <div className="mt-12">
           <StrategyConsole />

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { Hex } from "viem";
 import { useAccount } from "wagmi";
 
-import { CHAIN, DEMO_TOKENS, explorerTx } from "@/lib/chain";
+import { explorerTx } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { USDC_FAUCET_URL, useFaucet } from "@/lib/use-faucet";
 import { STRATEGY_PRESETS, useStrategyBuilder } from "@/lib/use-strategy-builder";
 import { loadStrategies, type StoredStrategy } from "@/lib/strategy-store";
@@ -35,10 +36,11 @@ export function StrategyWorkbench() {
 
 function WorkbenchInner() {
   const { isConnected } = useAccount();
+  const { network } = useNetwork();
   const [strategies, setStrategies] = useState<StoredStrategy[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  const refresh = useCallback(() => setStrategies(loadStrategies(CHAIN.id)), []);
+  const refresh = useCallback(() => setStrategies(loadStrategies(network.chain.id)), [network.chain.id]);
   useEffect(() => {
     refresh();
     setHydrated(true);
@@ -54,7 +56,7 @@ function WorkbenchInner() {
       {!isConnected && (
         <div className="border-hairline/60 bg-panel/20 border border-dashed p-5">
           <p className="text-readout-dim text-[13px] leading-relaxed">
-            Connect a wallet on {CHAIN.name} to drive this — fund inventory, ship a strategy, fill against it. It
+            Connect a wallet on {network.chain.name} to drive this — fund inventory, ship a strategy, fill against it. It
             writes to the same live Aqua + KeelRouter deployment the rest of this site documents. There's no sandbox.
           </p>
         </div>
@@ -92,7 +94,7 @@ function WorkbenchInner() {
         ))}
         {faucet.txHash && (
           <a
-            href={explorerTx(faucet.txHash)}
+            href={explorerTx(network, faucet.txHash)}
             target="_blank"
             rel="noreferrer"
             className="font-numeric text-amber-bright ml-auto text-[11px] hover:underline"
@@ -125,7 +127,7 @@ function WorkbenchInner() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <NumberField
-              label={`Inventory ${DEMO_TOKENS[0].symbol}`}
+              label={`Inventory ${network.tokens[0].symbol}`}
               hint="committed to the position"
               value={b.draft.amount0}
               step={10}
@@ -135,7 +137,7 @@ function WorkbenchInner() {
               }}
             />
             <NumberField
-              label={`Inventory ${DEMO_TOKENS[1].symbol}`}
+              label={`Inventory ${network.tokens[1].symbol}`}
               hint="the other side of the pair"
               value={b.draft.amount1}
               step={10}
@@ -195,7 +197,7 @@ function WorkbenchInner() {
           </div>
 
           <div className="border-hairline/60 flex flex-wrap items-center gap-3 border-t pt-5">
-            {DEMO_TOKENS.map((t, i) =>
+            {network.tokens.map((t, i) =>
               b.needsApproval[i] ? (
                 <button
                   key={t.address}
@@ -227,7 +229,7 @@ function WorkbenchInner() {
               {b.status}{" "}
               {b.txHash && (
                 <a
-                  href={explorerTx(b.txHash)}
+                  href={explorerTx(network, b.txHash)}
                   target="_blank"
                   rel="noreferrer"
                   className="font-numeric text-amber-bright hover:underline"

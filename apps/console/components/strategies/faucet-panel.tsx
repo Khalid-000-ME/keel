@@ -1,6 +1,7 @@
 "use client";
 
 import { explorerTx } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { USDC_FAUCET_URL, useFaucet } from "@/lib/use-faucet";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 
@@ -12,6 +13,7 @@ import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
  */
 export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?: string }) {
   const { tokens, minting, txHash, wrapEth, onRightChain, wrapAmountEth } = useFaucet();
+  const { network } = useNetwork();
 
   return (
     <div className="border-hairline bg-panel/40 border p-6">
@@ -19,9 +21,9 @@ export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?
         <div>
           <FieldLabel>{heading}</FieldLabel>
           <p className="text-readout-dim mt-2 max-w-lg text-[13px] leading-relaxed">
-            A strategy has to hold something to lean on. WETH and USDC are the real Base Sepolia pair this console
-            quotes against — wrap some testnet ETH and grab USDC from Circle&apos;s faucet, then commit some of each
-            as the position&apos;s inventory below.
+            A strategy has to hold something to lean on. WETH and USDC are the real pair this console quotes against
+            on {network.chain.name} — wrap some testnet ETH and grab USDC from Circle&apos;s faucet, then commit some
+            of each as the position&apos;s inventory below.
           </p>
         </div>
       </div>
@@ -69,7 +71,7 @@ export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?
         <p className="text-readout-dim mt-3 text-[12px]">
           Wrapped{" "}
           <a
-            href={explorerTx(txHash)}
+            href={explorerTx(network, txHash)}
             target="_blank"
             rel="noreferrer"
             className="font-numeric text-amber-bright hover:underline"

@@ -5,7 +5,8 @@ import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { buildKeelProgram, buildOrder, encodeOrder } from "@keel/strategy-sdk/encoding";
 
-import { ADDRESSES, AQUA_ABI, CHAIN, DEMO_TAKER_ABI, DEMO_TOKENS, ERC20_ABI } from "@/lib/chain";
+import { AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { toWad } from "@/lib/keel-math";
 import { saveStrategy } from "@/lib/strategy-store";
 import { txErrorText } from "@/lib/tx-error";
@@ -72,7 +73,8 @@ export const DEFAULT_STRATEGY_DRAFT: StrategyDraft = {
 export function useStrategyBuilder(onShipped: () => void) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const onRightChain = isConnected && chainId === CHAIN.id;
+  const { network } = useNetwork();
+  const onRightChain = isConnected && chainId === network.chain.id;
 
   const [draft, setDraft] = useState<StrategyDraft>(DEFAULT_STRATEGY_DRAFT);
   const [status, setStatus] = useState<string | null>(null);
@@ -106,23 +108,23 @@ export function useStrategyBuilder(onShipped: () => void) {
         boundWad: toWad(draft.bound),
         horizonSecs: draft.horizonSecs,
         startTimestamp: nonce.startedAt,
-        tokenInDecimals: DEMO_TOKENS[0].decimals,
-        tokenOutDecimals: DEMO_TOKENS[1].decimals,
+        tokenInDecimals: network.tokens[0].decimals,
+        tokenOutDecimals: network.tokens[1].decimals,
       },
       nonce.salt,
     ) as Hex;
-  }, [draft, nonce]);
+  }, [draft, nonce, network]);
 
   const order = useMemo(() => {
     if (!address || !program) return null;
     return buildOrder({
       maker: address,
-      tokenA: DEMO_TOKENS[0].address,
-      tokenB: DEMO_TOKENS[1].address,
+      tokenA: network.tokens[0].address,
+      tokenB: network.tokens[1].address,
       useAquaInsteadOfSignature: true,
       program,
     });
-  }, [address, program]);
+  }, [address, program, network]);
 
   const orderTuple = useMemo(
     () => (order ? ({ maker: order.maker, traits: order.traits, data: order.data } as const) : null),
@@ -132,28 +134,28 @@ export function useStrategyBuilder(onShipped: () => void) {
   // The router's own hashing, not a re-derivation: whatever this returns is
   // the id Aqua files the strategy under.
   const { data: strategyHash } = useReadContract({
-    address: ADDRESSES.demoTaker,
+    address: network.addresses.demoTaker,
     abi: DEMO_TAKER_ABI,
     functionName: "hashOf",
-    args: orderTuple ? [ADDRESSES.keelRouter, orderTuple] : undefined,
+    args: orderTuple ? [network.addresses.keelRouter, orderTuple] : undefined,
     query: { enabled: Boolean(orderTuple) },
   });
 
   const { data: allowances, refetch: refetchAllowances } = useReadContracts({
-    contracts: DEMO_TOKENS.map((t) => ({
+    contracts: network.tokens.map((t) => ({
       address: t.address,
       abi: ERC20_ABI,
       functionName: "allowance" as const,
-      args: [address ?? "0x0000000000000000000000000000000000000000", ADDRESSES.aqua],
+      args: [address ?? "0x0000000000000000000000000000000000000000", network.addresses.aqua],
     })),
     query: { enabled: Boolean(address) },
   });
 
   const amounts = [
-    parseUnits(String(draft.amount0), DEMO_TOKENS[0].decimals),
-    parseUnits(String(draft.amount1), DEMO_TOKENS[1].decimals),
+    parseUnits(String(draft.amount0), network.tokens[0].decimals),
+    parseUnits(String(draft.amount1), network.tokens[1].decimals),
   ] as const;
-  const needsApproval = DEMO_TOKENS.map((_, i) => {
+  const needsApproval = network.tokens.map((_, i) => {
     const current = allowances?.[i]?.result as bigint | undefined;
     return current === undefined || current < amounts[i];
   });
@@ -163,19 +165,19 @@ export function useStrategyBuilder(onShipped: () => void) {
   async function approve(index: number) {
     if (!onRightChain) return;
     setBusy(true);
-    setStatus(`Approving ${DEMO_TOKENS[index].symbol}…`);
+    setStatus(`Approving ${network.tokens[index].symbol}…`);
     try {
       const hash = await write({
-        address: DEMO_TOKENS[index].address,
+        address: network.tokens[index].address,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [ADDRESSES.aqua, 2n ** 256n - 1n],
-        chainId: CHAIN.id,
+        args: [network.addresses.aqua, 2n ** 256n - 1n],
+        chainId: network.chain.id,
       });
       setTxHash(hash);
       await new Promise((r) => setTimeout(r, 3_000));
       await refetchAllowances();
-      setStatus(`${DEMO_TOKENS[index].symbol} approved.`);
+      setStatus(`${network.tokens[index].symbol} approved.`);
     } catch (e) {
       setStatus(txErrorText(e));
     } finally {
@@ -189,28 +191,28 @@ export function useStrategyBuilder(onShipped: () => void) {
     setStatus("Shipping strategy…");
     try {
       const hash = await write({
-        address: ADDRESSES.aqua,
+        address: network.addresses.aqua,
         abi: AQUA_ABI,
         functionName: "ship",
         args: [
-          ADDRESSES.keelRouter,
+          network.addresses.keelRouter,
           encodeOrder(order) as Hex,
-          [DEMO_TOKENS[0].address, DEMO_TOKENS[1].address],
+          [network.tokens[0].address, network.tokens[1].address],
           [amounts[0], amounts[1]],
         ],
-        chainId: CHAIN.id,
+        chainId: network.chain.id,
       });
       setTxHash(hash);
 
       saveStrategy({
         strategyHash: strategyHash as Hex,
         order: { maker: order.maker as Hex, traits: `0x${order.traits.toString(16)}` as Hex, data: order.data as Hex },
-        token0: DEMO_TOKENS[0].address,
-        token1: DEMO_TOKENS[1].address,
-        symbol0: DEMO_TOKENS[0].symbol,
-        symbol1: DEMO_TOKENS[1].symbol,
-        amount0: formatUnits(amounts[0], DEMO_TOKENS[0].decimals),
-        amount1: formatUnits(amounts[1], DEMO_TOKENS[1].decimals),
+        token0: network.tokens[0].address,
+        token1: network.tokens[1].address,
+        symbol0: network.tokens[0].symbol,
+        symbol1: network.tokens[1].symbol,
+        amount0: formatUnits(amounts[0], network.tokens[0].decimals),
+        amount1: formatUnits(amounts[1], network.tokens[1].decimals),
         params: {
           gamma: draft.gamma,
           sigmaSq: draft.sigmaSq,
@@ -221,7 +223,7 @@ export function useStrategyBuilder(onShipped: () => void) {
         },
         shipTxHash: hash,
         shippedAt: Date.now(),
-        chainId: CHAIN.id,
+        chainId: network.chain.id,
       });
 
       setStatus("Shipped. It's live below — quote and fill against it.");
