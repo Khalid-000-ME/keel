@@ -11,6 +11,7 @@ import { toWad } from "@/lib/keel-math";
 import { saveStrategy } from "@/lib/strategy-store";
 import { txErrorText } from "@/lib/tx-error";
 import { waitForTx } from "@/lib/wait-for-tx";
+import { toDecimalString } from "@/lib/decimal";
 
 export interface StrategyDraft {
   amount0: number;
@@ -171,8 +172,8 @@ export function useStrategyBuilder(onShipped: () => void) {
   });
 
   const amounts = [
-    parseUnits(String(draft.amount0), network.tokens[0].decimals),
-    parseUnits(String(draft.amount1), network.tokens[1].decimals),
+    parseUnits(toDecimalString(draft.amount0, network.tokens[0].decimals), network.tokens[0].decimals),
+    parseUnits(toDecimalString(draft.amount1, network.tokens[1].decimals), network.tokens[1].decimals),
   ] as const;
   const needsApproval = network.tokens.map((_, i) => {
     const current = allowances?.[i]?.result as bigint | undefined;

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { txErrorText } from "@/lib/tx-error";
 import { waitForTx } from "@/lib/wait-for-tx";
 import { PRICE_DECIMALS } from "@/lib/keel-math";
+import { toDecimalString } from "@/lib/decimal";
 
 const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.ts's RPC_URL note
 
@@ -46,8 +47,8 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   const [txHash, setTxHash] = useState<Hex | undefined>();
 
   const orderTuple = toOrderTuple(strategy.order);
-  const amountInExposed = parseUnits(String(fillSize0), network.tokens[0].decimals);
-  const amountInCovered = parseUnits(String(fillSize1), network.tokens[1].decimals);
+  const amountInExposed = parseUnits(toDecimalString(fillSize0, network.tokens[0].decimals), network.tokens[0].decimals);
+  const amountInCovered = parseUnits(toDecimalString(fillSize1, network.tokens[1].decimals), network.tokens[1].decimals);
   const docked = Boolean(strategy.dockedTxHash);
 
   const {
