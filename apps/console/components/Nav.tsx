@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { NETWORKS } from "@/lib/chain";
+import { useNetwork } from "@/lib/use-network";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -82,19 +84,84 @@ export function Nav() {
           ))}
         </div>
 
-        <a
-          href="https://sepolia.basescan.org/address/0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2"
-          target="_blank"
-          rel="noreferrer"
-          className="border-hairline hover:border-long/50 hover:bg-long/5 group hidden items-center gap-2 border px-3 py-1.5 text-[12px] transition-colors sm:flex"
-        >
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="bg-long-bright absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" />
-            <span className="bg-long-bright relative inline-flex h-1.5 w-1.5 rounded-full" />
-          </span>
-          <span className="text-readout-dim group-hover:text-readout font-numeric transition-colors">Base Sepolia</span>
-        </a>
+        <NetworkSwitcher />
       </nav>
     </header>
+  );
+}
+
+/**
+ * Picks which of Keel's three live deployments (see README's deployment
+ * table) the rest of the app reads/writes against -- `useNetwork`'s context
+ * (lib/use-network.tsx), not a wallet's own connected chain. Deliberately
+ * wallet-agnostic: Nav is mounted once in the root layout, above every
+ * page's own `<Web3Providers>`, so it has no wagmi context to switch a
+ * connected wallet's chain directly. If a wallet ends up on a different
+ * chain than what's selected here, WalletBar (inside each page) is what
+ * prompts that wallet to switch -- same pattern as before this existed,
+ * just generalized from one hardcoded chain to whichever one is picked.
+ */
+function NetworkSwitcher() {
+  const { network, setNetwork } = useNetwork();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="border-hairline hover:border-long/50 hover:bg-long/5 group hidden items-center gap-2 border px-3 py-1.5 text-[12px] transition-colors sm:flex"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="bg-long-bright absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" />
+          <span className="bg-long-bright relative inline-flex h-1.5 w-1.5 rounded-full" />
+        </span>
+        <span className="text-readout-dim group-hover:text-readout font-numeric transition-colors">
+          {network.chain.name}
+        </span>
+        <span className="text-readout-dim/60 text-[10px]">▾</span>
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="border-hairline bg-graphite-raised absolute right-0 mt-2 min-w-[180px] border py-1 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.8)]"
+        >
+          {NETWORKS.map((n) => (
+            <button
+              key={n.chain.id}
+              type="button"
+              role="option"
+              aria-selected={n.chain.id === network.chain.id}
+              onClick={() => {
+                setNetwork(n);
+                setOpen(false);
+              }}
+              className={cn(
+                "font-numeric flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[12px] transition-colors",
+                n.chain.id === network.chain.id
+                  ? "text-amber-bright bg-panel-raised/60"
+                  : "text-readout-dim hover:text-readout hover:bg-panel-raised/40",
+              )}
+            >
+              {n.chain.name}
+              {n.chain.id === network.chain.id && <span className="text-[10px]">●</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
