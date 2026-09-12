@@ -12,7 +12,7 @@ import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
  * faucet -- there's no contract call that can hand out real USDC.
  */
 export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?: string }) {
-  const { tokens, minting, txHash, wrapEth, onRightChain, wrapAmountEth } = useFaucet();
+  const { tokens, minting, txHash, error, wrapEth, onRightChain, wrapAmountEth } = useFaucet();
   const { network } = useNetwork();
 
   return (
@@ -67,7 +67,7 @@ export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?
         ))}
       </div>
 
-      {txHash && (
+      {txHash && !error && (
         <p className="text-readout-dim mt-3 text-[12px]">
           Wrapped{" "}
           <a
@@ -80,6 +80,8 @@ export function FaucetPanel({ heading = "Step 1 · Test inventory" }: { heading?
           </a>
         </p>
       )}
+
+      {error && <p className="text-short-bright mt-3 text-[12px]">{error}</p>}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { useAccount, useChainId, useReadContracts, useWriteContract } from "wagm
 import { AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI, type Network } from "@/lib/chain";
 import { useNetwork } from "@/lib/use-network";
 import { loadStrategies, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
+import { waitForTx } from "@/lib/wait-for-tx";
 
 export interface LiveStrategy extends StoredStrategy {
   balance0: number | null;
@@ -105,14 +106,14 @@ export function useMarketSwap() {
   async function swap(best: QuoteResult, tokenIn: Hex, amountIn: bigint, isAToB: boolean) {
     if (!address || !onRightChain) throw new Error("Connect a wallet on the right chain first.");
 
-    await write({
+    const approveHash = await write({
       address: tokenIn,
       abi: ERC20_ABI,
       functionName: "approve",
       args: [network.addresses.demoTaker, amountIn],
       chainId: network.chain.id,
     });
-    await new Promise((r) => setTimeout(r, 2_500));
+    await waitForTx(approveHash, network.chain.id);
 
     return write({
       address: network.addresses.demoTaker,

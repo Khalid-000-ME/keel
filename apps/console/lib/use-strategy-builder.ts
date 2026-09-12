@@ -10,6 +10,7 @@ import { useNetwork } from "@/lib/use-network";
 import { toWad } from "@/lib/keel-math";
 import { saveStrategy } from "@/lib/strategy-store";
 import { txErrorText } from "@/lib/tx-error";
+import { waitForTx } from "@/lib/wait-for-tx";
 
 export interface StrategyDraft {
   amount0: number;
@@ -175,7 +176,7 @@ export function useStrategyBuilder(onShipped: () => void) {
         chainId: network.chain.id,
       });
       setTxHash(hash);
-      await new Promise((r) => setTimeout(r, 3_000));
+      await waitForTx(hash, network.chain.id);
       await refetchAllowances();
       setStatus(`${network.tokens[index].symbol} approved.`);
     } catch (e) {
@@ -229,7 +230,7 @@ export function useStrategyBuilder(onShipped: () => void) {
       setStatus("Shipped. It's live below — quote and fill against it.");
       // A fresh nonce so the next strategy can't collide on hash.
       setNonce({ salt: BigInt(Date.now()), startedAt: Math.floor(Date.now() / 1000) });
-      await new Promise((r) => setTimeout(r, 2_500));
+      await waitForTx(hash, network.chain.id);
       onShipped();
     } catch (e) {
       setStatus(txErrorText(e));

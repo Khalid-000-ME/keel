@@ -13,6 +13,7 @@ import { TiltGauge } from "@/components/TiltGauge";
 import { Formula } from "@/components/Formula";
 import { cn } from "@/lib/utils";
 import { txErrorText } from "@/lib/tx-error";
+import { waitForTx } from "@/lib/wait-for-tx";
 
 const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.ts's RPC_URL note
 
@@ -95,14 +96,14 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
     setBusy(label);
     try {
       setStatus(`Approving ${isAToB ? strategy.symbol0 : strategy.symbol1}…`);
-      await write({
+      const approveHash = await write({
         address: tokenIn,
         abi: ERC20_ABI,
         functionName: "approve",
         args: [network.addresses.demoTaker, amountIn],
         chainId: network.chain.id,
       });
-      await new Promise((r) => setTimeout(r, 2_500));
+      await waitForTx(approveHash, network.chain.id);
 
       setStatus(`Filling ${label}…`);
       const hash = await write({
@@ -114,7 +115,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
       });
       setTxHash(hash);
       setStatus(`Filled ${label} — watch the quotes move.`);
-      await new Promise((r) => setTimeout(r, 3_000));
+      await waitForTx(hash, network.chain.id);
       await refreshAll();
     } catch (e) {
       setStatus(txErrorText(e));
@@ -138,7 +139,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
       setTxHash(hash);
       markDocked(strategy.strategyHash, hash);
       setStatus("Docked. The allowance is released.");
-      await new Promise((r) => setTimeout(r, 2_500));
+      await waitForTx(hash, network.chain.id);
       await refreshAll();
     } catch (e) {
       setStatus(txErrorText(e));

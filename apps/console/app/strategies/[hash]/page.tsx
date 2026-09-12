@@ -17,6 +17,7 @@ import { InlineLink } from "@/components/ui/button";
 import { LivePriceChart, MAX_SAMPLES, type LiveSample } from "@/components/strategies/live-price-chart";
 import { cn } from "@/lib/utils";
 import { txErrorText } from "@/lib/tx-error";
+import { waitForTx } from "@/lib/wait-for-tx";
 
 const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.ts's RPC_URL note
 
@@ -149,14 +150,14 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
     setBusy(label);
     try {
       setStatus(`Approving ${isAToB ? strategy.symbol0 : strategy.symbol1}…`);
-      await write({
+      const approveHash = await write({
         address: tokenIn,
         abi: ERC20_ABI,
         functionName: "approve",
         args: [network.addresses.demoTaker, amountIn],
         chainId: network.chain.id,
       });
-      await new Promise((r) => setTimeout(r, 2_500));
+      await waitForTx(approveHash, network.chain.id);
 
       setStatus(`Filling ${label}…`);
       const hash = await write({
@@ -168,7 +169,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
       });
       setTxHash(hash);
       setStatus(`Filled ${label} — watch the lines step.`);
-      await new Promise((r) => setTimeout(r, 3_000));
+      await waitForTx(hash, network.chain.id);
 
       // The sampling effect turns this refetch into the timeline's fill marker.
       fillPending.current = true;
@@ -196,7 +197,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
       setTxHash(hash);
       markDocked(strategy.strategyHash, hash);
       setStatus("Docked. The allowance is released.");
-      await new Promise((r) => setTimeout(r, 2_500));
+      await waitForTx(hash, network.chain.id);
       await Promise.all([refetchBalances(), refetchQuotes()]);
     } catch (e) {
       setStatus(txErrorText(e));

@@ -6,6 +6,8 @@ import { useAccount, useChainId, useReadContracts, useWriteContract } from "wagm
 
 import { ERC20_ABI, type TokenDef } from "@/lib/chain";
 import { useNetwork } from "@/lib/use-network";
+import { waitForTx } from "@/lib/wait-for-tx";
+import { txErrorText } from "@/lib/tx-error";
 
 export const WRAP_AMOUNT_ETH = "0.01";
 export const USDC_FAUCET_URL = "https://faucet.circle.com";
@@ -33,6 +35,7 @@ export function useFaucet() {
 
   const [minting, setMinting] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [error, setError] = useState<string | null>(null);
 
   const { data: balances, refetch } = useReadContracts({
     contracts: network.tokens.map((t) => ({
@@ -49,6 +52,7 @@ export function useFaucet() {
   async function wrapEth(token: TokenDef) {
     if (!address || !onRightChain || token.symbol !== "WETH") return;
     setMinting(token.symbol);
+    setError(null);
     try {
       const hash = await write({
         address: token.address,
@@ -58,10 +62,13 @@ export function useFaucet() {
         chainId: network.chain.id,
       });
       setTxHash(hash);
-      await new Promise((r) => setTimeout(r, 3_000));
+      await waitForTx(hash, network.chain.id);
       await refetch();
-    } catch {
-      /* user rejected, or the wallet surfaced its own error */
+    } catch (e) {
+      // Previously swallowed silently -- a failed wrap (rejected in the
+      // wallet, insufficient ETH, a flaky RPC) looked identical to a
+      // successful one that just hadn't refreshed yet. Surface it instead.
+      setError(txErrorText(e));
     } finally {
       setMinting(null);
     }
@@ -72,5 +79,5 @@ export function useFaucet() {
     return { ...t, raw, formatted: raw !== undefined ? Number(formatUnits(raw, t.decimals)) : null };
   });
 
-  return { tokens: readable, minting, txHash, wrapEth, onRightChain, wrapAmountEth: WRAP_AMOUNT_ETH, refetch };
+  return { tokens: readable, minting, txHash, error, wrapEth, onRightChain, wrapAmountEth: WRAP_AMOUNT_ETH, refetch };
 }

@@ -92,7 +92,7 @@ function WorkbenchInner() {
             )}
           </div>
         ))}
-        {faucet.txHash && (
+        {faucet.txHash && !faucet.error && (
           <a
             href={explorerTx(network, faucet.txHash)}
             target="_blank"
@@ -102,6 +102,7 @@ function WorkbenchInner() {
             {faucet.txHash.slice(0, 10)}…
           </a>
         )}
+        {faucet.error && <span className="text-short-bright ml-auto text-[11px]">{faucet.error}</span>}
       </div>
 
       {/* the workbench: params left, live preview right */}
