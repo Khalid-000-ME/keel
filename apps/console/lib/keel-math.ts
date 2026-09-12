@@ -8,6 +8,19 @@
  * same 500bps penalty ramp) so the designed curve matches the shipped one.
  */
 
+/**
+ * Decimal places for displaying any price/rate/spread-scale number (mid,
+ * reservation price, half-spread, γ, σ², δ₀). Fixed at 10 rather than a
+ * smaller default because these values are no longer all near 1.0 the way
+ * DRFT/BALT's mock pair was -- WETH/USDC's mid works out to roughly
+ * 1/3500 (see use-strategy-builder.ts), and the skew/spread parameters
+ * sized for that scale run as small as ~1e-10. A shorter fixed precision
+ * (the old 3-6 decimal defaults) rounds all of that to 0.000000 and the
+ * indicator reads as dead/unchanging even though the underlying number is
+ * moving.
+ */
+export const PRICE_DECIMALS = 10;
+
 export interface KeelParams {
   /** Risk aversion. Higher = skews harder for the same drift. */
   gamma: number;

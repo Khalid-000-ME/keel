@@ -4,6 +4,7 @@ import type { Hex } from "viem";
 
 import { explorerTx } from "@/lib/chain";
 import { useNetwork } from "@/lib/use-network";
+import { PRICE_DECIMALS } from "@/lib/keel-math";
 import { STRATEGY_PRESETS, useStrategyBuilder } from "@/lib/use-strategy-builder";
 import { FieldLabel } from "@/components/NumericReadout";
 import { SkewPreview } from "@/components/strategies/skew-preview";
@@ -104,7 +105,7 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
             value={b.skewPerToken.toExponential(2)}
             note="γ · σ² · (T−t) — the whole skew term"
           />
-          <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(8)} note="δ₀ + γ · σ² · (T−t)" />
+          <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(PRICE_DECIMALS)} note="δ₀ + γ · σ² · (T−t)" />
         </div>
       </div>
 
@@ -117,6 +118,7 @@ export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
             horizonSecs: b.draft.horizonSecs,
           }}
           bound={b.draft.bound}
+          mid={b.draft.amount0 > 0 ? b.draft.amount1 / b.draft.amount0 : 1}
         />
         {b.program ? (
           <ProgramInspector program={b.program} strategyHash={b.strategyHash} />

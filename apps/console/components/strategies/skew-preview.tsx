@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { FieldLabel } from "@/components/NumericReadout";
-import { quoteAtDrift, type KeelParams } from "@/lib/keel-math";
+import { quoteAtDrift, PRICE_DECIMALS, type KeelParams } from "@/lib/keel-math";
 
 const W = 560;
 const H = 190;
@@ -125,21 +125,21 @@ export function SkewPreview({
         </text>
 
         <text x={PAD.left - 6} y={PAD.top + 8} textAnchor="end" className="fill-[var(--readout-dim)] text-[9px]">
-          {yMax.toFixed(3)}
+          {yMax.toFixed(PRICE_DECIMALS)}
         </text>
         <text x={PAD.left - 6} y={H - PAD.bottom} textAnchor="end" className="fill-[var(--readout-dim)] text-[9px]">
-          {yMin.toFixed(3)}
+          {yMin.toFixed(PRICE_DECIMALS)}
         </text>
       </svg>
 
       <div className="border-hairline/60 mt-3 grid grid-cols-2 gap-px border-t pt-3 text-[12px]">
         <div>
           <div className="text-readout-dim font-numeric text-[10px] tracking-[0.12em] uppercase">spread at target</div>
-          <div className="font-numeric text-readout mt-1">{spreadAtTarget.toFixed(5)}</div>
+          <div className="font-numeric text-readout mt-1">{spreadAtTarget.toFixed(PRICE_DECIMALS)}</div>
         </div>
         <div>
           <div className="text-readout-dim font-numeric text-[10px] tracking-[0.12em] uppercase">spread at bound</div>
-          <div className="font-numeric text-amber-bright mt-1">{spreadAtBound.toFixed(5)}</div>
+          <div className="font-numeric text-amber-bright mt-1">{spreadAtBound.toFixed(PRICE_DECIMALS)}</div>
         </div>
       </div>
     </div>

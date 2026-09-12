@@ -6,6 +6,7 @@ import { useAccount } from "wagmi";
 
 import { explorerTx } from "@/lib/chain";
 import { useNetwork } from "@/lib/use-network";
+import { PRICE_DECIMALS } from "@/lib/keel-math";
 import { USDC_FAUCET_URL, useFaucet } from "@/lib/use-faucet";
 import { STRATEGY_PRESETS, useStrategyBuilder } from "@/lib/use-strategy-builder";
 import { loadStrategies, type StoredStrategy } from "@/lib/strategy-store";
@@ -194,7 +195,7 @@ function WorkbenchInner() {
               value={b.skewPerToken.toExponential(2)}
               note="γ · σ² · (T−t)"
             />
-            <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(8)} note="δ₀ + γ · σ² · (T−t)" />
+            <Derived label="Half-spread right now" value={b.halfSpreadNow.toFixed(PRICE_DECIMALS)} note="δ₀ + γ · σ² · (T−t)" />
           </div>
 
           <div className="border-hairline/60 flex flex-wrap items-center gap-3 border-t pt-5">
@@ -252,6 +253,7 @@ function WorkbenchInner() {
               horizonSecs: b.draft.horizonSecs,
             }}
             bound={b.draft.bound}
+            mid={b.draft.amount0 > 0 ? b.draft.amount1 / b.draft.amount0 : 1}
           />
           {b.program ? (
             <ProgramInspector program={b.program} strategyHash={b.strategyHash} />
