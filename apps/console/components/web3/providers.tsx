@@ -6,7 +6,7 @@ import { injected } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { EIP1193Provider } from "viem";
 
-import { BASE_SEPOLIA_RPC_URLS, NETWORKS } from "@/lib/chain";
+import { ARBITRUM_SEPOLIA_RPC_URLS, BASE_SEPOLIA_RPC_URLS, ETH_SEPOLIA_RPC_URLS, NETWORKS } from "@/lib/chain";
 
 /**
  * The subset of wallet self-identification flags injected providers set.
@@ -95,15 +95,16 @@ export const wagmiConfig = createConfig({
       },
     }),
   ],
-  // Base Sepolia round-robins/falls over across every URL in
-  // BASE_SEPOLIA_RPC_URLS on error, so one public endpoint's rate limit
-  // doesn't take the whole console down; the other two chains aren't
-  // console-primary yet (see README's "What's deferred"), so they use a
-  // single default http() transport each.
+  // Every chain round-robins/falls over across its own RPC list on error
+  // (lib/chain.ts), so one public endpoint's rate limit doesn't take the
+  // whole console down -- this was Ethereum Sepolia and Arbitrum Sepolia's
+  // actual bottleneck before: wagmi/viem's *default* RPC for each
+  // (thirdweb's shared endpoint, Offchain Labs' public one) rate-limits
+  // hard under this console's polling.
   transports: {
     [NETWORKS[0].chain.id]: fallback(BASE_SEPOLIA_RPC_URLS.map((url) => http(url))),
-    [NETWORKS[1].chain.id]: http(),
-    [NETWORKS[2].chain.id]: http(),
+    [NETWORKS[1].chain.id]: fallback(ETH_SEPOLIA_RPC_URLS.map((url) => http(url))),
+    [NETWORKS[2].chain.id]: fallback(ARBITRUM_SEPOLIA_RPC_URLS.map((url) => http(url))),
   },
   multiInjectedProviderDiscovery: false,
   ssr: true,

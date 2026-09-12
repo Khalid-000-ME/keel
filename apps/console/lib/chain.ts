@@ -2,15 +2,21 @@ import { arbitrumSepolia, baseSepolia, sepolia } from "wagmi/chains";
 import type { Chain } from "viem";
 
 /**
- * Endpoints this app uses for **reads** on Base Sepolia specifically.
- * NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL (apps/console/.env.local) takes a
- * comma-separated list, wired into a `fallback([...])` transport rather than
- * a single `http()` -- wagmi tries them in order per request and moves to
- * the next on error, so no single public RPC's rate limit or downtime is
- * the whole story. Falls back to Base Sepolia's own default public RPC if
- * the env var is unset. Ethereum Sepolia and Arbitrum Sepolia aren't
- * console-primary yet (see README's "What's deferred"), so they use their
- * chain package's default RPC list as-is rather than a configurable one.
+ * Endpoints this app uses for **reads**, one list per chain, each wired into
+ * a `fallback([...])` transport (see providers.tsx) rather than a single
+ * `http()` -- wagmi tries them in order per request and moves to the next
+ * on error, so no single public RPC's rate limit or downtime is the whole
+ * story. Each `NEXT_PUBLIC_*_RPC_URL` env var (apps/console/.env.local)
+ * takes a comma-separated list and overrides its chain's defaults below.
+ *
+ * The defaults below matter more than they look: wagmi/viem's own
+ * `sepolia`/`arbitrumSepolia` chain definitions point at
+ * `11155111.rpc.thirdweb.com` and `sepolia-rollup.arbitrum.io/rpc`
+ * respectively -- both shared-by-every-anonymous-dapp public endpoints that
+ * rate-limit hard under this console's polling (every strategy card and the
+ * market page each read balances/quotes every few seconds). The URLs here
+ * were the ones that actually held up during this project's own contract
+ * deploys to those two chains (see README's deployment table).
  *
  * @dev This list does **not** govern writes. `writeContract` goes through
  *      `getConnectorClient()` -- a wallet client over the injected
@@ -19,22 +25,48 @@ import type { Chain } from "viem";
  *      that chain, which the page cannot override. A wallet-side rate
  *      limit therefore surfaces on the fill/dock/ship buttons while every
  *      read on the same screen keeps working; the fix for that is to
- *      change the network's RPC inside the wallet. The chain object below
- *      at least hands these endpoints over when the wallet *adds* the
- *      network.
+ *      change the network's RPC inside the wallet (or add it fresh --
+ *      `wallet_addEthereumChain` hands over this same vetted list).
  */
-export const BASE_SEPOLIA_RPC_URLS: readonly [string, ...string[]] = (() => {
-  const configured = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL?.split(",")
+function rpcUrlList(envVar: string | undefined, defaults: readonly [string, ...string[]]): readonly [string, ...string[]] {
+  const configured = envVar?.split(",")
     .map((u) => u.trim())
     .filter(Boolean);
   // Typed as a non-empty tuple because it is one by construction, and
   // viem's Chain wants `rpcUrls.default.http` to guarantee at least one.
-  return configured?.length ? (configured as [string, ...string[]]) : baseSepolia.rpcUrls.default.http;
-})();
+  return configured?.length ? (configured as [string, ...string[]]) : defaults;
+}
+
+export const BASE_SEPOLIA_RPC_URLS = rpcUrlList(
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL,
+  baseSepolia.rpcUrls.default.http,
+);
+
+export const ETH_SEPOLIA_RPC_URLS = rpcUrlList(process.env.NEXT_PUBLIC_ETH_SEPOLIA_RPC_URL, [
+  "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://rpc.sepolia.ethpandaops.io",
+  "https://eth-sepolia-testnet.api.pocket.network",
+]);
+
+export const ARBITRUM_SEPOLIA_RPC_URLS = rpcUrlList(process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL, [
+  "https://arbitrum-sepolia.gateway.tenderly.co",
+  "https://sepolia-rollup.arbitrum.io/rpc",
+  "https://arbitrum-sepolia.drpc.org",
+]);
 
 const BASE_SEPOLIA_CHAIN: Chain = {
   ...baseSepolia,
   rpcUrls: { ...baseSepolia.rpcUrls, default: { http: BASE_SEPOLIA_RPC_URLS } },
+};
+
+const ETH_SEPOLIA_CHAIN: Chain = {
+  ...sepolia,
+  rpcUrls: { ...sepolia.rpcUrls, default: { http: ETH_SEPOLIA_RPC_URLS } },
+};
+
+const ARBITRUM_SEPOLIA_CHAIN: Chain = {
+  ...arbitrumSepolia,
+  rpcUrls: { ...arbitrumSepolia.rpcUrls, default: { http: ARBITRUM_SEPOLIA_RPC_URLS } },
 };
 
 export interface TokenDef {
@@ -80,7 +112,7 @@ export const NETWORKS: readonly Network[] = [
     ],
   },
   {
-    chain: sepolia,
+    chain: ETH_SEPOLIA_CHAIN,
     addresses: {
       aqua: "0x20592B28fCaa6ADa4097bDB03f31d76bE13669cE",
       keelRouter: "0x2854Fa991680bd7bBfC660D197B883e025C16fBb",
@@ -92,7 +124,7 @@ export const NETWORKS: readonly Network[] = [
     ],
   },
   {
-    chain: arbitrumSepolia,
+    chain: ARBITRUM_SEPOLIA_CHAIN,
     addresses: {
       aqua: "0x2dDc814a107e8F982f356E3b409DC2D00F68b1b3",
       keelRouter: "0x2e8697EfCe447002d0056445645932020023B744",
