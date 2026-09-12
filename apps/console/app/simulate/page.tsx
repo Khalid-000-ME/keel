@@ -1,6 +1,7 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { receipt } from "@/lib/receipt";
+import { onchainDemo } from "@/lib/onchain-demo";
 import { formatWad, wadToNumber } from "@/lib/wad";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { PnlChart } from "@/components/PnlChart";
@@ -139,13 +140,92 @@ export default function SimulatePage() {
             <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
               Everything above came out of{" "}
               <span className="font-numeric text-readout">AdversarialFlow.s.sol</span> running locally against a forge
-              VM — real contract execution, but a local one. Below is a separate, smaller run: a Keel strategy actually
-              shipped to Base Sepolia and hit with eight real fills, each a confirmable transaction. Different run,
+              VM — real contract execution, but a local one, which produces no transactions. Below is a separate,
+              smaller run: a Keel strategy actually shipped to Base Sepolia on the real{" "}
+              <span className="font-numeric text-readout">
+                {onchainDemo.tokenSymbols.token0}/{onchainDemo.tokenSymbols.token1}
+              </span>{" "}
+              pair and hit with {onchainDemo.fills.length} real fills, each a confirmable transaction. Different run,
               different parameters, different scale — shown side by side because a local receipt and a public one prove
               different things.
             </p>
             <div className="mt-8">
               <OnchainFillCurve variant="compact" />
+            </div>
+
+            {/* The transactions themselves. Deliberately its own table rather
+                than a column on the per-fill ledger above: that ledger is the
+                local simulation, whose rows have no transactions at all, so a
+                hash column there would be empty or invented. */}
+            <div className="border-hairline mt-8 border">
+              <div className="border-hairline/70 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
+                <FieldLabel>Every fill, on chain</FieldLabel>
+                <NumericReadout
+                  value={`${onchainDemo.fills.length} transactions`}
+                  size="xs"
+                  className="text-readout-dim"
+                />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-[13px]">
+                  <thead className="bg-panel-raised/60">
+                    <tr className="border-hairline text-readout-dim border-b text-left">
+                      <Th>Tick</Th>
+                      <Th>Inventory before</Th>
+                      <Th align="right">{onchainDemo.tokenSymbols.token1} out</Th>
+                      <Th align="right">Transaction</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {onchainDemo.fills.map((f) => (
+                      <tr
+                        key={f.txHash}
+                        className="border-hairline/40 hover:bg-panel/60 border-b transition-colors last:border-0"
+                      >
+                        <td className="px-5 py-2">
+                          <NumericReadout
+                            value={String(f.tick).padStart(2, "0")}
+                            size="sm"
+                            className="text-readout-dim"
+                          />
+                        </td>
+                        <td className="px-5 py-2">
+                          <NumericReadout
+                            value={`${formatWad(f.balance0Before, 2)} ${onchainDemo.tokenSymbols.token0}`}
+                            size="sm"
+                          />
+                        </td>
+                        <td className="px-5 py-2 text-right">
+                          <NumericReadout value={formatWad(f.actualAmountOut, 8)} size="sm" sign="short" />
+                        </td>
+                        <td className="px-5 py-2 text-right">
+                          <a
+                            href={`${onchainDemo.explorer}/tx/${f.txHash}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-numeric text-amber-bright text-[12px] hover:underline"
+                          >
+                            {f.txHash.slice(0, 10)}… ↗
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="border-hairline/70 text-readout-dim border-t px-5 py-3 text-[11px] leading-relaxed">
+                {onchainDemo.tokenSymbols.token1} paid out falls with every fill — each one pushes inventory further
+                from target, so the next is priced worse for the taker. That monotonic fall is the skew, measured
+                rather than modelled. Ship tx{" "}
+                <a
+                  href={`${onchainDemo.explorer}/tx/${onchainDemo.shipTxHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-numeric text-amber-bright hover:underline"
+                >
+                  {onchainDemo.shipTxHash.slice(0, 10)}… ↗
+                </a>
+              </p>
             </div>
           </div>
         </Reveal>

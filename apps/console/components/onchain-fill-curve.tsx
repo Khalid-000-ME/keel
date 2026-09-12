@@ -1,5 +1,7 @@
 import { onchainDemo } from "@/lib/onchain-demo";
 import { DEFAULT_NETWORK, explorerTx } from "@/lib/chain";
+import { axisTick } from "@/lib/decimal";
+import { PRICE_DECIMALS } from "@/lib/keel-math";
 import { wadToNumber } from "@/lib/wad";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 
@@ -50,7 +52,8 @@ const POINTS = onchainDemo.fills.map((fill) => ({
 
 const W = 900;
 const H = 300;
-const PAD = { top: 20, right: 26, bottom: 40, left: 62 };
+// left gutter sized for exponent-form ticks ("2.31e-4"), not "0.000"
+const PAD = { top: 20, right: 26, bottom: 40, left: 74 };
 
 const Q_MIN = Math.min(...POINTS.map((p) => p.q));
 const Q_MAX = Math.max(...POINTS.map((p) => p.q));
@@ -129,7 +132,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
                 fill="var(--readout-dim)"
                 fontSize={10}
               >
-                {v.toFixed(3)}
+                {axisTick(v)}
               </text>
             </g>
           ))}
@@ -173,7 +176,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
               of this chart is that a reader can go check it */}
           {POINTS.map((p) => (
             <a key={p.txHash} href={explorerTx(DEFAULT_NETWORK, p.txHash)} target="_blank" rel="noreferrer">
-              <title>{`tick ${p.tick} · q ${p.q >= 0 ? "+" : ""}${p.q.toFixed(0)} · rate ${p.rate.toFixed(6)} · block ${p.blockNumber} · ${p.txHash}`}</title>
+              <title>{`tick ${p.tick} · q ${p.q >= 0 ? "+" : ""}${p.q.toFixed(0)} · rate ${p.rate.toFixed(PRICE_DECIMALS)} · block ${p.blockNumber} · ${p.txHash}`}</title>
               <circle cx={xFor(p.q)} cy={yFor(p.rate)} r={10} fill="transparent" />
               <circle
                 cx={xFor(p.q)}
@@ -285,7 +288,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
                       />
                     </td>
                     <td className="px-5 py-2 text-right">
-                      <NumericReadout value={p.rate.toFixed(6)} size="sm" sign="short" />
+                      <NumericReadout value={p.rate.toFixed(PRICE_DECIMALS)} size="sm" sign="short" />
                     </td>
                     <td className="px-5 py-2 text-right">
                       <a
