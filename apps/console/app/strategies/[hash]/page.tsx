@@ -122,8 +122,19 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
+  // Both expressed in the same units -- token1 per token0, matching mid
+  // (balanceOut/balanceIn) -- so they're comparable on one chart/one axis.
+  // Exposed sells token0 in for token1 out, so token1-out/token0-in is
+  // already token1-per-token0. Covered sells token1 in for token0 out, so
+  // its *raw* rate (token0-out/token1-in) is token0-per-token1 -- the
+  // reciprocal scale. For a ~1.0 mid pair (the old DRFT/BALT mocks) that
+  // mismatch was invisible; for WETH/USDC's ~1/3500 mid it isn't (see
+  // KeelInventorySkewDecimals.t.sol's note on scale mismatches) -- plotting
+  // ~0.0003 against its ~3500 reciprocal on one axis flattened the whole
+  // chart. Inverting covered's raw rate puts it back in token1-per-token0.
   const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize0 : null;
-  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) / fillSize1 : null;
+  const coveredOutToken0 = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) : null;
+  const coveredRate = coveredOutToken0 !== null && coveredOutToken0 > 0 ? fillSize1 / coveredOutToken0 : null;
 
   // The series carries poll samples too; the table below is only about fills.
   const fills = history.filter((h) => h.kind === "fill");

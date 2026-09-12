@@ -89,8 +89,18 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
+  // Both expressed in the same units -- token1 per token0, matching mid
+  // (balanceOut/balanceIn) -- so subtracting them below is meaningful.
+  // Exposed sells token0 in for token1 out, so token1-out/token0-in is
+  // already token1-per-token0. Covered sells token1 in for token0 out, so
+  // its *raw* rate (token0-out/token1-in) is the reciprocal scale -- for a
+  // ~1.0 mid pair (the old DRFT/BALT mocks) that mismatch was invisible;
+  // for WETH/USDC's ~1/3500 mid it produced nonsense like "asymmetry
+  // 872029.9" (a real number, just token0-per-token1 minus token1-per-
+  // token0). Inverting covered's raw rate puts it back in the same units.
   const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize0 : null;
-  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) / fillSize1 : null;
+  const coveredOutToken0 = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) : null;
+  const coveredRate = coveredOutToken0 !== null && coveredOutToken0 > 0 ? fillSize1 / coveredOutToken0 : null;
   const asymmetry = exposedRate !== null && coveredRate !== null ? coveredRate - exposedRate : null;
 
   async function refreshAll() {
