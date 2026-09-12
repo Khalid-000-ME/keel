@@ -80,80 +80,87 @@ export function SkewLab() {
     <div className="border-hairline bg-panel/50 overflow-hidden border backdrop-blur">
       {/* the level */}
       <div className="flex justify-center px-6 pt-8 pb-2">
+        {/* An instrument scale, not a spirit level. The previous version was
+            a rounded tube washed with a green-amber-red gradient and a
+            glowing puck riding inside it -- skeuomorphic, and at odds with
+            the flat hairline-and-square-corner language the rest of the site
+            uses. This keeps the same reading (which side inventory leans,
+            how far toward the bound) but draws it the way every other
+            readout here is drawn: a real axis, tick marks, restrained zone
+            tints, and a needle. */}
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[640px]" role="img" aria-label="Inventory drift level">
-          <defs>
-            <linearGradient id="skewlab-scale" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="var(--long)" stopOpacity="0.5" />
-              <stop offset="50%" stopColor="var(--neutral-amber)" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="var(--short)" stopOpacity="0.5" />
-            </linearGradient>
-            <filter id="skewlab-glow" filterUnits="userSpaceOnUse" x={0} y={0} width={W} height={H}>
-              <feGaussianBlur stdDeviation="4" result="b" />
-              <feMerge>
-                <feMergeNode in="b" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* tube */}
-          <rect
-            x={inset}
-            y={H / 2 - 20}
-            width={W - inset * 2}
-            height={40}
-            rx={20}
-            fill="var(--panel-raised)"
-            stroke="var(--hairline)"
-            strokeWidth={2}
-          />
-          <rect
-            x={inset + 2}
-            y={H / 2 - 18}
-            width={W - inset * 2 - 4}
-            height={36}
-            rx={18}
-            fill="url(#skewlab-scale)"
-            opacity={0.35}
-          />
-
-          {/* ticks */}
-          {Array.from({ length: 11 }).map((_, i) => {
-            const t = i / 10;
-            const x = inset + 8 + t * (W - inset * 2 - 16);
-            const major = i === 0 || i === 5 || i === 10;
+          {(() => {
+            const left = inset;
+            const right = W - inset;
+            const mid = W / 2;
+            const baseY = H - 22;
+            const topY = 16;
             return (
-              <line
-                key={i}
-                x1={x}
-                y1={H / 2 - (major ? 26 : 24)}
-                x2={x}
-                y2={H / 2 - (major ? 20 : 21)}
-                stroke={major ? "var(--hairline-bright)" : "var(--hairline)"}
-                strokeWidth={major ? 1.5 : 1}
-              />
+              <>
+                {/* zone tints: covered to the left of target, exposed to the right */}
+                <rect x={left} y={topY} width={mid - left} height={baseY - topY} fill="var(--long)" fillOpacity={0.05} />
+                <rect x={mid} y={topY} width={right - mid} height={baseY - topY} fill="var(--short)" fillOpacity={0.05} />
+
+                {/* the filled reading: centre out to wherever the position sits */}
+                {/* `initial={false}` starts this at the animate target rather
+                    than rendering an unresolved first frame: motion manages
+                    x/width itself (it writes them as CSS lengths, e.g.
+                    "100.1px"), so plain static attributes get overridden and
+                    the first paint emitted width="undefined", which SVG
+                    rejects. */}
+                <motion.rect
+                  y={topY}
+                  height={baseY - topY}
+                  fill={bubbleColor}
+                  fillOpacity={0.16}
+                  initial={false}
+                  animate={{ x: ratio >= 0 ? mid : cx, width: Math.abs(cx - mid) }}
+                  transition={{ type: "spring", stiffness: 60, damping: 15 }}
+                />
+
+                {/* ticks, hanging off the baseline */}
+                {Array.from({ length: 11 }).map((_, i) => {
+                  const t = i / 10;
+                  const x = left + t * (right - left);
+                  const major = i === 0 || i === 5 || i === 10;
+                  return (
+                    <line
+                      key={i}
+                      x1={x}
+                      y1={baseY}
+                      x2={x}
+                      y2={baseY + (major ? 7 : 4)}
+                      stroke={major ? "var(--hairline-bright)" : "var(--hairline)"}
+                      strokeWidth={1}
+                    />
+                  );
+                })}
+
+                {/* baseline + bounds */}
+                <line x1={left} y1={baseY} x2={right} y2={baseY} stroke="var(--hairline-bright)" strokeWidth={1} />
+                <line x1={left} y1={topY} x2={left} y2={baseY} stroke="var(--hairline)" strokeWidth={1} />
+                <line x1={right} y1={topY} x2={right} y2={baseY} stroke="var(--hairline)" strokeWidth={1} />
+
+                {/* target */}
+                <line
+                  x1={mid}
+                  y1={topY - 4}
+                  x2={mid}
+                  y2={baseY}
+                  stroke="var(--neutral-amber)"
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                  strokeOpacity={0.8}
+                />
+
+                {/* the needle */}
+                <motion.g animate={{ x: cx - mid }} transition={{ type: "spring", stiffness: 60, damping: 15 }}>
+                  <line x1={mid} y1={topY - 4} x2={mid} y2={baseY} stroke={bubbleColor} strokeWidth={2} />
+                  <rect x={mid - 4} y={topY - 9} width={8} height={6} fill={bubbleColor} />
+                </motion.g>
+              </>
             );
-          })}
-
-          {/* target zone */}
-          <line x1={W / 2 - 22} y1={H / 2 - 20} x2={W / 2 - 22} y2={H / 2 + 20} stroke="var(--neutral-amber)" strokeWidth={1} strokeOpacity={0.6} />
-          <line x1={W / 2 + 22} y1={H / 2 - 20} x2={W / 2 + 22} y2={H / 2 + 20} stroke="var(--neutral-amber)" strokeWidth={1} strokeOpacity={0.6} />
-
-          {/* bubble */}
-          <motion.g animate={{ x: cx - W / 2 }} transition={{ type: "spring", stiffness: 60, damping: 15 }}>
-            <circle cx={W / 2} cy={H / 2} r={14} fill={bubbleColor} fillOpacity={0.22} stroke={bubbleColor} strokeWidth={1.5} filter="url(#skewlab-glow)" />
-            {/* Highlight arc, drawn in the page ground rather than literal
-                white: on a light theme a white stroke over a light bubble
-                is invisible. */}
-            <path
-              d={`M ${W / 2 - 6} ${H / 2 - 6} a 8 8 0 0 1 6 -3`}
-              fill="none"
-              stroke="var(--graphite-raised)"
-              strokeOpacity={0.7}
-              strokeWidth={1.5}
-              strokeLinecap="round"
-            />
-          </motion.g>
+          })()}
         </svg>
       </div>
 
