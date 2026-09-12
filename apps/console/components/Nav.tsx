@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/", label: "Overview" },
   { href: "/mechanism", label: "Mechanism" },
   { href: "/strategies", label: "Ship" },
+  { href: "/positions", label: "Positions" },
   { href: "/market", label: "Market" },
   { href: "/simulate", label: "Receipt" },
   { href: "/position/live", label: "Position" },

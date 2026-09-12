@@ -10,7 +10,7 @@ import { FieldLabel } from "@/components/NumericReadout";
 import { SkewPreview } from "@/components/strategies/skew-preview";
 import { ProgramInspector } from "@/components/strategies/program-inspector";
 
-export function StrategyBuilder({ onShipped }: { onShipped: () => void }) {
+export function StrategyBuilder({ onShipped }: { onShipped: (strategyHash: Hex) => void }) {
   const b = useStrategyBuilder(onShipped);
   const { network } = useNetwork();
 

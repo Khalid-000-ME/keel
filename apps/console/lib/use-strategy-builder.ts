@@ -72,7 +72,7 @@ export const DEFAULT_STRATEGY_DRAFT: StrategyDraft = {
  * commit fixing encodeOrder's missing offset word), so the fix belongs in
  * exactly one place.
  */
-export function useStrategyBuilder(onShipped: () => void) {
+export function useStrategyBuilder(onShipped: (strategyHash: Hex) => void) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { network } = useNetwork();
@@ -250,7 +250,7 @@ export function useStrategyBuilder(onShipped: () => void) {
       // A fresh nonce so the next strategy can't collide on hash.
       setNonce({ salt: BigInt(Date.now()), startedAt: Math.floor(Date.now() / 1000) });
       await waitForTx(hash, network.chain.id);
-      onShipped();
+      onShipped(strategyHash as Hex);
     } catch (e) {
       setStatus(txErrorText(e));
     } finally {

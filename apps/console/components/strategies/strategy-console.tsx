@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useAccount } from "wagmi";
+import type { Hex } from "viem";
 
 import { useNetwork } from "@/lib/use-network";
 import { loadStrategies, type StoredStrategy } from "@/lib/strategy-store";
@@ -9,8 +11,8 @@ import { Web3Providers } from "@/components/web3/providers";
 import { WalletBar } from "@/components/web3/wallet-bar";
 import { FaucetPanel } from "@/components/strategies/faucet-panel";
 import { StrategyBuilder } from "@/components/strategies/strategy-builder";
-import { StrategyCard } from "@/components/strategies/strategy-card";
 import { FieldLabel } from "@/components/NumericReadout";
+import { InlineLink } from "@/components/ui/button";
 
 export function StrategyConsole() {
   return (
@@ -27,6 +29,10 @@ function ConsoleInner() {
   // localStorage is client-only, so the first paint has to match the server's
   // empty list or React will complain about the mismatch.
   const [hydrated, setHydrated] = useState(false);
+  // Set by the builder's onShipped callback, which now hands back the hash
+  // Aqua filed the strategy under -- so the redirect below can open the
+  // positions list with this exact card already expanded.
+  const [justShipped, setJustShipped] = useState<Hex | null>(null);
 
   const refresh = useCallback(() => setStrategies(loadStrategies(network.chain.id)), [network.chain.id]);
 
@@ -51,38 +57,45 @@ function ConsoleInner() {
 
       <FaucetPanel />
 
-      <StrategyBuilder onShipped={refresh} />
+      <StrategyBuilder
+        onShipped={(hash) => {
+          setJustShipped(hash);
+          refresh();
+        }}
+      />
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <div>
-            <FieldLabel>Step 4 · Your strategies</FieldLabel>
-            <p className="text-readout-dim mt-2 max-w-2xl text-[13px] leading-relaxed">
-              Quotes and balances below refresh from the chain every few seconds. Hit the same position with
-              exposed-side fills and watch its quote walk away from mid — that&apos;s the mechanism, live, not a
-              replay.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={refresh}
-            className="font-numeric border-hairline text-readout-dim hover:text-readout hover:border-hairline-bright border px-3 py-1.5 text-[11px] transition-colors"
-          >
-            Refresh
-          </button>
+        <div>
+          <FieldLabel>Step 4 · Your strategies</FieldLabel>
+          <p className="text-readout-dim mt-2 max-w-2xl text-[13px] leading-relaxed">
+            Shipped positions live on their own page, where quotes and balances refresh from the chain every few
+            seconds. Hit one with exposed-side fills and watch its quote walk away from mid — that&apos;s the
+            mechanism, live, not a replay.
+          </p>
         </div>
 
-        {hydrated && strategies.length === 0 && (
-          <div className="border-hairline/60 bg-panel/20 border border-dashed p-6">
-            <p className="text-readout-dim text-[13px]">
-              No strategies shipped from this browser yet. Ship one above and it appears here.
+        {justShipped ? (
+          <div className="border-long/40 bg-long/[0.06] flex flex-wrap items-center justify-between gap-4 border p-5">
+            <p className="text-readout text-[13px]">
+              Shipped. It&apos;s live and quoting now.
             </p>
+            <Link
+              href={`/positions?expand=${justShipped}`}
+              className="font-numeric bg-readout text-graphite px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
+            >
+              Open it in your positions →
+            </Link>
+          </div>
+        ) : (
+          <div className="border-hairline/60 bg-panel/20 flex flex-wrap items-center justify-between gap-4 border border-dashed p-5">
+            <p className="text-readout-dim text-[13px]">
+              {hydrated && strategies.length === 0
+                ? "No strategies shipped from this browser yet — ship one above."
+                : `${strategies.length} position${strategies.length === 1 ? "" : "s"} shipped from this browser.`}
+            </p>
+            <InlineLink href="/positions">View your positions</InlineLink>
           </div>
         )}
-
-        {strategies.map((s) => (
-          <StrategyCard key={s.strategyHash} strategy={s} onChanged={refresh} />
-        ))}
       </div>
     </div>
   );

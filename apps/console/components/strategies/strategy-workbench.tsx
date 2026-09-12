@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import type { Hex } from "viem";
 import { useAccount } from "wagmi";
 
@@ -16,7 +17,7 @@ import { FieldLabel } from "@/components/NumericReadout";
 import { NumberField, Derived } from "@/components/strategies/strategy-builder";
 import { SkewPreview } from "@/components/strategies/skew-preview";
 import { ProgramInspector } from "@/components/strategies/program-inspector";
-import { StrategyCard } from "@/components/strategies/strategy-card";
+import { InlineLink } from "@/components/ui/button";
 
 /**
  * Single-screen version of the maker console: one page, parameters on the
@@ -40,6 +41,10 @@ function WorkbenchInner() {
   const { network } = useNetwork();
   const [strategies, setStrategies] = useState<StoredStrategy[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // Set by the builder's onShipped callback, which hands back the hash Aqua
+  // filed the strategy under -- so the redirect below can open the positions
+  // list with this exact card already expanded.
+  const [justShipped, setJustShipped] = useState<Hex | null>(null);
 
   const refresh = useCallback(() => setStrategies(loadStrategies(network.chain.id)), [network.chain.id]);
   useEffect(() => {
@@ -48,7 +53,10 @@ function WorkbenchInner() {
   }, [refresh]);
 
   const faucet = useFaucet();
-  const b = useStrategyBuilder(refresh);
+  const b = useStrategyBuilder((hash) => {
+    setJustShipped(hash);
+    refresh();
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -262,29 +270,30 @@ function WorkbenchInner() {
         </div>
       </div>
 
-      {/* results */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <FieldLabel>Your positions</FieldLabel>
-          <button
-            type="button"
-            onClick={refresh}
-            className="font-numeric border-hairline text-readout-dim hover:text-readout hover:border-hairline-bright border px-3 py-1.5 text-[11px] transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-
-        {hydrated && strategies.length === 0 && (
-          <div className="border-hairline/60 bg-panel/20 border border-dashed p-6">
-            <p className="text-readout-dim text-[13px]">Nothing shipped from this browser yet — ship above.</p>
+      {/* results live on /positions now -- this is just the hand-off */}
+      {justShipped ? (
+        <div className="border-long/40 bg-long/[0.06] flex flex-wrap items-center justify-between gap-4 border p-5">
+          <div>
+            <FieldLabel>Shipped</FieldLabel>
+            <p className="text-readout mt-1.5 text-[13px]">It&apos;s live and quoting now.</p>
           </div>
-        )}
-
-        {strategies.map((s) => (
-          <StrategyCard key={s.strategyHash} strategy={s} onChanged={refresh} />
-        ))}
-      </div>
+          <Link
+            href={`/positions?expand=${justShipped}`}
+            className="font-numeric bg-readout text-graphite px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
+          >
+            Open it in your positions →
+          </Link>
+        </div>
+      ) : (
+        <div className="border-hairline/60 bg-panel/20 flex flex-wrap items-center justify-between gap-4 border border-dashed p-5">
+          <p className="text-readout-dim text-[13px]">
+            {hydrated && strategies.length === 0
+              ? "Nothing shipped from this browser yet — ship above."
+              : `${strategies.length} position${strategies.length === 1 ? "" : "s"} shipped from this browser.`}
+          </p>
+          <InlineLink href="/positions">View your positions</InlineLink>
+        </div>
+      )}
     </div>
   );
 }
