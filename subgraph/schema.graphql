@@ -24,6 +24,19 @@ type KeelPosition @entity(immutable: false) {
   boundWad: BigInt!
   horizonSecs: BigInt!
   startTimestamp: BigInt!
+  """
+  Native ERC-20 decimals of each side, as declared in the shipped program.
+  Positions shipped before this field existed report 18/18, which is what
+  they were by construction.
+  """
+  tokenInDecimals: Int!
+  tokenOutDecimals: Int!
+  """
+  Balances normalized to 18-decimal WAD, not raw token units -- the AS math
+  below (and targetInventoryWad/boundWad above) is all WAD, so a 6-decimal
+  side like USDC has to be scaled up on the way in or every derived price
+  is off by 1e12.
+  """
   currentBalanceAWad: BigInt! # updated on every fill from the Swapped event's amountIn/amountOut
   currentBalanceBWad: BigInt!
   currentReservationPriceWad: BigInt! # re-derived with the same AS formula, see mapping.ts
