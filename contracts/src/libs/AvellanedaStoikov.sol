@@ -131,17 +131,81 @@ library AvellanedaStoikov {
         uint256 elapsedSecs,
         int256 boundWad
     ) internal pure returns (uint256 newBalanceIn, uint256 newBalanceOut) {
-        int256 mid = midFromBalancesWad(balanceIn, balanceOut);
-        int256 r = reservationPriceWad(mid, inventoryQWad, p, elapsedSecs);
+        // The A->B case: balanceIn *is* the tracked (tokenA) side, which is
+        // what this signature has always assumed. Kept as-is so the Uniswap
+        // hook and this library's own tests keep their exact behaviour.
+        return applyInventorySkewDirectional(
+            balanceIn, balanceOut, balanceIn, balanceOut, inventoryQWad, p, elapsedSecs, boundWad, true
+        );
+    }
+
+    /// @notice The direction-aware form. `applyInventorySkew` above is the
+    ///         `isAToB == true` special case of this.
+    ///
+    /// @dev Why this exists: the original function folded three separate
+    ///      direction-dependent decisions into "balanceIn is tokenA", which
+    ///      silently breaks the B->A (covered) direction:
+    ///
+    ///      1. *Which balance carries inventory.* `q` is declared against
+    ///         tokenA, so it must be read from the tokenA balance whichever
+    ///         side of the swap tokenA currently sits on -- otherwise a B->A
+    ///         fill compares a tokenB balance against a tokenA-denominated
+    ///         target, and `q` stops meaning anything.
+    ///      2. *Which side is exposed.* An A->B fill pays in tokenA, pushing
+    ///         inventory up, so it is exposed when q >= 0. A B->A fill pays
+    ///         *out* tokenA, pushing inventory down, so it is exposed when
+    ///         q <= 0 -- the mirror image, not the same test.
+    ///      3. *Which way the half-spread moves the price.* The price
+    ///         register SwapVM prices against is tokenOut-per-tokenIn, so
+    ///         "worse for the taker" is a *lower* number quoting A->B and a
+    ///         *higher* one quoting B->A.
+    ///
+    ///      All three are handled by computing in one fixed price space --
+    ///      p, tokenB per tokenA -- and inverting once at the end for the
+    ///      B->A direction, rather than by branching on the raw registers.
+    ///
+    /// @param balanceInWad the swap's input-side balance, WAD-normalized
+    /// @param balanceOutWad the swap's output-side balance, WAD-normalized
+    /// @param balanceAWad the tokenA-side balance, WAD-normalized
+    /// @param balanceBWad the tokenB-side balance, WAD-normalized
+    /// @param inventoryQWad tokenA inventory minus the declared target, WAD
+    /// @param isAToB true when the taker is paying tokenA in for tokenB out
+    function applyInventorySkewDirectional(
+        uint256 balanceInWad,
+        uint256 balanceOutWad,
+        uint256 balanceAWad,
+        uint256 balanceBWad,
+        int256 inventoryQWad,
+        Params memory p,
+        uint256 elapsedSecs,
+        int256 boundWad,
+        bool isAToB
+    ) internal pure returns (uint256 newBalanceIn, uint256 newBalanceOut) {
+        // One price space for the whole calculation: p = tokenB per tokenA,
+        // independent of which way this particular fill runs. gamma/sigma^2/
+        // delta0 are maker-declared constants calibrated against this mid,
+        // so they only stay meaningful if `r` is always built in it.
+        int256 pMid = midFromBalancesWad(balanceAWad, balanceBWad);
+        int256 r = reservationPriceWad(pMid, inventoryQWad, p, elapsedSecs);
 
         int256 halfSpread = halfSpreadWad(p, elapsedSecs);
         if (halfSpread < 0) halfSpread = 0;
 
-        bool exposedSide = inventoryQWad >= 0;
-        int256 effectivePrice = exposedSide ? r - halfSpread : r + halfSpread;
-        if (effectivePrice < 1) effectivePrice = 1; // never quote a non-positive price
+        // See note 2 above: the test mirrors with the direction.
+        bool exposedSide = isAToB ? inventoryQWad >= 0 : inventoryQWad <= 0;
 
-        (newBalanceIn, newBalanceOut) = recenterBalances(balanceIn, balanceOut, effectivePrice);
+        // See note 3: in p-space, worse-for-the-taker is downward when
+        // paying tokenA in and upward when paying tokenB in.
+        bool worseIsDown = isAToB ? exposedSide : !exposedSide;
+        int256 effectiveP = worseIsDown ? r - halfSpread : r + halfSpread;
+        if (effectiveP < 1) effectiveP = 1; // never quote a non-positive price
+
+        // recenterBalances works in the register's own tokenOut-per-tokenIn
+        // terms, so invert p once for the B->A direction.
+        int256 effectivePrice = isAToB ? effectiveP : (WAD * WAD) / effectiveP;
+        if (effectivePrice < 1) effectivePrice = 1;
+
+        (newBalanceIn, newBalanceOut) = recenterBalances(balanceInWad, balanceOutWad, effectivePrice);
 
         if (exposedSide) {
             uint256 penaltyBps = softBoundPenaltyBps(inventoryQWad, boundWad);

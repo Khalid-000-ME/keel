@@ -34,6 +34,20 @@ export function buildShipKeelStrategyTx(
   amounts: ShipAmounts,
   saltSeed: bigint,
 ): CallInfo {
+  // tokenA/tokenB are the pair sorted by address, which is not necessarily
+  // the caller's in/out framing -- so the decimals have to be reordered the
+  // same way the amounts already were. Passing the caller's in/out decimals
+  // straight through was wrong whenever tokenIn happened to be the
+  // higher-sorting of the two.
+  const tokenInIsA = BigInt(config.tokenIn) < BigInt(config.tokenOut);
+  const [tokenA, tokenB] = tokenInIsA ? [config.tokenIn, config.tokenOut] : [config.tokenOut, config.tokenIn];
+  const [amountA, amountB] = tokenInIsA
+    ? [amounts.amountIn, amounts.amountOut]
+    : [amounts.amountOut, amounts.amountIn];
+  const [tokenADecimals, tokenBDecimals] = tokenInIsA
+    ? [config.tokenInDecimals, config.tokenOutDecimals]
+    : [config.tokenOutDecimals, config.tokenInDecimals];
+
   const program = buildKeelProgram(
     {
       gammaWad: config.params.gammaWad,
@@ -43,17 +57,12 @@ export function buildShipKeelStrategyTx(
       boundWad: config.boundWad,
       horizonSecs: config.params.horizonSecs,
       startTimestamp: Math.floor(Date.now() / 1000),
-      tokenInDecimals: config.tokenInDecimals,
-      tokenOutDecimals: config.tokenOutDecimals,
+      tokenADecimals,
+      tokenBDecimals,
+      tokenA,
     },
     saltSeed,
   );
-
-  const tokenInIsA = BigInt(config.tokenIn) < BigInt(config.tokenOut);
-  const [tokenA, tokenB] = tokenInIsA ? [config.tokenIn, config.tokenOut] : [config.tokenOut, config.tokenIn];
-  const [amountA, amountB] = tokenInIsA
-    ? [amounts.amountIn, amounts.amountOut]
-    : [amounts.amountOut, amounts.amountIn];
 
   const order = buildOrder({
     maker: config.maker,

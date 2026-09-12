@@ -60,8 +60,21 @@ library KeelInventorySkew {
     ///      [int128 gammaWad][int128 sigmaSqWad][int128 baseSpreadWad]
     ///      [int256 targetInventoryWad][int256 boundWad]
     ///      [uint32 horizonSecs][uint40 startTimestamp]
-    ///      [uint8 tokenInDecimals][uint8 tokenOutDecimals]
-    /// @dev tokenInDecimals/tokenOutDecimals exist because `ctx.swap.balanceIn/
+    ///      [uint8 tokenADecimals][uint8 tokenBDecimals][address tokenA]
+    /// @dev The decimals are keyed to the order's own tokenA/tokenB -- not to
+    ///      the swap's in/out sides, which swap places with the direction of
+    ///      each fill. An earlier version keyed them in/out and applied them
+    ///      positionally, which was correct for A->B fills and silently wrong
+    ///      for every B->A (covered-side) one: on that direction it scaled an
+    ///      18-decimal balance by the 6-decimal token's factor and vice
+    ///      versa, handing XYCSwap a curve whose reserves were off by ~1e24
+    ///      and quoting far more tokenOut than the position could settle. It
+    ///      went unnoticed because every pair shipped before real USDC was
+    ///      18/18, where both scales are 1. `tokenA` is carried so `exec` can
+    ///      tell the direction (`ctx.query.tokenIn == tokenA`) without an
+    ///      external call, keeping this instruction a pure function of its
+    ///      own args and the context it is handed.
+    /// @dev tokenADecimals/tokenBDecimals exist because `ctx.swap.balanceIn/
     ///      balanceOut` are the maker's *raw* Aqua balances, in whichever
     ///      decimals the actual ERC-20 uses -- not WAD by construction, just
     ///      by convention when every token happens to be 18-decimal (as
@@ -86,12 +99,13 @@ library KeelInventorySkew {
         int256 boundWad;
         uint32 horizonSecs;
         uint40 startTimestamp;
-        uint8 tokenInDecimals;
-        uint8 tokenOutDecimals;
+        uint8 tokenADecimals;
+        uint8 tokenBDecimals;
+        address tokenA;
     }
 
     function sizeOf() internal pure returns (uint256) {
-        return InstructionBuilder.sizeOf() + 16 + 16 + 16 + 32 + 32 + 4 + 5 + 1 + 1;
+        return InstructionBuilder.sizeOf() + 16 + 16 + 16 + 32 + 32 + 4 + 5 + 1 + 1 + 20;
     }
 
     /// @notice Encodes a ProgramData struct as instruction bytes, following
@@ -110,8 +124,9 @@ library KeelInventorySkew {
         ptr = ptr.push(uint256(d.boundWad), 32);
         ptr = ptr.push(uint256(d.horizonSecs), 4);
         ptr = ptr.push(uint256(d.startTimestamp), 5);
-        ptr = ptr.push(d.tokenInDecimals);
-        ptr = ptr.push(d.tokenOutDecimals);
+        ptr = ptr.push(d.tokenADecimals);
+        ptr = ptr.push(d.tokenBDecimals);
+        ptr = ptr.push(d.tokenA);
         start.patchLength(ptr);
         return ptr.resolve();
     }
@@ -132,8 +147,9 @@ library KeelInventorySkew {
         d.boundWad = int256(uint256(args.at(80).asU256()));
         d.horizonSecs = args.at(112).asU32();
         d.startTimestamp = args.at(116).asU40();
-        d.tokenInDecimals = args.at(121).asU8();
-        d.tokenOutDecimals = args.at(122).asU8();
+        d.tokenADecimals = args.at(121).asU8();
+        d.tokenBDecimals = args.at(122).asU8();
+        d.tokenA = args.at(123).asAddress();
     }
 
     /// @notice Reads the maker's live Aqua safe balance -- already sitting
@@ -156,13 +172,25 @@ library KeelInventorySkew {
         // maker declares >18 decimals for either token -- correctly, since
         // no real ERC-20 does and this instruction has no other way to
         // reject a nonsensical value without an external call.
-        uint256 inScale = 10 ** (18 - uint256(d.tokenInDecimals));
-        uint256 outScale = 10 ** (18 - uint256(d.tokenOutDecimals));
+        // Which direction is this fill running? tokenA/tokenB are the order's
+        // own two tokens; ctx.query.tokenIn says which of them the taker is
+        // paying in. Everything direction-dependent below hangs off this.
+        bool isAToB = ctx.query.tokenIn == d.tokenA;
+
+        uint256 aScale = 10 ** (18 - uint256(d.tokenADecimals));
+        uint256 bScale = 10 ** (18 - uint256(d.tokenBDecimals));
+        uint256 inScale = isAToB ? aScale : bScale;
+        uint256 outScale = isAToB ? bScale : aScale;
 
         uint256 balanceInWad = ctx.swap.balanceIn * inScale;
         uint256 balanceOutWad = ctx.swap.balanceOut * outScale;
 
-        int256 inventoryQWad = int256(balanceInWad) - d.targetInventoryWad;
+        // `q` is declared against tokenA, so it is read from the tokenA
+        // balance whichever side of this particular swap tokenA sits on.
+        uint256 balanceAWad = isAToB ? balanceInWad : balanceOutWad;
+        uint256 balanceBWad = isAToB ? balanceOutWad : balanceInWad;
+
+        int256 inventoryQWad = int256(balanceAWad) - d.targetInventoryWad;
         uint256 elapsedSecs = block.timestamp > d.startTimestamp ? block.timestamp - d.startTimestamp : 0;
 
         AvellanedaStoikov.Params memory p = AvellanedaStoikov.Params({
@@ -172,8 +200,8 @@ library KeelInventorySkew {
             horizonSecs: uint256(d.horizonSecs)
         });
 
-        (uint256 newBalanceInWad, uint256 newBalanceOutWad) = AvellanedaStoikov.applyInventorySkew(
-            balanceInWad, balanceOutWad, inventoryQWad, p, elapsedSecs, d.boundWad
+        (uint256 newBalanceInWad, uint256 newBalanceOutWad) = AvellanedaStoikov.applyInventorySkewDirectional(
+            balanceInWad, balanceOutWad, balanceAWad, balanceBWad, inventoryQWad, p, elapsedSecs, d.boundWad, isAToB
         );
 
         // Denormalized back to native decimals: XYCSwap (or whatever

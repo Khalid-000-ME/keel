@@ -90,9 +90,15 @@ export function handleShipped(event: Shipped): void {
   const boundWad = readSignedBE(args, 82, 32);
   const horizonSecs = readUnsignedBE(args, 114, 4);
   const startTimestamp = readUnsignedBE(args, 118, 5);
-  // tokenIn/tokenOutDecimals, appended after startTimestamp when the opcode
+  // The two decimals bytes, appended after startTimestamp when the opcode
   // grew from 121 to 123 args bytes (125 total) to support non-18-decimal
-  // pairs. Programs shipped before that are 123 bytes total and were 18/18
+  // pairs. They are keyed to tokenA/tokenB (the pair sorted by address),
+  // which is what the scaleA/scaleB use below already assumes; the opcode
+  // originally named them tokenIn/tokenOut, which was the same thing only
+  // for A->B fills and is why covered-side fills mispriced. Programs newer
+  // than that carry tokenA as 20 further bytes (143 args) -- not read here,
+  // since this mapping already knows the pair from the order itself.
+  // Programs shipped before the decimals existed are 123 bytes total and 18/18
   // by construction, so a missing field reads as 18 rather than zero --
   // zero would make the scale factor below 1e18 and corrupt every price.
   const tokenInDecimals = program.length > 123 ? program[123] : 18;

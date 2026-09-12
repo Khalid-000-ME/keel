@@ -138,8 +138,9 @@ contract ShipKeelRealPair is Script {
             boundWad: BOUND_WAD,
             horizonSecs: HORIZON_SECS,
             startTimestamp: uint40(block.timestamp),
-            tokenInDecimals: USDC_DECIMALS,
-            tokenOutDecimals: WETH_DECIMALS
+            tokenADecimals: USDC_DECIMALS,
+            tokenBDecimals: WETH_DECIMALS,
+            tokenA: USDC
         });
         bytes memory program =
             bytes.concat(KeelInventorySkew.build(d), XYCSwap.build(), Salt.build(abi.encodePacked(block.timestamp)));

@@ -20,8 +20,12 @@ export const SALT_OPCODE = 0x02;
  * [int128 gammaWad][int128 sigmaSqWad][int128 baseSpreadWad]
  * [int256 targetInventoryWad][int256 boundWad]
  * [uint32 horizonSecs][uint40 startTimestamp]
- * [uint8 tokenInDecimals][uint8 tokenOutDecimals]
- * (123 args bytes + the 2-byte instruction header = 125 bytes total).
+ * [uint8 tokenADecimals][uint8 tokenBDecimals][address tokenA]
+ * (143 args bytes + the 2-byte instruction header = 145 bytes total).
+ *
+ * The decimals are keyed to tokenA/tokenB rather than the swap's in/out
+ * sides, and tokenA itself is carried so the opcode can tell which way a
+ * fill is running. See KeelProgramData in @keel/seam for why.
  *
  * Verified against a live Solidity fixture -- see
  * contracts/test/EncodingFixtures.t.sol::test_LogKeelProgramDataFixture --
@@ -36,10 +40,11 @@ export function encodeKeelInventorySkew(d: KeelProgramData): Hex {
     toHexPadded(d.boundWad, 32),
     toHexPadded(BigInt(d.horizonSecs), 4),
     toHexPadded(BigInt(d.startTimestamp), 5),
-    toHexPadded(BigInt(d.tokenInDecimals), 1),
-    toHexPadded(BigInt(d.tokenOutDecimals), 1),
+    toHexPadded(BigInt(d.tokenADecimals), 1),
+    toHexPadded(BigInt(d.tokenBDecimals), 1),
+    toHexPadded(BigInt(d.tokenA), 20),
   ]);
-  return concatHex([instructionHeader(KEEL_INVENTORY_SKEW_OPCODE, 123), args]);
+  return concatHex([instructionHeader(KEEL_INVENTORY_SKEW_OPCODE, 143), args]);
 }
 
 /** swap-vm/src/instructions/XYCSwap.sol: no args. */

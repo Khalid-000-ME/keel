@@ -26,9 +26,12 @@ abstract contract KeelTestBase is AquaSwapVMTest {
         return bytes.concat(KeelInventorySkew.build(d), XYCSwap.build());
     }
 
+    /// @dev `view`, not `pure`, because the program now carries tokenA so the
+    ///      opcode can tell a fill's direction -- and tokenA here is the
+    ///      harness's own token, not a constant.
     function defaultKeelParams(int256 targetInventoryWad, int256 boundWad, uint40 startTimestamp)
         internal
-        pure
+        view
         returns (KeelInventorySkew.ProgramData memory)
     {
         return KeelInventorySkew.ProgramData({
@@ -39,8 +42,9 @@ abstract contract KeelTestBase is AquaSwapVMTest {
             boundWad: boundWad,
             horizonSecs: 7 days,
             startTimestamp: startTimestamp,
-            tokenInDecimals: 18,
-            tokenOutDecimals: 18
+            tokenADecimals: 18,
+            tokenBDecimals: 18,
+            tokenA: address(tokenA)
         });
     }
 }

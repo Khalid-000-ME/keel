@@ -127,8 +127,9 @@ contract ShipKeelDemo is Script {
             boundWad: BOUND_WAD,
             horizonSecs: HORIZON_SECS,
             startTimestamp: uint40(block.timestamp),
-            tokenInDecimals: 18,
-            tokenOutDecimals: 18
+            tokenADecimals: 18,
+            tokenBDecimals: 18,
+            tokenA: address(token0)
         });
         bytes memory program =
             bytes.concat(KeelInventorySkew.build(d), XYCSwap.build(), Salt.build(abi.encodePacked(block.timestamp)));

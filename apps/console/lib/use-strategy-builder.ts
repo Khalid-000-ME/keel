@@ -128,8 +128,11 @@ export function useStrategyBuilder(onShipped: (strategyHash: Hex) => void) {
         boundWad: toWad(draft.bound),
         horizonSecs: draft.horizonSecs,
         startTimestamp: nonce.startedAt,
-        tokenInDecimals: network.tokens[0].decimals,
-        tokenOutDecimals: network.tokens[1].decimals,
+        // network.tokens is already address-sorted, so [0]/[1] are tokenA/
+        // tokenB -- the same pair the order below is built with.
+        tokenADecimals: network.tokens[0].decimals,
+        tokenBDecimals: network.tokens[1].decimals,
+        tokenA: network.tokens[0].address,
       },
       nonce.salt,
     ) as Hex;
