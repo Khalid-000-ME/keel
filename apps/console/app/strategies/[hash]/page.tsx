@@ -79,7 +79,6 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   // balance (and the tilt gauge) would never move off target. Defaults are
   // sized for a small test trade on each side.
   const [fillSize0, setFillSize0] = useState(50);
-  const [fillSize1, setFillSize1] = useState(0.01);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<Hex | undefined>();
@@ -90,9 +89,13 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
   const orderTuple = toOrderTuple(strategy.order);
   const amountInExposed = parseUnits(toDecimalString(fillSize0, network.tokens[0].decimals), network.tokens[0].decimals);
-  const amountInCovered = parseUnits(toDecimalString(fillSize1, network.tokens[1].decimals), network.tokens[1].decimals);
   const docked = Boolean(strategy.dockedTxHash);
   const isMine = address?.toLowerCase() === strategy.order.maker.toLowerCase();
+  // A position shipped against a different pair can't be read through this
+  // network's current decimals (see isLegacyPair). Suppress every derived
+  // number rather than render one that's a million-fold off -- the dock
+  // button below stays live so the maker can still recover the inventory.
+  const legacyPair = isLegacyPair(strategy, network);
 
   const {
     data: balances,
@@ -106,23 +109,42 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
     query: { refetchInterval: REFRESH_MS },
   });
 
+  const bal0 = balances?.[0];
+  const bal1 = balances?.[1];
+
+  // The live mid, from the position's actual balances rather than the
+  // amounts it was shipped with. Those stored amounts are a snapshot from
+  // ship time: as soon as any fill lands they stop describing this position,
+  // so using them put the chart's "mid" reference somewhere the real mid no
+  // longer was -- and the further the position drifted, the more wrong it
+  // got, on a chart whose entire subject is drift. Falls back to the ship
+  // amounts only until the first balance read arrives.
+  const shippedMid = Number(strategy.amount0) > 0 ? Number(strategy.amount1) / Number(strategy.amount0) : 1;
+  const liveMid =
+    !legacyPair && bal0 !== undefined && bal1 !== undefined && bal0 > 0n
+      ? Number(formatUnits(bal1, network.tokens[1].decimals)) /
+        Number(formatUnits(bal0, network.tokens[0].decimals))
+      : null;
+  const midForQuotes = liveMid ?? shippedMid;
+
+  // The covered side's size, derived rather than entered separately. Each
+  // side sells a different token, so two independent size inputs quoted the
+  // two sides at different *values* -- and price impact scales with size, so
+  // the gap between the two quoted lines was dominated by that size
+  // difference rather than by the inventory skew the chart exists to show.
+  const fillSize1 = fillSize0 * midForQuotes;
+  const amountInCovered = parseUnits(toDecimalString(fillSize1, network.tokens[1].decimals), network.tokens[1].decimals);
+
   const { data: quotes, dataUpdatedAt: quotesUpdatedAt, refetch: refetchQuotes } = useReadContracts({
     contracts: [
       { address: network.addresses.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [network.addresses.keelRouter, orderTuple, amountInExposed, true] },
       { address: network.addresses.demoTaker, abi: DEMO_TAKER_ABI, functionName: "previewFill" as const, args: [network.addresses.keelRouter, orderTuple, amountInCovered, false] },
     ],
-    query: { refetchInterval: REFRESH_MS, enabled: !docked && !isLegacyPair(strategy, network) },
+    query: { refetchInterval: REFRESH_MS, enabled: !docked && !legacyPair && amountInCovered > 0n },
   });
 
   const { mutateAsync: write } = useWriteContract();
 
-  const bal0 = balances?.[0];
-  const bal1 = balances?.[1];
-  // A position shipped against a different pair can't be read through this
-  // network's current decimals (see isLegacyPair). Suppress every derived
-  // number rather than render one that's a million-fold off -- the dock
-  // button below stays live so the maker can still recover the inventory.
-  const legacyPair = isLegacyPair(strategy, network);
   const inventory =
     !legacyPair && bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)) : null;
   const drift = inventory !== null ? inventory - strategy.params.targetInventory : null;
@@ -270,7 +292,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
       <LivePriceChart
         history={history}
         currentQ={drift}
-        mid={Number(strategy.amount0) > 0 ? Number(strategy.amount1) / Number(strategy.amount0) : 1}
+        mid={midForQuotes}
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
@@ -322,9 +344,16 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <FieldLabel>Make a fill — adjustable size</FieldLabel>
           </div>
+          {/* One size, not two. Each side sells a different token, so two
+              independent boxes quoted the two sides at different *values* --
+              and since price impact scales with size, the gap between the two
+              quoted lines was mostly that size difference rather than the
+              inventory skew the chart claims it is. The covered side's size
+              is derived from this one through the live mid, so both sides
+              describe the same trade value and the gap is the skew alone. */}
           <div className="mt-2 flex flex-wrap items-center gap-4">
             <label className="text-readout-dim flex items-center gap-2 text-[11px]">
-              {strategy.symbol0} in
+              trade size, {strategy.symbol0}
               <input
                 type="number"
                 min={0.01}
@@ -334,17 +363,9 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
                 className="border-hairline bg-graphite-raised text-readout font-numeric w-24 border px-2 py-1 text-[12px] outline-none"
               />
             </label>
-            <label className="text-readout-dim flex items-center gap-2 text-[11px]">
-              {strategy.symbol1} in
-              <input
-                type="number"
-                min={0.000000001}
-                step={0.0001}
-                value={fillSize1}
-                onChange={(e) => setFillSize1(Math.max(0.000000001, Number(e.target.value) || 0.000000001))}
-                className="border-hairline bg-graphite-raised text-readout font-numeric w-32 border px-2 py-1 text-[12px] outline-none"
-              />
-            </label>
+            <span className="text-readout-dim font-numeric text-[11px]">
+              ≈ {fillSize1.toFixed(8)} {strategy.symbol1} on the covered side
+            </span>
           </div>
 
           <div className="border-hairline/60 mt-4 grid gap-px border sm:grid-cols-2">
@@ -359,7 +380,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
             <QuoteBox
               label="Covered-side fill"
               formula="r + \delta"
-              detail={`${fillSize1} ${strategy.symbol1} in`}
+              detail={`${fillSize1.toFixed(8)} ${strategy.symbol1} in — same value`}
               rate={coveredRate}
               tone="long"
               note="brings inventory back to target"
