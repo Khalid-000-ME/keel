@@ -45,7 +45,7 @@ export default function LandingPage() {
               <ButtonLink href="/simulate" variant="primary">
                 See the receipt
               </ButtonLink>
-              <ButtonLink href="/position/live" variant="secondary" arrow={false}>
+              <ButtonLink href="/positions" variant="secondary" arrow={false}>
                 <Activity className="h-4 w-4" />
                 Watch a position lean
               </ButtonLink>

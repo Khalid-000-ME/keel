@@ -14,7 +14,6 @@ const LINKS = [
   { href: "/positions", label: "Positions" },
   { href: "/market", label: "Market" },
   { href: "/simulate", label: "Receipt" },
-  { href: "/position/live", label: "Position" },
 ];
 
 // One nav-height of scroll. Deliberately not tied to the hero: the landing
