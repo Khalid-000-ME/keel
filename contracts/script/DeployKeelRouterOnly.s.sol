@@ -14,8 +14,12 @@ import { NetworkConfig } from "./NetworkConfig.sol";
 ///         KeelRouter inlines KeelInstructions.sol as an internal library
 ///         (Solidity has no way to "hot-patch" a deployed contract's
 ///         bytecode), so picking up a source change to that library means
-///         redeploying this router -- exactly the situation after adding
-///         tokenInDecimals/tokenOutDecimals to ProgramData.
+///         redeploying this router -- exactly the situation after keying
+///         ProgramData's decimals to tokenA/tokenB and adding tokenA, which
+///         is what makes covered-side (B->A) fills price correctly. Note
+///         that programs shipped against an older router carry no tokenA
+///         and are 20 bytes shorter, so they cannot be read by this one:
+///         positions have to be re-shipped, not migrated.
 /// @dev Existing Aqua addresses are hardcoded here (not in NetworkConfig.sol,
 ///      which only holds third-party addresses -- WETH, PoolManager -- that
 ///      never change; Aqua addresses are *this project's own* deployments,

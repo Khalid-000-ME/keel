@@ -123,6 +123,10 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
+  // A reverting quote is an answer, not a gap: reading only `.result` showed
+  // a side that can never fill as a plain em-dash, with its button still live.
+  const exposedQuoteError = quotes?.[0]?.error ? txErrorText(quotes[0].error) : null;
+  const coveredQuoteError = quotes?.[1]?.error ? txErrorText(quotes[1].error) : null;
   // Both expressed in the same units -- token1 per token0, matching mid
   // (balanceOut/balanceIn) -- so subtracting them below is meaningful.
   // Exposed sells token0 in for token1 out, so token1-out/token0-in is
@@ -329,6 +333,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
               rate={exposedRate}
               tone="short"
               note="pushes inventory further from target"
+              error={exposedQuoteError}
             />
             <QuoteBox
               label="Covered-side fill"
@@ -337,6 +342,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
               rate={coveredRate}
               tone="long"
               note="brings inventory back to target"
+              error={coveredQuoteError}
             />
           </div>
 
@@ -418,6 +424,7 @@ function QuoteBox({
   rate,
   tone,
   note,
+  error,
 }: {
   label: string;
   formula: string;
@@ -425,6 +432,8 @@ function QuoteBox({
   rate: number | null;
   tone: "long" | "short";
   note: string;
+  /** Why this side has no quote, when the router rejected it outright. */
+  error?: string | null;
 }) {
   return (
     <div className="bg-panel-raised/40 p-4">
@@ -433,10 +442,20 @@ function QuoteBox({
         <Formula tex={formula} className="text-hairline-bright" />
       </div>
       <div className="mt-2">
-        <NumericReadout value={rate !== null ? rate.toFixed(PRICE_DECIMALS) : "—"} size="lg" sign={tone} />
+        <NumericReadout
+          value={error ? "—" : rate !== null ? rate.toFixed(PRICE_DECIMALS) : "—"}
+          size="lg"
+          sign={error ? "short" : tone}
+        />
       </div>
       <div className="text-readout-dim mt-1 text-[11px]">{detail}</div>
-      <div className="text-readout-dim mt-0.5 text-[11px]">{note}</div>
+      {error ? (
+        <div className="text-short-bright mt-1 text-[11px] leading-relaxed">
+          this side won&apos;t quote: {error}
+        </div>
+      ) : (
+        <div className="text-readout-dim mt-0.5 text-[11px]">{note}</div>
+      )}
     </div>
   );
 }

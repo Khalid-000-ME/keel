@@ -97,12 +97,18 @@ export function useBestQuote(strategies: LiveStrategy[], amountIn: bigint, isATo
     })
     .filter((q): q is QuoteResult => q !== null);
 
+  // Candidates whose preview reverted are dropped from the routing above --
+  // they genuinely can't fill -- but dropping them *silently* turned "every
+  // strategy rejected this direction" into an indistinguishable "no route",
+  // with nothing on screen saying why. Keep the first reason to show.
+  const firstQuoteError = data?.find((d) => d?.error)?.error ?? null;
+
   const best = quotes.reduce<QuoteResult | null>(
     (top, q) => (top === null || q.amountOut > top.amountOut ? q : top),
     null,
   );
 
-  return { quotes, best, dataUpdatedAt };
+  return { quotes, best, dataUpdatedAt, quoteError: firstQuoteError };
 }
 
 /**

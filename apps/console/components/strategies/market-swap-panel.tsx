@@ -39,7 +39,7 @@ export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) 
   const setAmount = isAToB ? setAmount0 : setAmount1;
   const amountIn = parseSide(network, amount, isAToB);
 
-  const { quotes, best } = useBestQuote(strategies, amountIn, isAToB);
+  const { quotes, best, quoteError } = useBestQuote(strategies, amountIn, isAToB);
   const { swap, onRightChain, isConnected } = useMarketSwap();
 
   const bestOut = best ? Number(formatUnits(best.amountOut, tokenOut.decimals)) : null;
@@ -108,6 +108,11 @@ export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) 
             sign="long"
           />
         </div>
+        {best === null && quoteError && amountIn > 0n && (
+          <div className="text-short-bright mt-1.5 text-[11px] leading-relaxed">
+            no strategy would quote this direction: {txErrorText(quoteError)}
+          </div>
+        )}
       </div>
 
       {quotes.length > 1 && (
