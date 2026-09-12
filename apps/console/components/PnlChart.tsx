@@ -34,8 +34,25 @@ export function PnlChart({
   const line = (key: "stockPnl" | "keelPnl") =>
     series.map((s, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(s[key]).toFixed(1)}`).join(" ");
 
-  const area = (key: "stockPnl" | "keelPnl") =>
-    `${line(key)} L ${xFor(series.length - 1).toFixed(1)} ${zeroY.toFixed(1)} L ${xFor(0).toFixed(1)} ${zeroY.toFixed(1)} Z`;
+  /**
+   * The band between the two curves, filled once.
+   *
+   * Each series used to get its own area down to the zero line. Keel's PnL
+   * turns negative near the end, so its area fills *upward* into the stock
+   * area, and two translucent fills stacked into a grey-olive wash once the
+   * palette went light. Filling the gap itself is both cleaner and closer to
+   * what the chart is for: that gap is the whole claim.
+   */
+  const gapBand = (() => {
+    const forward = series
+      .map((s, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(s.keelPnl).toFixed(1)}`)
+      .join(" ");
+    const back = series
+      .map((_, i) => series.length - 1 - i)
+      .map((i) => `L ${xFor(i).toFixed(1)} ${yFor(series[i].stockPnl).toFixed(1)}`)
+      .join(" ");
+    return `${forward} ${back} Z`;
+  })();
 
   const last = series[series.length - 1];
 
@@ -48,13 +65,12 @@ export function PnlChart({
         aria-label="Stock versus Keel PnL across the adversarial run"
       >
         <defs>
-          <linearGradient id={`${uid}-stock`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--short)" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="var(--short)" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id={`${uid}-keel`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--long)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="var(--long)" stopOpacity="0" />
+          {/* One tint for the gap, in the -bright accent: `--long`/`--short` are
+              the darkened variants tuned to carry text on white, far too heavy
+              to wash a large area with on the light theme. */}
+          <linearGradient id={`${uid}-gap`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--long-bright)" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="var(--long-bright)" stopOpacity="0.07" />
           </linearGradient>
           <filter id={`${uid}-glow`} x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -90,8 +106,7 @@ export function PnlChart({
           strokeDasharray="3 5"
         />
 
-        <path d={area("stockPnl")} fill={`url(#${uid}-stock)`} />
-        <path d={area("keelPnl")} fill={`url(#${uid}-keel)`} />
+        <path d={gapBand} fill={`url(#${uid}-gap)`} />
 
         <motion.path
           d={line("stockPnl")}

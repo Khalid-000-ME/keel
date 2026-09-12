@@ -107,8 +107,8 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
         >
           <defs>
             <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--short)" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="var(--short)" stopOpacity="0" />
+              <stop offset="0%" stopColor="var(--short-bright)" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="var(--short-bright)" stopOpacity="0" />
             </linearGradient>
           </defs>
 
