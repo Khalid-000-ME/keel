@@ -1,3 +1,5 @@
+import { formatUnits } from "viem";
+
 import { onchainDemo } from "@/lib/onchain-demo";
 import { DEFAULT_NETWORK, explorerTx } from "@/lib/chain";
 import { axisTick } from "@/lib/decimal";
@@ -15,10 +17,13 @@ import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
  * so the JSON stays the single source of truth -- if the demo is re-run
  * and re-captured, this chart moves with it.
  *
- * Deliberately one line only. All eight recorded fills are exposed-side
- * (isAToB), so there is no measured covered-side series to draw and none
- * is invented here; the covered side lives in SkewLab, which is explicitly
- * a computed toy.
+ * Deliberately one line only. The plotted series is the exposed side
+ * (isAToB) -- every point pushes inventory further from target, which is
+ * why the rate only falls. The run also records a single covered-side
+ * fill, but it runs the other way (WETH in, USDC out), so its rate lives
+ * on a different scale entirely and is reported as a figure below rather
+ * than bent onto these axes. The continuous covered *curve* elsewhere on
+ * the site is still computed from the formula, not observed.
  */
 
 const TARGET = wadToNumber(onchainDemo.params.targetInventoryWad);
@@ -241,11 +246,22 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
       <div className="border-hairline/70 text-readout-dim mt-5 border-t px-5 py-4 text-[12px] leading-relaxed">
         {POINTS.length} real fills against one shipped strategy, on the real {onchainDemo.tokenSymbols.token0}/
         {onchainDemo.tokenSymbols.token1} pair. Every point links to its own transaction on Basescan.{" "}
-        <span className="text-readout">All {POINTS.length} are exposed-side</span> (
+        <span className="text-readout">All {POINTS.length} plotted here are exposed-side</span> (
         <span className="font-numeric">isAToB</span>)
-        — each pushes inventory further from target, which is why the rate only falls. Nothing here measures the
-        covered side, so no covered-side curve is drawn: the covered line elsewhere on the site is computed from the
-        formula, not observed.
+        — each pushes inventory further from target, which is why the rate only falls.{" "}
+        <a
+          href={explorerTx(DEFAULT_NETWORK, onchainDemo.coveredFill.txHash)}
+          target="_blank"
+          rel="noreferrer"
+          className="text-long-bright underline decoration-dotted underline-offset-4"
+        >
+          One covered-side fill
+        </a>{" "}
+        was recorded too — {formatUnits(BigInt(onchainDemo.coveredFill.amountInWeth), 18)}{" "}
+        {onchainDemo.tokenSymbols.token1} in for{" "}
+        {formatUnits(BigInt(onchainDemo.coveredFill.actualAmountOutRaw), 6)} {onchainDemo.tokenSymbols.token0} out — but
+        it sells the other token, so its rate isn&apos;t on this axis. It is the first covered fill this project has
+        ever landed on chain: the direction reverted on the previous router.
       </div>
 
       {variant === "full" ? (

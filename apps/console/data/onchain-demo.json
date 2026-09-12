@@ -1,139 +1,159 @@
 {
-  "chain": "Base Sepolia",
-  "chainId": 84532,
-  "explorer": "https://sepolia.basescan.org",
-  "verifiedAgainstLiveChain": true,
-  "verificationNote": "A real Keel position on the real Circle USDC / WETH pair -- no mock tokens anywhere -- shipped and filled ten times against the live Aqua + redeployed KeelRouter on Base Sepolia via contracts/script/ShipKeelRealPair.s.sol. Every value here was re-derived from the chain after the broadcast (cast tx / cast receipt), never copied from forge's run-latest.json: forge mislabeled which hash belonged to which script call again in this run, exactly as it did in the earlier DRFT/BALT run. True order was reconstructed from each transaction's own on-chain nonce (743-752, strictly sequential) and cross-checked two further ways: the fill selector 0x358e73bf distinguishes the ten fills from the single approveRouter call (0xa773a59b), and the WETH paid out per fill decreases monotonically tick to tick (231012139850087 down to 34987833004421 wei), which is precisely the Avellaneda-Stoikov skew pricing the exposed side worse as inventory drifts. The strategyHash below is the one Aqua actually filed the position under, taken from the Shipped event in the ship transaction's own logs -- the script's pre-broadcast console line logged a different hash, and querying safeBalances with that one reverts. finalBalance0/1 were read back live from aqua.safeBalances() after the run and match the fill series. Do not trust broadcast/ShipKeelRealPair.s.sol/84532/run-latest.json's per-transaction function labels for this run -- use this file.",
-  "decimalsNote": "balance0Before/finalBalance0 are stored WAD-normalized (18 decimals) rather than in USDC's native 6, because every consumer of this file runs them through wadToNumber(), which assumes 18. The native raw amounts are kept alongside as *Raw fields. token1 is WETH, already 18 decimals, so its values are identical in both forms.",
-  "deployedContracts": {
-    "aqua": "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",
-    "keelRouter": "0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2"
+ "chain": "Base Sepolia",
+ "chainId": 84532,
+ "explorer": "https://sepolia.basescan.org",
+ "verifiedAgainstLiveChain": true,
+ "verificationNote": "A real Keel position on the real Circle USDC / WETH pair -- no mock tokens anywhere -- shipped against the live Aqua and a freshly redeployed KeelRouter on Base Sepolia via contracts/script/ShipKeelRealPair.s.sol, then filled ten times on the exposed side and once on the covered side. Every number in this file was decoded from the router's own fill events on chain, not copied from the script's console output. That distinction mattered here: forge's script log prints values from its simulation pass, which ran against slightly earlier state, so its per-fill outputs and its final balances are all a little different from what actually settled (tick 0 simulated 230969239974217 wei out, the chain settled 231031449107135). Summing the decoded events reproduces aqua.safeBalances() exactly (18627612 / 2383844570257055), which is what makes this file trustworthy. The strategyHash is the one Aqua actually filed the position under, identified by querying safeBalances against every 32-byte candidate in the ship transaction's logs -- the script's pre-broadcast console line logs a different hash, because the salt derives from block.timestamp. Do not trust broadcast/ShipKeelRealPair.s.sol/84532/run-latest.json's per-transaction function labels; the ordering here comes from each transaction's own nonce (764-774, strictly sequential).",
+ "decimalsNote": "balance0Before/finalBalance0 are stored WAD-normalized (18 decimals) rather than in USDC's native 6, because every consumer of this file runs them through wadToNumber(), which assumes 18. The native-decimal value is kept alongside as *Raw. balance1/WETH values are already 18-decimal and need no such treatment. coveredFill.actualAmountOut is USDC, so it carries both forms too.",
+ "coveredSideNote": "This run is the first to record a covered-side (tokenB -> tokenA) fill. Every earlier run on this pair was exposed-side only, which is exactly why a covered-side pricing bug survived: KeelInventorySkew keyed its decimals to the swap's in/out sides rather than to tokenA/tokenB, so on a B->A fill it scaled both balances by the wrong powers of ten and quoted far more tokenOut than the position could settle. On the previous router that call reverted at every realistic size. The fill below is the evidence that the fixed router prices and settles it.",
+ "deployedContracts": {
+  "aqua": "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",
+  "keelRouter": "0xeE6bb570BcfD4Ff2F168F4E0b492C7a5282b14dA"
+ },
+ "demoTokens": {
+  "token0": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "token1": "0x4200000000000000000000000000000000000006"
+ },
+ "tokenSymbols": {
+  "token0": "USDC",
+  "token1": "WETH"
+ },
+ "tokenDecimals": {
+  "token0": 6,
+  "token1": 18
+ },
+ "maker": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE",
+ "demoTaker": "0x9A60e9842E5f05e50DdB5C479871eB73f487f287",
+ "strategyHash": "0x912d8904fb6690e3137048d86eb1a570b765620a412edd6f9f3dbe83b036d8b0",
+ "shipTxHash": "0xf6e5a89e9477b3371c222a8e5cdd3abebfa256100e9d83fed495b4c34003e498",
+ "shipBlockNumber": 46736186,
+ "routerDeployTxHash": "0x1d1041ecd2e0499a0ab2f21133a69b8cb420fb86c315db82ba88a799d06d6732",
+ "routerDeployBlockNumber": 46735212,
+ "params": {
+  "gammaWad": "1.2e12",
+  "sigmaSqWad": "1e15",
+  "baseSpreadWad": "3e13",
+  "targetInventoryWad": "12000000000000000000",
+  "boundWad": "6000000000000000000",
+  "horizonSecs": 3600,
+  "fillSize": "1000000000000000000",
+  "fillSizeRaw": "1000000",
+  "ticks": 10
+ },
+ "fills": [
+  {
+   "tick": 0,
+   "nonce": 764,
+   "balance0Before": "12000000000000000000",
+   "balance0BeforeRaw": "12000000",
+   "balance1Before": "3400000000000000",
+   "actualAmountOut": "231031449107135",
+   "txHash": "0x81bffe28c7faf585b67461dd025e9288423e5815217b8a2863ba362b940f9b79",
+   "blockNumber": 46736191
   },
-  "demoTokens": {
-    "token0": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-    "token1": "0x4200000000000000000000000000000000000006"
+  {
+   "tick": 1,
+   "nonce": 765,
+   "balance0Before": "13000000000000000000",
+   "balance0BeforeRaw": "13000000",
+   "balance1Before": "3168968550892865",
+   "actualAmountOut": "190145053590683",
+   "txHash": "0x2bffc6e04a36af394ba0c2c4fd8ef95b4c8f1676a90b3b2626f3d5c2a7865f4e",
+   "blockNumber": 46736192
   },
-  "tokenSymbols": { "token0": "USDC", "token1": "WETH" },
-  "tokenDecimals": { "token0": 6, "token1": 18 },
-  "maker": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE",
-  "demoTaker": "0xEA2323a5653C6392dB51558897d92e609eB1f92e",
-  "strategyHash": "0x9048fa797c40055d89db2ffd4cc5f189dd1d519740c5e03313c31b769b15a8d3",
-  "shipTxHash": "0x3418475e0dea08e4d88dff50d491d9352f489d5e4ec5bc5e8dab082c6067ca17",
-  "shipBlockNumber": 46726593,
-  "params": {
-    "gammaWad": "1.2e12",
-    "sigmaSqWad": "1e15",
-    "baseSpreadWad": "3e13",
-    "targetInventoryWad": "12000000000000000000",
-    "boundWad": "6000000000000000000",
-    "horizonSecs": 3600,
-    "fillSize": "1000000000000000000",
-    "fillSizeRaw": "1000000",
-    "ticks": 10
+  {
+   "tick": 2,
+   "nonce": 766,
+   "balance0Before": "14000000000000000000",
+   "balance0BeforeRaw": "14000000",
+   "balance1Before": "2978823497302182",
+   "actualAmountOut": "157177391244668",
+   "txHash": "0x5bdc9bac23182b3ec0252440dd286c8e7bee25d313a12fad8c505ac5f348cfc4",
+   "blockNumber": 46736193
   },
-  "fills": [
-    {
-      "tick": 0,
-      "nonce": 743,
-      "balance0Before": "12000000000000000000",
-      "balance0BeforeRaw": "12000000",
-      "balance1Before": "3400000000000000",
-      "actualAmountOut": "231012139850087",
-      "txHash": "0x5e32d586f60461abeae90d1747e49d5ac9cd8fa25c88d8d4305b977a760f2e46",
-      "blockNumber": 46726595
-    },
-    {
-      "tick": 1,
-      "nonce": 744,
-      "balance0Before": "13000000000000000000",
-      "balance0BeforeRaw": "13000000",
-      "balance1Before": "3168987860149913",
-      "actualAmountOut": "190103418949863",
-      "txHash": "0x34204b9deb995c0a2d8f149a57110d5a04dfc9c0e0b944586199b594127a7163",
-      "blockNumber": 46726595
-    },
-    {
-      "tick": 2,
-      "nonce": 745,
-      "balance0Before": "14000000000000000000",
-      "balance0BeforeRaw": "14000000",
-      "balance1Before": "2978884441200050",
-      "actualAmountOut": "157123285153848",
-      "txHash": "0x230557b256c2602c795817d1a532bf915cfb50bc4931d32cd1805d3019c87eb0",
-      "blockNumber": 46726597
-    },
-    {
-      "tick": 3,
-      "nonce": 746,
-      "balance0Before": "15000000000000000000",
-      "balance0BeforeRaw": "15000000",
-      "balance1Before": "2821761156046202",
-      "actualAmountOut": "130016921217296",
-      "txHash": "0xc852f7f449d1253c2635676c90f4100d9cf7936b5a02d012cb64cb43e35392dd",
-      "blockNumber": 46726597
-    },
-    {
-      "tick": 4,
-      "nonce": 747,
-      "balance0Before": "16000000000000000000",
-      "balance0BeforeRaw": "16000000",
-      "balance1Before": "2691744234828906",
-      "actualAmountOut": "107409422225249",
-      "txHash": "0xd917ae8341f8fb7631a69a1855c57a142a04d64f16a3fdec1998b06a0c21832f",
-      "blockNumber": 46726597
-    },
-    {
-      "tick": 5,
-      "nonce": 748,
-      "balance0Before": "17000000000000000000",
-      "balance0BeforeRaw": "17000000",
-      "balance1Before": "2584334812603657",
-      "actualAmountOut": "88270412294952",
-      "txHash": "0xeef939f2bb31d0d4efb13537fc1f899164e0ec64dc114c7cd47ccc9c22b2bebd",
-      "blockNumber": 46726597
-    },
-    {
-      "tick": 6,
-      "nonce": 749,
-      "balance0Before": "18000000000000000000",
-      "balance0BeforeRaw": "18000000",
-      "balance1Before": "2496064400308705",
-      "actualAmountOut": "71880818958948",
-      "txHash": "0x9368a16575dabc75477be20928a6126fc209446ebb3843596d0d774eec2a310e",
-      "blockNumber": 46726599
-    },
-    {
-      "tick": 7,
-      "nonce": 750,
-      "balance0Before": "19000000000000000000",
-      "balance0BeforeRaw": "19000000",
-      "balance1Before": "2424183581349757",
-      "actualAmountOut": "58155784128293",
-      "txHash": "0x5f5a4f22aa836bc2a5d082161ed232b55eca95afaa56876d527ab8ce27bc23d9",
-      "blockNumber": 46726599
-    },
-    {
-      "tick": 8,
-      "nonce": 751,
-      "balance0Before": "20000000000000000000",
-      "balance0BeforeRaw": "20000000",
-      "balance1Before": "2366027797221464",
-      "actualAmountOut": "45950059567070",
-      "txHash": "0xbd1bd3d94f34355da2af89947407e13457bcf799b3be79437992e56fa4998cd5",
-      "blockNumber": 46726599
-    },
-    {
-      "tick": 9,
-      "nonce": 752,
-      "balance0Before": "21000000000000000000",
-      "balance0BeforeRaw": "21000000",
-      "balance1Before": "2320077737654394",
-      "actualAmountOut": "34987833004421",
-      "txHash": "0xd77a2c28bf69add72e579ba4795d5c1b029e0983a2a75345243c3367ff8e12f0",
-      "blockNumber": 46726599
-    }
-  ],
-  "finalBalance0": "22000000000000000000",
-  "finalBalance0Raw": "22000000",
-  "finalBalance1": "2285089904649973"
+  {
+   "tick": 3,
+   "nonce": 767,
+   "balance0Before": "15000000000000000000",
+   "balance0BeforeRaw": "15000000",
+   "balance1Before": "2821646106057514",
+   "actualAmountOut": "130095970606790",
+   "txHash": "0x5b6925f6619a19e225b42dac1672a963e46aed1726a6bc14fe90203224afa111",
+   "blockNumber": 46736194
+  },
+  {
+   "tick": 4,
+   "nonce": 768,
+   "balance0Before": "16000000000000000000",
+   "balance0BeforeRaw": "16000000",
+   "balance1Before": "2691550135450724",
+   "actualAmountOut": "107516644427591",
+   "txHash": "0x7e494f44e9abb45e7635688803b69923a9d5bc884e08c72c8d5226d8680b8d70",
+   "blockNumber": 46736195
+  },
+  {
+   "tick": 5,
+   "nonce": 769,
+   "balance0Before": "17000000000000000000",
+   "balance0BeforeRaw": "17000000",
+   "balance1Before": "2584033491023133",
+   "actualAmountOut": "88408976612925",
+   "txHash": "0x4de92c998fcc813c6dcf01b574e21d27216efaacaa0531f2967742c47d356250",
+   "blockNumber": 46736196
+  },
+  {
+   "tick": 6,
+   "nonce": 770,
+   "balance0Before": "18000000000000000000",
+   "balance0BeforeRaw": "18000000",
+   "balance1Before": "2495624514410208",
+   "actualAmountOut": "72023839569525",
+   "txHash": "0x41c470be2d79c00d438452b6e0e89b599650db8d0499d3c15bbc5059b2f1bf48",
+   "blockNumber": 46736197
+  },
+  {
+   "tick": 7,
+   "nonce": 771,
+   "balance0Before": "19000000000000000000",
+   "balance0BeforeRaw": "19000000",
+   "balance1Before": "2423600674840683",
+   "actualAmountOut": "58335193040035",
+   "txHash": "0xe75ef088f8cd7a625f673a5cf7f90a2920b0d1ca845bb3f9e2084affffb96094",
+   "blockNumber": 46736198
+  },
+  {
+   "tick": 8,
+   "nonce": 772,
+   "balance0Before": "20000000000000000000",
+   "balance0BeforeRaw": "20000000",
+   "balance1Before": "2365265481800648",
+   "actualAmountOut": "46169595879446",
+   "txHash": "0x17bf14802e5efbe4e62b6fbd240c4d7058cfb9ea3128a2b38a41f22fe46f91b3",
+   "blockNumber": 46736199
+  },
+  {
+   "tick": 9,
+   "nonce": 773,
+   "balance0Before": "21000000000000000000",
+   "balance0BeforeRaw": "21000000",
+   "balance1Before": "2319095885921202",
+   "actualAmountOut": "35251315664147",
+   "txHash": "0xb7982812dcc9248110827d7267f846d47144d6adafc1e4471a69b90690ca561a",
+   "blockNumber": 46736200
+  }
+ ],
+ "coveredFill": {
+  "nonce": 774,
+  "balance0Before": "22000000000000000000",
+  "balance0BeforeRaw": "22000000",
+  "balance1Before": "2283844570257055",
+  "amountInWeth": "100000000000000",
+  "actualAmountOut": "3372388000000000000",
+  "actualAmountOutRaw": "3372388",
+  "txHash": "0xc135c35b900889d9f56afeb76345aee640e1b8a86afa5d36631896a8dc2055ae",
+  "blockNumber": 46736201
+ },
+ "finalBalance0": "18627612000000000000",
+ "finalBalance0Raw": "18627612",
+ "finalBalance1": "2383844570257055"
 }

@@ -15,7 +15,7 @@ The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kerne
 | Contract | Address |
 |---|---|
 | Aqua | [`0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD`](https://sepolia.basescan.org/address/0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD) |
-| KeelRouter | [`0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2`](https://sepolia.basescan.org/address/0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2) — redeployed to add `tokenInDecimals`/`tokenOutDecimals` normalization, so it's safe to quote non-18-decimal tokens like USDC (see below) |
+| KeelRouter | [`0xeE6bb570BcfD4Ff2F168F4E0b492C7a5282b14dA`](https://sepolia.basescan.org/address/0xeE6bb570BcfD4Ff2F168F4E0b492C7a5282b14dA) — redeployed to key `KeelInventorySkew`'s decimals to tokenA/tokenB instead of the swap's in/out sides, which is what makes covered-side (B→A) fills price and settle correctly (see below). Supersedes [`0x9520b1F0…50ea2`](https://sepolia.basescan.org/address/0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2); positions shipped against that one carry a program with no `tokenA` and must be re-shipped, not migrated |
 | KeelSkewHook | [`0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0`](https://sepolia.basescan.org/address/0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0) (against Base Sepolia's real, already-deployed v4 `PoolManager`) |
 | Subgraph | [thegraph.com/studio/subgraph/keel-subgraph](https://thegraph.com/studio/subgraph/keel-subgraph) — indexing live, `hasIndexingErrors: false` |
 | KeelDemoTaker | [`0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763`](https://sepolia.basescan.org/address/0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763) — quote/fill helper for the browser console |

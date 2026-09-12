@@ -1,4 +1,5 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { formatUnits } from "viem";
 
 import { receipt } from "@/lib/receipt";
 import { onchainDemo } from "@/lib/onchain-demo";
@@ -224,6 +225,32 @@ export default function SimulatePage() {
                   className="font-numeric text-amber-bright hover:underline"
                 >
                   {onchainDemo.shipTxHash.slice(0, 10)}… ↗
+                </a>
+              </p>
+              {/* Deliberately a footnote and not a row: this fill runs the
+                  other way, so "Inventory before / WETH out" would describe
+                  it wrongly. It is also the one the previous router could
+                  never settle, which is why it is worth naming at all. */}
+              <p className="border-hairline/70 text-readout-dim border-t px-5 py-3 text-[11px] leading-relaxed">
+                <span className="text-long-bright">And one covered-side fill</span> — the other direction,{" "}
+                <span className="font-numeric text-readout">
+                  {formatUnits(BigInt(onchainDemo.coveredFill.amountInWeth), 18)} {onchainDemo.tokenSymbols.token1}
+                </span>{" "}
+                in for{" "}
+                <span className="font-numeric text-readout">
+                  {formatUnits(BigInt(onchainDemo.coveredFill.actualAmountOutRaw), 6)}{" "}
+                  {onchainDemo.tokenSymbols.token0}
+                </span>{" "}
+                out, bringing inventory back toward target instead of pushing it away. Its units are reversed, so it
+                sits here rather than in the table above. This is the first covered fill the project has landed on
+                chain: on the previous router the direction was mispriced and reverted at any realistic size.{" "}
+                <a
+                  href={`${onchainDemo.explorer}/tx/${onchainDemo.coveredFill.txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-numeric text-amber-bright hover:underline"
+                >
+                  {onchainDemo.coveredFill.txHash.slice(0, 10)}… ↗
                 </a>
               </p>
             </div>

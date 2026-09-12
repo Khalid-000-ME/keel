@@ -23,6 +23,10 @@ import { KeelPosition, Fill } from "../generated/schema";
 const KEEL_ROUTER_ADDRESSES: Address[] = [
   Address.fromString("0x1771093A5094FCc818775806eD8a729f6cF7DA0E"),
   Address.fromString("0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2"),
+  // Covered-side fills only exist from this one onward: the earlier routers
+  // keyed the skew instruction's decimals to the swap's in/out sides, so a
+  // B->A fill quoted more than the position could settle and reverted.
+  Address.fromString("0xeE6bb570BcfD4Ff2F168F4E0b492C7a5282b14dA"),
 ];
 
 function isKeelRouter(app: Address): boolean {

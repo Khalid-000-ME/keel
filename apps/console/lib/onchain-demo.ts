@@ -48,6 +48,29 @@ export const onchainDemo = onchainDemoData as {
     txHash: string;
     blockNumber: number;
   }[];
+  /**
+   * The covered-side (tokenB -> tokenA) fill: WETH in, USDC out.
+   *
+   * Kept apart from `fills` rather than appended to it because it runs the
+   * other way: its amountIn is WETH and its amountOut is USDC, so plotting
+   * it on the exposed series' axes would be comparing two different rates.
+   * It is also the whole point of this run -- see the file's
+   * coveredSideNote for why no earlier run has one.
+   */
+  coveredFill: {
+    nonce: number;
+    balance0Before: string;
+    balance0BeforeRaw: string;
+    balance1Before: string;
+    /** WETH paid in, 18-decimal native. */
+    amountInWeth: string;
+    /** USDC received, WAD-normalized like every other balance here. */
+    actualAmountOut: string;
+    /** The same value in USDC's native 6 decimals, as actually settled. */
+    actualAmountOutRaw: string;
+    txHash: string;
+    blockNumber: number;
+  };
   finalBalance0: string;
   finalBalance0Raw: string;
   finalBalance1: string;

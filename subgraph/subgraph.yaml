@@ -78,3 +78,31 @@ dataSources:
         - event: Swapped(bytes32,address,address,address,address,uint256,uint256)
           handler: handleSwapped
       file: ./src/mapping.ts
+
+  # Third router. Same reason as the second: KeelRouter inlines
+  # KeelInstructions as an internal library, so fixing the opcode means a new
+  # address. This one keys the instruction's decimals to tokenA/tokenB rather
+  # than to the swap's in/out sides, which is what makes covered-side (B->A)
+  # fills price correctly -- and every covered fill in the index comes from
+  # here, because on the earlier routers that direction reverted.
+  - kind: ethereum
+    name: KeelRouterV3
+    network: base-sepolia
+    source:
+      address: "0xeE6bb570BcfD4Ff2F168F4E0b492C7a5282b14dA"
+      abi: KeelRouter
+      startBlock: 46735212
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - KeelPosition
+        - Fill
+      abis:
+        - name: KeelRouter
+          file: ./abis/KeelRouter.json
+      eventHandlers:
+        - event: Swapped(bytes32,address,address,address,address,uint256,uint256)
+          handler: handleSwapped
+      file: ./src/mapping.ts

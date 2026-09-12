@@ -103,7 +103,14 @@ export const NETWORKS: readonly Network[] = [
     chain: BASE_SEPOLIA_CHAIN,
     addresses: {
       aqua: "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",
-      keelRouter: "0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2",
+      // Redeployed when KeelInventorySkew's decimals were re-keyed to
+      // tokenA/tokenB so covered-side (B->A) fills price correctly -- the
+      // router inlines that instruction, so the fix only exists at a new
+      // address. Positions shipped against the previous router
+      // (0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2) carry a program with no
+      // tokenA and cannot be read here; they show up as "old pair" and have
+      // to be re-shipped rather than migrated.
+      keelRouter: "0xeE6bb570BcfD4Ff2F168F4E0b492C7a5282b14dA",
       demoTaker: "0x54A8d52E72C0FdfB3ECF7014F47cE24D6229B763",
     },
     tokens: [
