@@ -258,11 +258,11 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
               {strategy.symbol1} in
               <input
                 type="number"
-                min={0.0001}
-                step={0.01}
+                min={0.000000001}
+                step={0.0001}
                 value={fillSize1}
-                onChange={(e) => setFillSize1(Math.max(0.0001, Number(e.target.value) || 0.0001))}
-                className="border-hairline bg-graphite-raised text-readout font-numeric w-24 border px-2 py-1 text-[12px] outline-none"
+                onChange={(e) => setFillSize1(Math.max(0.000000001, Number(e.target.value) || 0.000000001))}
+                className="border-hairline bg-graphite-raised text-readout font-numeric w-32 border px-2 py-1 text-[12px] outline-none"
               />
             </label>
           </div>
