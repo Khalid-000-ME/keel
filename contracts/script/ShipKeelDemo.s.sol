@@ -38,7 +38,11 @@ import { KeelInventorySkew } from "../src/instructions/KeelInstructions.sol";
 ///      AdversarialFlow run is for).
 contract ShipKeelDemo is Script {
     address constant AQUA = 0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD;
-    address constant KEEL_ROUTER = 0x1771093A5094FCc818775806eD8a729f6cF7DA0E;
+    // The redeployed router (DeployKeelRouterOnly.s.sol, Base Sepolia block
+    // 46682344). The original at 0x1771093A5094FCc818775806eD8a729f6cF7DA0E
+    // predates the tokenIn/tokenOutDecimals normalization and is kept live
+    // only for the historical demo position already shipped against it.
+    address constant KEEL_ROUTER = 0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2;
 
     uint256 constant TICKS = 8;
     uint256 constant FILL_SIZE = 5e18;
