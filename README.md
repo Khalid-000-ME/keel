@@ -32,7 +32,11 @@ The same pricing kernel also runs as a Uniswap v4 dynamic-fee hook — one kerne
 
 These two chains have Aqua + KeelRouter + KeelDemoTaker deployed but no shipped position yet — the console currently drives Base Sepolia only (`apps/console/lib/chain.ts`); pointing it at either of these is a config change, not a contract one.
 
-**A real Keel position has been shipped and filled against Base Sepolia** — 8 real fills, real `safeTransferFrom` calls, real inventory drift, real soft-bound clamp — via `contracts/script/ShipKeelDemo.s.sol`. That run predates the WETH/USDC switch and the router redeploy above, so it was against the DRFT/BALT pair and the prior `KeelRouter` address — still real, still independently re-verified against the live chain (not just copied from forge's own broadcast log — see `docs/onchain-demo/base-sepolia-run-1.json`'s `verificationNote` for why that mattered here) and checked in at `docs/onchain-demo/base-sepolia-run-1.json`, with the same data rendered on `/position/live`'s "Real evidence" panel as a fallback if the live RPC or subgraph is unreachable during a demo. [Ship tx](https://sepolia.basescan.org/tx/0xbc055d7c9a9decbf8f73b85612aa9ee48dd7fa4d7811f2725f9e248b8aedb260) · strategy hash `0x21851573476bedbc0ca391536e394a1566be94ff1515a7ec07d81f7dd1961cd8`.
+**A real Keel position has been shipped and filled against Base Sepolia**, on the real Circle USDC / WETH pair — no mock tokens — via `contracts/script/ShipKeelRealPair.s.sol`: ten exposed-side fills that each lean the position further out, then **one covered-side fill** bringing it back (0.0001 WETH in for 3.372388 USDC out, [block 46736201](https://sepolia.basescan.org/tx/0xc135c35b900889d9f56afeb76345aee640e1b8a86afa5d36631896a8dc2055ae)). That covered fill is the first this project has landed: on the previous router the direction was mispriced and reverted at any realistic size. [Ship tx](https://sepolia.basescan.org/tx/0xf6e5a89e9477b3371c222a8e5cdd3abebfa256100e9d83fed495b4c34003e498) · strategy hash `0x912d8904fb6690e3137048d86eb1a570b765620a412edd6f9f3dbe83b036d8b0`.
+
+Every value is checked in at `apps/console/data/onchain-demo.json` and rendered on `/simulate` and `/mechanism`, so the evidence survives an unreachable RPC or subgraph during a demo. It was decoded from the router's own fill events rather than copied from forge's broadcast log — that log prints the *simulation* pass, whose amounts differ slightly from what settled; summing the decoded events reproduces `aqua.safeBalances()` exactly, which is what makes the file trustworthy (see its `verificationNote`).
+
+An earlier run — 8 fills against the DRFT/BALT mock pair and the original `KeelRouter`, before the WETH/USDC switch — is kept at `docs/onchain-demo/base-sepolia-run-1.json`. Still real, still independently re-verified, but superseded by the run above. [Ship tx](https://sepolia.basescan.org/tx/0xbc055d7c9a9decbf8f73b85612aa9ee48dd7fa4d7811f2725f9e248b8aedb260) · strategy hash `0x21851573476bedbc0ca391536e394a1566be94ff1515a7ec07d81f7dd1961cd8`.
 
 ---
 
@@ -157,14 +161,15 @@ cd apps/console && pnpm build && pnpm start
 pnpm --filter @keel/console dev
 ```
 
-Seven pages (five plus a guided fallback and a per-position detail view for the maker console):
+Eight pages (six, plus a guided fallback and a per-position detail view for the maker console):
 
 - `/` — landing, PnL comparison + headline
 - `/mechanism` — the long-form explanation, with the formulas typeset and an interactive skew lab
 - **`/strategies` — the maker console: connect a wallet and actually ship a position, one screen.** Faucet balances, γ / σ² / δ₀ / target / soft bound, the live quote-curve preview, and the literal SwapVM bytecode all sit in one view — adjust a parameter and the curve and bytecode update immediately, ship in place, results appear below. Reads the strategy hash back from the router *before* signing, then approve + `ship()`. Shipped positions show balances and both-side quotes read live from the chain every few seconds, plus one-click test fills (watch the exposed-side quote walk away from mid as you hit it) and dock-and-withdraw. Nothing is mocked — it writes to the same Aqua + KeelRouter above. A step-by-step walkthrough of the identical flow (same hooks, same verified ship/fill logic) is kept at `/strategies/guided` as a fallback.
 - **`/strategies/[hash]` — a shipped position's own page**, linked from every card in the list above. A large version of the quote curve tracks the position's *real* on-chain drift as a marker riding along its own configured curve, leaving a fading trail behind it as fills land — so a sequence of fills reads as literal movement along the exposed/covered lines, not just numbers changing in a table. Adjustable-size fill buttons live right next to it, so the whole exercise (drift the position, watch the curve, fill again) happens on one page.
 - `/simulate` — the full receipt table
-- `/position/[hash]` — the live tilt gauge, still rendering the AdversarialFlow simulation's final state as a stand-in pending a direct subgraph read, plus a "Real evidence" panel with the shipped/filled Base Sepolia position's hashes (see above)
+- `/positions` — every position this browser has shipped, as a list; clicking a row expands its live card in place (balances, both-side quotes, tilt gauge, test fills, dock), and clicking the card opens the full `/strategies/[hash]` view
+- `/market` — every live position compared on one screen: their quote curves overlaid on relative axes, and a swap panel that quotes all of them and routes to whichever pays best
 
 The maker console needs a browser wallet (MetaMask, Rabby, …) on Base Sepolia. The taker side of it goes through `KeelDemoTaker`, which builds `TakerTraits` with the real `swap-vm` library rather than re-implementing ~330 lines of variable-length slice packing in TypeScript — see `contracts/src/demo/KeelDemoTaker.sol` for why.
 
