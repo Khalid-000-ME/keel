@@ -11,7 +11,7 @@ import { receipt } from "@/lib/receipt";
 import { wadToNumber } from "@/lib/wad";
 
 const DEPLOYMENTS = [
-  { label: "KeelRouter", address: "0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2" },
+  { label: "KeelRouter", address: "0xeE6bb570BcfD4Ff2F168F4E0b492C7a5282b14dA" },
   { label: "KeelSkewHook", address: "0x52EBAdE332113825827b4Ad2Dc55B1743E9A40C0" },
   { label: "Aqua", address: "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD" },
 ];

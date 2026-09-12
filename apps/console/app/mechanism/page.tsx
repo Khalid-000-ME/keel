@@ -7,6 +7,11 @@ import { Reveal } from "@/components/landing-client";
 import { Formula } from "@/components/Formula";
 import { SkewLab } from "@/components/SkewLab";
 import { OnchainFillCurve } from "@/components/onchain-fill-curve";
+// The copy below quotes the run's fill count, so it reads it from the run
+// rather than spelling it out: this page said "eight fills" for two runs
+// after the run stopped having eight, directly above a chart whose own
+// legend disagreed with it.
+import { onchainDemo } from "@/lib/onchain-demo";
 
 export const metadata: Metadata = {
   title: "Keel — the mechanism",
@@ -145,16 +150,19 @@ export default function MechanismPage() {
               </h3>
               <p className="text-readout-dim mt-4 max-w-2xl text-[14px] leading-relaxed">
                 The lab above is a computed toy — it evaluates the formula in your browser. This is the same strategy
-                shipped to a live chain and hit with eight identical fills, each one leaning the position further out.
+                shipped to a live chain and hit with {onchainDemo.fills.length} identical fills, each one leaning the
+                position further out.
                 The rate a taker got fell on every single one, exactly as the mechanism says it should.
               </p>
               <div className="mt-8">
                 <OnchainFillCurve />
               </div>
               <p className="text-readout-dim mt-4 max-w-2xl text-[12px] leading-relaxed">
-                Honest caveat: all eight recorded fills are exposed-side, so this measures only the side that gets
-                worse. The covered side in the lab above is what the formula computes, not something these
-                transactions demonstrate.
+                Honest caveat: the {onchainDemo.fills.length} fills plotted above are all exposed-side, so the curve
+                measures only the side that gets worse. One covered-side fill was landed in the same run — the first
+                this project has managed on chain, since that direction was mispriced and reverted on the previous
+                router — but a single point is not a curve, so the covered line in the lab above is still what the
+                formula computes rather than something these transactions demonstrate.
               </p>
             </div>
           </Reveal>
