@@ -20,7 +20,14 @@ import { cn } from "@/lib/utils";
  */
 export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) {
   const [isAToB, setIsAToB] = useState(true); // true: token0 -> token1 (USDC -> WETH)
-  const [amount, setAmount] = useState("100");
+  // One amount per direction rather than one shared across the flip: token0
+  // and token1 differ wildly in real-world scale, so a "100" that's a sane
+  // USDC trade silently becomes ~$350k of WETH the moment the direction is
+  // flipped, and every quote after that either reverts or reads as garbage.
+  // Harmless back when both sides were 18-decimal mocks worth the same
+  // nothing; not harmless against a real pair.
+  const [amount0, setAmount0] = useState("100");
+  const [amount1, setAmount1] = useState("0.01");
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<Hex | undefined>();
   const [busy, setBusy] = useState(false);
@@ -28,6 +35,8 @@ export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) 
   const { network } = useNetwork();
   const tokenIn = network.tokens[isAToB ? 0 : 1];
   const tokenOut = network.tokens[isAToB ? 1 : 0];
+  const amount = isAToB ? amount0 : amount1;
+  const setAmount = isAToB ? setAmount0 : setAmount1;
   const amountIn = parseSide(network, amount, isAToB);
 
   const { quotes, best } = useBestQuote(strategies, amountIn, isAToB);
