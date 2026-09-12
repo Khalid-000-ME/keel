@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContracts, useWriteContract } from "wagmi";
 
 import { AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI, type Network } from "@/lib/chain";
 import { useNetwork } from "@/lib/use-network";
-import { loadStrategies, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
+import { isLegacyPair, loadStrategies, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
 import { waitForTx } from "@/lib/wait-for-tx";
 
 export interface LiveStrategy extends StoredStrategy {
@@ -27,9 +27,23 @@ const REFRESH_MS = 15_000; // same cadence as the strategy detail page -- see li
  */
 export function useLiveStrategies() {
   const { network } = useNetwork();
+  // Read the store in an effect, never during render. The server has no
+  // localStorage, so a render-time read has the server emit an empty list
+  // while the client's very first render emits a populated one -- React
+  // reports that as a hydration mismatch and throws the whole tree away to
+  // re-render it. Starting empty matches the server, then filling in after
+  // mount is what the other list screens already do.
+  const [stored, setStored] = useState<StoredStrategy[]>([]);
+  useEffect(() => {
+    setStored(loadStrategies(network.chain.id));
+  }, [network.chain.id]);
+
+  // Legacy-pair positions are excluded outright rather than rendered: their
+  // balances would be formatted through the current pair's decimals and come
+  // out a million-fold wrong, and a taker can't route to them anyway.
   const strategies = useMemo(
-    () => loadStrategies(network.chain.id).filter((s) => !s.dockedTxHash),
-    [network.chain.id],
+    () => stored.filter((s) => !s.dockedTxHash && !isLegacyPair(s, network)),
+    [stored, network],
   );
 
   const { data: balances, dataUpdatedAt } = useReadContracts({

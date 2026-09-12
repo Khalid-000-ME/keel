@@ -7,7 +7,7 @@ import { useAccount, useChainId, useReadContract, useReadContracts, useWriteCont
 
 import { AQUA_ABI, DEMO_TAKER_ABI, ERC20_ABI, explorerTx } from "@/lib/chain";
 import { useNetwork } from "@/lib/use-network";
-import { markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
+import { isLegacyPair, markDocked, toOrderTuple, type StoredStrategy } from "@/lib/strategy-store";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { TiltGauge } from "@/components/TiltGauge";
 import { Formula } from "@/components/Formula";
@@ -78,14 +78,20 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
         args: [network.addresses.keelRouter, orderTuple, amountInCovered, false],
       },
     ],
-    query: { refetchInterval: REFRESH_MS, enabled: !docked },
+    query: { refetchInterval: REFRESH_MS, enabled: !docked && !isLegacyPair(strategy, network) },
   });
 
   const { mutateAsync: write } = useWriteContract();
 
   const bal0 = balances?.[0];
   const bal1 = balances?.[1];
-  const inventory = bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)) : null;
+  // A position shipped against a different pair can't be read through this
+  // network's current decimals (see isLegacyPair). Suppress every derived
+  // number rather than render one that's a million-fold off -- the dock
+  // button below stays live so the maker can still recover the inventory.
+  const legacyPair = isLegacyPair(strategy, network);
+  const inventory =
+    !legacyPair && bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)) : null;
   const drift = inventory !== null ? inventory - strategy.params.targetInventory : null;
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
@@ -99,8 +105,12 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   // for WETH/USDC's ~1/3500 mid it produced nonsense like "asymmetry
   // 872029.9" (a real number, just token0-per-token1 minus token1-per-
   // token0). Inverting covered's raw rate puts it back in the same units.
-  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize0 : null;
-  const coveredOutToken0 = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) : null;
+  const exposedRate =
+    !legacyPair && exposedOut !== undefined
+      ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize0
+      : null;
+  const coveredOutToken0 =
+    !legacyPair && coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) : null;
   const coveredRate = coveredOutToken0 !== null && coveredOutToken0 > 0 ? fillSize1 / coveredOutToken0 : null;
   const asymmetry = exposedRate !== null && coveredRate !== null ? coveredRate - exposedRate : null;
 
@@ -228,19 +238,30 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
             </div>
           ) : (
             <div className="border-hairline/60 text-readout-dim mt-4 flex h-[180px] items-center justify-center border border-dashed text-[12px]">
-              {balancesError ? "Couldn't read live balances — see below." : "Loading live balances…"}
+              {legacyPair
+                ? "Shipped against a different pair — see below."
+                : balancesError
+                  ? "Couldn't read live balances — see below."
+                  : "Loading live balances…"}
             </div>
           )}
           <div className="border-hairline/60 mt-4 grid grid-cols-3 gap-px border-t pt-4">
-            <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)).toFixed(2) : "—"} />
-            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, network.tokens[1].decimals)).toFixed(6) : "—"} />
+            <Mini label={strategy.symbol0} value={!legacyPair && bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)).toFixed(2) : "—"} />
+            <Mini label={strategy.symbol1} value={!legacyPair && bal1 !== undefined ? Number(formatUnits(bal1, network.tokens[1].decimals)).toFixed(6) : "—"} />
             <Mini
               label="drift q"
               value={drift !== null ? `${drift > 0 ? "+" : ""}${drift.toFixed(2)}` : "—"}
               tone={drift === null ? "neutral" : drift > 0 ? "short" : drift < 0 ? "long" : "amber"}
             />
           </div>
-          {balancesError && (
+          {legacyPair && (
+            <p className="text-amber-bright mt-3 text-[11px]">
+              Shipped against {strategy.symbol0}/{strategy.symbol1}, but {network.chain.name} now quotes{" "}
+              {network.tokens[0].symbol}/{network.tokens[1].symbol}. Live figures are hidden because they&apos;d be
+              formatted with the current pair&apos;s decimals and read wildly wrong. Dock it to recover the inventory.
+            </p>
+          )}
+          {balancesError && !legacyPair && (
             <p className="text-short-bright mt-3 text-[11px]">
               {strategy.symbol0}/{strategy.symbol1} balance read failed — this position may have been shipped against
               a different KeelRouter than {network.chain.name}&apos;s current one ({txErrorText(balancesError)}).

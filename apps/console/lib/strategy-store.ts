@@ -2,6 +2,8 @@
 
 import type { Hex } from "viem";
 
+import type { Network } from "@/lib/chain";
+
 /**
  * Local record of strategies shipped from this browser.
  *
@@ -45,6 +47,27 @@ export interface StoredStrategy {
   chainId: number;
   /** Set once the maker docks it, so the row can stay as demo evidence. */
   dockedTxHash?: Hex;
+}
+
+/**
+ * Whether a stored position was shipped against a different pair than the
+ * one this network currently quotes.
+ *
+ * Only the pair's *addresses* are stored per strategy -- decimals are read
+ * from the network's current token list at render time. That was safe while
+ * every position used the same 18/18 pair, but the WETH/USDC switch means a
+ * position shipped earlier (DRFT/BALT, 18 decimals both sides) would be
+ * formatted through USDC's 6, reporting balances a million-fold off with no
+ * indication anything was wrong. These entries live in localStorage, so they
+ * outlast the migration on any browser that shipped one -- they have to be
+ * detected rather than assumed away.
+ */
+export function isLegacyPair(strategy: StoredStrategy, network: Network): boolean {
+  const [token0, token1] = network.tokens;
+  return (
+    strategy.token0.toLowerCase() !== token0.address.toLowerCase() ||
+    strategy.token1.toLowerCase() !== token1.address.toLowerCase()
+  );
 }
 
 function read(): StoredStrategy[] {
