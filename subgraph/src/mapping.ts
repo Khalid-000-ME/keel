@@ -248,22 +248,22 @@ export function handleSwapped(event: Swapped): void {
   const position = KeelPosition.load(event.params.orderHash.toHexString());
   if (position === null) return; // not a Keel position (or Shipped wasn't indexed for it), ignore
 
-  // Normalize on the way in: amountIn/amountOut arrive in raw token units,
-  // and everything downstream (mid, inventoryQ against targetInventoryWad)
-  // is WAD. Accumulating raw 6-decimal USDC into a field named *Wad was the
-  // bug -- it made mid off by 1e12 and made inventoryQ subtract a WAD
-  // target from a 6-decimal balance.
-  const scaleA = scaleFor(position.tokenInDecimals);
-  const scaleB = scaleFor(position.tokenOutDecimals);
-
-  if (event.params.tokenIn.equals(Address.fromBytes(position.tokenA))) {
-    position.currentBalanceAWad = position.currentBalanceAWad.plus(event.params.amountIn.times(scaleA));
-    position.currentBalanceBWad = position.currentBalanceBWad.minus(event.params.amountOut.times(scaleB));
-  } else {
-    position.currentBalanceBWad = position.currentBalanceBWad.plus(event.params.amountIn.times(scaleB));
-    position.currentBalanceAWad = position.currentBalanceAWad.minus(event.params.amountOut.times(scaleA));
-  }
-
+  // Balances are deliberately *not* touched here.
+  //
+  // A fill moves tokens through Aqua, and Aqua announces those movements
+  // itself: one Pushed for what the taker paid in, one Pulled for what the
+  // maker paid out, both in the same transaction as this Swapped. Verified
+  // on an exposed fill (Pushed 1000000 USDC at log 144, Pulled
+  // 231031449107135 WETH at log 146, Swapped at 147) and on the covered one
+  // (Pushed 100000000000000 WETH at 162, Pulled 3372388 USDC at 164).
+  //
+  // So accumulating amountIn/amountOut here as well double-counted every
+  // fill: the position read 25.26 USDC where the chain said 18.63, while
+  // the opening balances -- which arrive as Pushed with no Swapped
+  // alongside -- were counted correctly exactly once. handlePushed and
+  // handlePulled are now the single authority on inventory, and this
+  // handler only records the fill and re-derives the price from balances
+  // those handlers have already updated (their logs precede this one).
   recomputeReservationPrice(position, event.block.timestamp);
   position.lastUpdated = event.block.timestamp;
   position.save();
