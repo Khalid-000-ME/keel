@@ -1,5 +1,5 @@
 import { Address, BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts";
-import { Shipped } from "../generated/Aqua/Aqua";
+import { Pulled, Pushed, Shipped } from "../generated/Aqua/Aqua";
 import { Swapped } from "../generated/KeelRouter/KeelRouter";
 import { KeelPosition, Fill } from "../generated/schema";
 
@@ -9,17 +9,20 @@ import { KeelPosition, Fill } from "../generated/schema";
 // event filtering by app) because Aqua's Shipped event fires for every app
 // built on it, not just Keel -- this is how handleShipped tells a Keel
 // strategy apart from anyone else's.
-// Both routers are matched, not just the current one. KeelRouter inlines
-// KeelInstructions as an internal library, so picking up the
-// tokenIn/tokenOutDecimals change meant redeploying it to a new address --
-// the original is still on-chain with the original demo position and its
-// fills under it. Matching only the current address would silently orphan
-// all of that history; matching only the original (which is what this file
-// did until the redeploy) means indexing nothing shipped since.
+// Every router is matched, not just the current one. KeelRouter inlines
+// KeelInstructions as an internal library, so each change to the opcode's
+// byte layout meant redeploying to a new address -- and the older routers
+// are still on-chain holding earlier positions and their fills. Matching
+// only the current address would silently orphan all of that history;
+// matching only the original (which is what this file did until the first
+// redeploy) means indexing nothing shipped since.
 //
-// Original: Base Sepolia block 46398488 (DeployAquaRouter.s.sol).
-// Current:  Base Sepolia block 46682344 (DeployKeelRouterOnly.s.sol),
-//           adds decimals normalization for non-18-decimal pairs.
+// v1: Base Sepolia block 46398488 (DeployAquaRouter.s.sol).
+// v2: Base Sepolia block 46682344, adds decimals normalization so
+//     non-18-decimal pairs like USDC quote correctly.
+// v3: Base Sepolia block 46735212, keys those decimals to tokenA/tokenB
+//     rather than to the swap's in/out sides -- which is what makes
+//     covered-side (B->A) fills price and settle at all.
 const KEEL_ROUTER_ADDRESSES: Address[] = [
   Address.fromString("0x1771093A5094FCc818775806eD8a729f6cF7DA0E"),
   Address.fromString("0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2"),
@@ -122,12 +125,18 @@ export function handleShipped(event: Shipped): void {
   position.startTimestamp = startTimestamp;
   position.tokenInDecimals = tokenInDecimals;
   position.tokenOutDecimals = tokenOutDecimals;
-  // Initial balances aren't known from Shipped alone (ship() takes amounts
-  // in the same call, but as a separate Pushed event per token) -- start
-  // at zero and let the first Fill (or a future handlePushed, deferred)
-  // establish them. Documented as a known gap, not silently wrong.
-  position.currentBalanceAWad = BigInt.zero();
-  position.currentBalanceBWad = BigInt.zero();
+  // Zero here is a starting point, not the answer: `Shipped` carries the
+  // strategy bytes but no amounts. Aqua emits a separate `Pushed` per token
+  // in the same transaction, and handlePushed below folds those in -- so a
+  // position is only briefly at zero, between the two logs of one ship.
+  //
+  // Ordering is not assumed either way: handlePushed tolerates a position
+  // that doesn't exist yet (it returns early and that inventory is simply
+  // not counted), while this handler must not clobber balances a Pushed
+  // already recorded. Hence the load-before-create below.
+  const existing = KeelPosition.load(event.params.strategyHash.toHexString());
+  position.currentBalanceAWad = existing === null ? BigInt.zero() : existing.currentBalanceAWad;
+  position.currentBalanceBWad = existing === null ? BigInt.zero() : existing.currentBalanceBWad;
   position.currentReservationPriceWad = BigInt.zero();
   position.currentHalfSpreadWad = BigInt.zero();
   position.shippedAt = event.block.timestamp;
@@ -143,6 +152,69 @@ export function handleShipped(event: Shipped): void {
  * "genuinely independent, solver-usable source of routable state" claim,
  * not just an event log.
  */
+/**
+ * Inventory pushed into a position -- the opening balances at ship time, and
+ * any later top-up.
+ *
+ * Without this, `currentBalanceAWad`/`currentBalanceBWad` were deltas since
+ * ship rather than balances: handleSwapped accumulated fills onto a zero
+ * base, so a position that shipped with 12 USDC and sold some of its WETH
+ * reported ~6.6 USDC and a *negative* WETH balance. Everything derived from
+ * them (mid, inventoryQ, the reservation price) inherited the error.
+ */
+export function handlePushed(event: Pushed): void {
+  if (!isKeelRouter(event.params.app)) return; // Aqua serves every app, not just Keel
+
+  const position = KeelPosition.load(event.params.strategyHash.toHexString());
+  if (position === null) return; // not a Keel position, or its Shipped isn't indexed
+
+  applyInventoryDelta(position, event.params.token, event.params.amount, true);
+  recomputeReservationPrice(position, event.block.timestamp);
+  position.lastUpdated = event.block.timestamp;
+  position.save();
+}
+
+/**
+ * Inventory pulled back out -- a withdrawal, or the docking that retires a
+ * position. The mirror of handlePushed; without it a docked position would
+ * keep reporting the inventory it no longer backs.
+ */
+export function handlePulled(event: Pulled): void {
+  if (!isKeelRouter(event.params.app)) return;
+
+  const position = KeelPosition.load(event.params.strategyHash.toHexString());
+  if (position === null) return;
+
+  applyInventoryDelta(position, event.params.token, event.params.amount, false);
+  recomputeReservationPrice(position, event.block.timestamp);
+  position.lastUpdated = event.block.timestamp;
+  position.save();
+}
+
+/**
+ * Adds or subtracts a raw token amount on whichever side of the pair it
+ * belongs to, normalized to WAD the same way handleSwapped does -- both
+ * paths write the same fields, so they have to agree on scale or the
+ * balances drift against each other.
+ */
+function applyInventoryDelta(position: KeelPosition, token: Address, amount: BigInt, isAdd: bool): void {
+  const isSideA = token.equals(Address.fromBytes(position.tokenA));
+  const isSideB = token.equals(Address.fromBytes(position.tokenB));
+  if (!isSideA && !isSideB) return; // a token this position doesn't trade
+
+  const scaled = amount.times(scaleFor(isSideA ? position.tokenInDecimals : position.tokenOutDecimals));
+
+  if (isSideA) {
+    position.currentBalanceAWad = isAdd
+      ? position.currentBalanceAWad.plus(scaled)
+      : position.currentBalanceAWad.minus(scaled);
+  } else {
+    position.currentBalanceBWad = isAdd
+      ? position.currentBalanceBWad.plus(scaled)
+      : position.currentBalanceBWad.minus(scaled);
+  }
+}
+
 function recomputeReservationPrice(position: KeelPosition, timestamp: BigInt): void {
   if (position.currentBalanceAWad.equals(BigInt.zero())) return; // no liquidity yet, nothing to price
 

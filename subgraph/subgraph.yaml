@@ -28,6 +28,13 @@ dataSources:
       eventHandlers:
         - event: Shipped(address,address,bytes32,bytes)
           handler: handleShipped
+        # Shipped carries the strategy but no amounts -- Aqua emits these per
+        # token instead. Without them the indexed balances were deltas since
+        # ship rather than balances, and could read negative.
+        - event: Pushed(address,address,bytes32,address,uint256)
+          handler: handlePushed
+        - event: Pulled(address,address,bytes32,address,uint256)
+          handler: handlePulled
       file: ./src/mapping.ts
   # The original router, kept indexed: it still holds the original demo
   # position and every fill made against it. Dropping it would orphan that
