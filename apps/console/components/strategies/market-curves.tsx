@@ -27,7 +27,12 @@ const PALETTE = ["#d9a441", "#5fb3a1", "#c76b98", "#6f9bd8", "#a7c957", "#e0777a
  */
 export function MarketCurves({ strategies }: { strategies: LiveStrategy[] }) {
   const { curves, yLo, yHi } = useMemo(() => {
-    const maxBound = Math.max(1, ...strategies.map((s) => s.params.bound));
+    // Widest bound across the live positions, with no absolute floor: a
+    // floor of 1 was harmless for DRFT/BALT-scale inventories but pins the
+    // drift axis to +/-1 for a small WETH/USDC position (bound 0.2, say),
+    // squashing every curve into the middle third of the chart.
+    const bounds = strategies.map((s) => s.params.bound).filter((b) => b > 0);
+    const maxBound = bounds.length > 0 ? Math.max(...bounds) : 1;
 
     const built = strategies.map((s) => {
       const mid = s.balance0 && s.balance0 > 0 && s.balance1 !== null ? s.balance1 / s.balance0 : 1;
@@ -42,9 +47,15 @@ export function MarketCurves({ strategies }: { strategies: LiveStrategy[] }) {
     const allPrices = built.flatMap((c) => c.points.flatMap((p) => [p.exposed, p.covered]));
     let lo = allPrices.length ? Math.min(...allPrices) : 0;
     let hi = allPrices.length ? Math.max(...allPrices) : 1;
-    if (hi - lo < 1e-9) {
-      lo -= 1;
-      hi += 1;
+    // Expand a degenerate band *proportionally*, the way the other two
+    // charts do. Widening by an absolute +/-1 was survivable when every
+    // price sat near 1.0 (the DRFT/BALT mocks); against WETH/USDC's
+    // ~0.0003 it blows the axis out to [-1, 1] and squashes every curve
+    // into one flat line through the middle.
+    if (hi - lo < Math.abs(hi) * 0.002) {
+      const center = Math.abs(hi) > 0 ? hi : 1;
+      lo = center * 0.999;
+      hi = center * 1.001;
     }
     const pad = (hi - lo) * 0.12;
     lo -= pad;

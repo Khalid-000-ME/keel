@@ -79,9 +79,14 @@ export function LivePriceChart({
     const qs = history.map((h) => h.q);
     let qLo = Math.min(...qs, 0);
     let qHi = Math.max(...qs, 0);
-    if (qHi - qLo < 1e-9) {
-      qLo -= 1;
-      qHi += 1;
+    // Same proportional treatment as the price axis: a flat drift series
+    // widened by an absolute +/-1 reads fine at DRFT/BALT inventory scale,
+    // but flattens the q line for any position whose whole bound is well
+    // under 1 (a fraction-of-a-WETH inventory, say).
+    if (qHi - qLo < 1e-12) {
+      const spread = Math.max(Math.abs(qHi), 1e-6) * 0.05;
+      qLo -= spread;
+      qHi += spread;
     }
 
     const x = (t: number) => PAD.left + ((t - tLo) / tSpan) * (W - PAD.left - PAD.right);
