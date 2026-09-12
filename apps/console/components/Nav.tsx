@@ -62,10 +62,10 @@ export function Nav() {
               width={24}
               height={24}
               priority
-              className="border-neutral-amber/60 relative h-6 w-6 rounded-md border object-cover"
+              className="relative h-6 w-6 rounded-md object-cover"
             />
           </span>
-          <span className="font-numeric text-readout text-sm tracking-[0.2em]">KEEL</span>
+          <span className="font-wordmark text-readout text-sm tracking-[0.12em]">KEEL</span>
         </Link>
 
         <div className="flex items-center gap-1">

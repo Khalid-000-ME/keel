@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans, Montserrat } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans, Montserrat, Audiowide } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { NetworkProvider } from "@/lib/use-network";
 import "katex/dist/katex.min.css";
@@ -41,6 +41,15 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+// The navbar wordmark only. Ships a single 400 weight, and its letterforms
+// are already wide, so it needs far less tracking than the mono it replaced.
+const audiowide = Audiowide({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-audiowide",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://keel.vercel.app"),
   title: "Keel — the position that knows which way it's leaning",
@@ -59,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${ibmPlexMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${montserrat.variable}`}
+      className={`${ibmPlexMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${montserrat.variable} ${audiowide.variable}`}
     >
       <body className="bg-graphite text-readout min-h-screen antialiased">
         <NetworkProvider>

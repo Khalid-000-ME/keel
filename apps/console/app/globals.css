@@ -91,6 +91,11 @@ body {
   font-family: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* The navbar wordmark, and nothing else on the site. */
+.font-wordmark {
+  font-family: var(--font-audiowide), "Audiowide", ui-sans-serif, system-ui, sans-serif;
+}
+
 /* Fine grid, the substrate of a trading terminal. */
 .grid-substrate {
   /* Grid lines sit just *below* the page ground rather than above it: on
