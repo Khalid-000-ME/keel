@@ -4,10 +4,11 @@ import { useMemo } from "react";
 
 import { FieldLabel } from "@/components/NumericReadout";
 import { PRICE_DECIMALS } from "@/lib/keel-math";
+import { axisTick } from "@/lib/decimal";
 
 const W = 720;
 const H = 320;
-const PAD = { top: 20, right: 52, bottom: 40, left: 62 };
+const PAD = { top: 20, right: 52, bottom: 40, left: 74 };
 
 /** Enough for ~30 minutes at the page's 15s poll -- past that the tail is noise. */
 export const MAX_SAMPLES = 120;
@@ -233,10 +234,10 @@ export function LivePriceChart({
 
           {/* axis labels */}
           <text x={PAD.left - 8} y={PAD.top + 8} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-            {geom.yHi.toFixed(PRICE_DECIMALS)}
+            {axisTick(geom.yHi)}
           </text>
           <text x={PAD.left - 8} y={H - PAD.bottom} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-            {geom.yLo.toFixed(PRICE_DECIMALS)}
+            {axisTick(geom.yLo)}
           </text>
           <text
             x={-(H / 2)}

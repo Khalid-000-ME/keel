@@ -4,10 +4,11 @@ import { useMemo } from "react";
 
 import { FieldLabel } from "@/components/NumericReadout";
 import { quoteAtDrift, PRICE_DECIMALS, type KeelParams } from "@/lib/keel-math";
+import { axisTick } from "@/lib/decimal";
 
 const W = 560;
 const H = 190;
-const PAD = { top: 14, right: 14, bottom: 26, left: 46 };
+const PAD = { top: 14, right: 14, bottom: 26, left: 62 };
 
 /**
  * What this strategy will quote, across the whole drift range, before it
@@ -125,10 +126,10 @@ export function SkewPreview({
         </text>
 
         <text x={PAD.left - 6} y={PAD.top + 8} textAnchor="end" className="fill-[var(--readout-dim)] text-[9px]">
-          {yMax.toFixed(PRICE_DECIMALS)}
+          {axisTick(yMax)}
         </text>
         <text x={PAD.left - 6} y={H - PAD.bottom} textAnchor="end" className="fill-[var(--readout-dim)] text-[9px]">
-          {yMin.toFixed(PRICE_DECIMALS)}
+          {axisTick(yMin)}
         </text>
       </svg>
 

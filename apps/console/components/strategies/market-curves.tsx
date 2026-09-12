@@ -4,12 +4,13 @@ import { useMemo } from "react";
 import Link from "next/link";
 
 import { FieldLabel } from "@/components/NumericReadout";
-import { quoteAtDrift, PRICE_DECIMALS } from "@/lib/keel-math";
+import { quoteAtDrift } from "@/lib/keel-math";
+import { axisTick } from "@/lib/decimal";
 import type { LiveStrategy } from "@/lib/use-market";
 
 const W = 720;
 const H = 320;
-const PAD = { top: 20, right: 20, bottom: 36, left: 62 };
+const PAD = { top: 20, right: 20, bottom: 36, left: 74 };
 
 /** Distinct enough at 2px stroke width; cycles if there are ever more strategies than colors. */
 const PALETTE = ["#d9a441", "#5fb3a1", "#c76b98", "#6f9bd8", "#a7c957", "#e0777a"];
@@ -115,10 +116,10 @@ export function MarketCurves({ strategies }: { strategies: LiveStrategy[] }) {
         ))}
 
         <text x={PAD.left - 8} y={PAD.top + 8} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-          {yHi.toFixed(PRICE_DECIMALS)}
+          {axisTick(yHi)}
         </text>
         <text x={PAD.left - 8} y={H - PAD.bottom} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-          {yLo.toFixed(PRICE_DECIMALS)}
+          {axisTick(yLo)}
         </text>
         <text x={-(H / 2)} y={12} transform="rotate(-90)" textAnchor="middle" className="fill-[var(--readout-dim)] text-[10px]">
           price (token1 / token0)
