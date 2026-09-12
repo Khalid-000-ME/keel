@@ -87,8 +87,28 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   // tagged as fill-driven -- the fill and its resulting quote are one event.
   const fillPending = useRef(false);
 
+  // The size the quotes are actually fetched at, held apart from the input
+  // and debounced. wagmi keys its query on the call args, so feeding the raw
+  // input straight into them fired a fresh pair of previewFill calls on
+  // every keystroke: the page re-quoted continuously while typing instead of
+  // after a fill, and every one of those refetches also appended a point to
+  // the chart measured at a different notional, mixing incomparable readings
+  // into a single series.
+  const [quoteSize, setQuoteSize] = useState(fillSize0);
+  useEffect(() => {
+    const id = setTimeout(() => setQuoteSize(fillSize0), 500);
+    return () => clearTimeout(id);
+  }, [fillSize0]);
+
+  // A price series measured at one trade size can't be extended with points
+  // measured at another -- price impact differs -- so changing the size
+  // starts a fresh series rather than splicing the two together.
+  useEffect(() => {
+    setHistory([]);
+  }, [quoteSize]);
+
   const orderTuple = toOrderTuple(strategy.order);
-  const amountInExposed = parseUnits(toDecimalString(fillSize0, network.tokens[0].decimals), network.tokens[0].decimals);
+  const amountInExposed = parseUnits(toDecimalString(quoteSize, network.tokens[0].decimals), network.tokens[0].decimals);
   const docked = Boolean(strategy.dockedTxHash);
   const isMine = address?.toLowerCase() === strategy.order.maker.toLowerCase();
   // A position shipped against a different pair can't be read through this
@@ -132,7 +152,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   // two sides at different *values* -- and price impact scales with size, so
   // the gap between the two quoted lines was dominated by that size
   // difference rather than by the inventory skew the chart exists to show.
-  const fillSize1 = fillSize0 * midForQuotes;
+  const fillSize1 = quoteSize * midForQuotes;
   const amountInCovered = parseUnits(toDecimalString(fillSize1, network.tokens[1].decimals), network.tokens[1].decimals);
 
   const { data: quotes, dataUpdatedAt: quotesUpdatedAt, refetch: refetchQuotes } = useReadContracts({
@@ -163,7 +183,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   // chart. Inverting covered's raw rate puts it back in token1-per-token0.
   const exposedRate =
     !legacyPair && exposedOut !== undefined
-      ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize0
+      ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / quoteSize
       : null;
   const coveredOutToken0 =
     !legacyPair && coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) : null;
@@ -372,7 +392,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
             <QuoteBox
               label="Exposed-side fill"
               formula="r - \delta"
-              detail={`${fillSize0} ${strategy.symbol0} in`}
+              detail={`${quoteSize} ${strategy.symbol0} in`}
               rate={exposedRate}
               tone="short"
               note="pushes inventory further from target"

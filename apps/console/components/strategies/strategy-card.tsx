@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatUnits, parseUnits, type Hex } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
@@ -41,12 +41,21 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   // balance (and this gauge) would never move off target. Defaults are
   // sized for a small test trade on each side.
   const [fillSize0, setFillSize0] = useState(50);
+  // The size the quotes are actually fetched at, held apart from the input
+  // and debounced: wagmi keys its query on the call args, so feeding the raw
+  // input straight in re-fired previewFill on every keystroke rather than
+  // after a fill.
+  const [quoteSize, setQuoteSize] = useState(50);
+  useEffect(() => {
+    const id = setTimeout(() => setQuoteSize(fillSize0), 500);
+    return () => clearTimeout(id);
+  }, [fillSize0]);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<Hex | undefined>();
 
   const orderTuple = toOrderTuple(strategy.order);
-  const amountInExposed = parseUnits(toDecimalString(fillSize0, network.tokens[0].decimals), network.tokens[0].decimals);
+  const amountInExposed = parseUnits(toDecimalString(quoteSize, network.tokens[0].decimals), network.tokens[0].decimals);
   const docked = Boolean(strategy.dockedTxHash);
   // A position shipped against a different pair can't be read through this
   // network's current decimals (see isLegacyPair). Suppress every derived
@@ -85,7 +94,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   // two sides at different *values* -- and price impact scales with size, so
   // the asymmetry reported below was dominated by that size difference
   // rather than by the inventory skew it claims to measure.
-  const fillSize1 = fillSize0 * midForQuotes;
+  const fillSize1 = quoteSize * midForQuotes;
   const amountInCovered = parseUnits(toDecimalString(fillSize1, network.tokens[1].decimals), network.tokens[1].decimals);
 
   const { data: quotes, refetch: refetchQuotes } = useReadContracts({
@@ -125,7 +134,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
   // token0). Inverting covered's raw rate puts it back in the same units.
   const exposedRate =
     !legacyPair && exposedOut !== undefined
-      ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize0
+      ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / quoteSize
       : null;
   const coveredOutToken0 =
     !legacyPair && coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) : null;
@@ -316,7 +325,7 @@ export function StrategyCard({ strategy, onChanged }: { strategy: StoredStrategy
             <QuoteBox
               label="Exposed-side fill"
               formula="r - \delta"
-              detail={`${fillSize0} ${strategy.symbol0} in`}
+              detail={`${quoteSize} ${strategy.symbol0} in`}
               rate={exposedRate}
               tone="short"
               note="pushes inventory further from target"
