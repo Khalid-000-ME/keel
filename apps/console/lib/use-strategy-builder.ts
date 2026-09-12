@@ -96,6 +96,24 @@ export function useStrategyBuilder(onShipped: () => void) {
   const set = <K extends keyof StrategyDraft>(key: K, value: StrategyDraft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
 
+  /**
+   * Setting inventory0 alone (target tags along, same as before) used to
+   * leave `bound` exactly where it was -- a fixed absolute number, not a
+   * fraction of the new inventory. Every preset sizes bound as a fraction
+   * of amount0 (e.g. 20% for Balanced), so typing a new inventory number
+   * without reapplying a preset left bound at its old scale entirely:
+   * shrink inventory from the 3500 default down to 5 and bound stays at
+   * 700 -- 140x the new target -- so real drift never clears the gauge's
+   * ~8% "at target" threshold and the needle reads AT TARGET no matter how
+   * far the actual balance has moved. Rescaling bound by the same ratio it
+   * already had to amount0 keeps whatever sensitivity was in effect.
+   */
+  const setInventory0 = (value: number) =>
+    setDraft((d) => {
+      const ratio = d.amount0 > 0 ? d.bound / d.amount0 : 0.2;
+      return { ...d, amount0: value, target: value, bound: Math.max(0.000001, value * ratio) };
+    });
+
   const applyPreset = (preset: (typeof STRATEGY_PRESETS)[number]) => setDraft((d) => preset.apply(d));
 
   const program = useMemo(() => {
@@ -246,6 +264,7 @@ export function useStrategyBuilder(onShipped: () => void) {
   return {
     draft,
     set,
+    setInventory0,
     applyPreset,
     program,
     strategyHash: strategyHash as Hex | undefined,

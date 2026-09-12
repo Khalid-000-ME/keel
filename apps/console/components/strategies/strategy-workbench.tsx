@@ -133,10 +133,7 @@ function WorkbenchInner() {
               hint="committed to the position"
               value={b.draft.amount0}
               step={10}
-              onChange={(v) => {
-                b.set("amount0", v);
-                b.set("target", v);
-              }}
+              onChange={b.setInventory0}
             />
             <NumberField
               label={`Inventory ${network.tokens[1].symbol}`}
