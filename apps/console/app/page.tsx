@@ -42,12 +42,12 @@ export default function LandingPage() {
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-3">
-              <ButtonLink href="/simulate" variant="primary">
-                See the receipt
+              <ButtonLink href="/strategies" variant="primary">
+                Submit a strategy
               </ButtonLink>
-              <ButtonLink href="/positions" variant="secondary" arrow={false}>
+              <ButtonLink href="/market" variant="secondary" arrow={false}>
                 <Activity className="h-4 w-4" />
-                Watch a position lean
+                Explore positions
               </ButtonLink>
             </div>
           </div>

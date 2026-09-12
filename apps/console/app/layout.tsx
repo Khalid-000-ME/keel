@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter, Instrument_Serif, DM_Sans, Montserrat, Audiowide } from "next/font/google";
+import { IBM_Plex_Mono, Space_Grotesk, Instrument_Serif, DM_Sans, Montserrat, Audiowide } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { NetworkProvider } from "@/lib/use-network";
 import "katex/dist/katex.min.css";
@@ -12,9 +12,12 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-const inter = Inter({
+// The body face for everything that isn't a readout, a headline or the
+// wordmark. Variable, so no weight list -- Tailwind's font-weight utilities
+// interpolate the axis rather than swapping between shipped cuts.
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -68,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${ibmPlexMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${montserrat.variable} ${audiowide.variable}`}
+      className={`${ibmPlexMono.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} ${dmSans.variable} ${montserrat.variable} ${audiowide.variable}`}
     >
       <body className="bg-graphite text-readout min-h-screen antialiased">
         <NetworkProvider>
