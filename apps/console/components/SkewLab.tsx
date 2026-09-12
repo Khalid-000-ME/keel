@@ -11,8 +11,12 @@ import { Formula } from "@/components/Formula";
  * and both quoted prices move apart, asymmetrically.
  *
  * The maths here mirrors contracts/src/libs/AvellanedaStoikov.sol exactly,
- * with the parameters of the strategy actually shipped to Base Sepolia, so
- * the numbers on screen are the numbers that deployed position would quote:
+ * with the parameters of the original DRFT/BALT demo position (the run
+ * recorded in data/onchain-demo.json). It is a teaching toy at a mid of
+ * 1.0, deliberately left at that scale because the mechanism is easiest to
+ * read there -- it is *not* what the console ships today, which quotes real
+ * WETH/USDC around a mid of roughly 1/3500 with parameters sized to match
+ * (see lib/use-strategy-builder.ts):
  *
  *   r(s,q,t) = s - q·γ·σ²·(T-t)
  *   δ(t)     = δ₀ + γ·σ²·(T-t)
@@ -23,10 +27,11 @@ import { Formula } from "@/components/Formula";
  */
 
 const MID = 1.0;
-// These are the parameters of the strategy actually shipped to Base Sepolia
-// (data/onchain-demo.json) -- gamma/sigma^2/base spread already matched, and
-// the horizon and bound are now the shipped ones too, so the lab quotes what
-// the deployed position quotes rather than a flattering calibration.
+// The parameters of the original DRFT/BALT demo position
+// (data/onchain-demo.json) -- gamma/sigma^2/base spread, horizon and bound
+// all match that recorded run, so the lab quotes what that position quoted
+// rather than a flattering calibration. Today's console ships a different
+// pair at a different scale; this stays as the mid-1.0 explainer.
 const GAMMA = 5e-4;
 const SIGMA_SQ = 5e-5;
 const BASE_SPREAD = 1e-3;
