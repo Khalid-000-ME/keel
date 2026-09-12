@@ -218,7 +218,7 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
             fontSize={10}
             fillOpacity={0.8}
           >
-            inventory drift q (token0 above target)
+            inventory drift q ({onchainDemo.tokenSymbols.token0} above target)
           </text>
         </svg>
 
@@ -228,15 +228,18 @@ export function OnchainFillCurve({ variant = "full" }: { variant?: "full" | "com
             <span className="font-numeric">exposed-side fills · realised out/in</span>
           </span>
           <span className="font-numeric">
-            {POINTS.length} fills · block {POINTS[0].blockNumber} · −{DROP_PCT.toFixed(1)}% across the run
+            {POINTS.length} fills · blocks {POINTS[0].blockNumber}–{POINTS[POINTS.length - 1].blockNumber} · −
+            {DROP_PCT.toFixed(1)}% across the run
           </span>
         </div>
       </div>
 
       {/* the honesty note -- what was measured, and what this axis is not */}
       <div className="border-hairline/70 text-readout-dim mt-5 border-t px-5 py-4 text-[12px] leading-relaxed">
-        Eight real fills, one block, one shipped strategy. Every point links to its own transaction on Basescan.{" "}
-        <span className="text-readout">All eight are exposed-side</span> (<span className="font-numeric">isAToB</span>)
+        {POINTS.length} real fills against one shipped strategy, on the real {onchainDemo.tokenSymbols.token0}/
+        {onchainDemo.tokenSymbols.token1} pair. Every point links to its own transaction on Basescan.{" "}
+        <span className="text-readout">All {POINTS.length} are exposed-side</span> (
+        <span className="font-numeric">isAToB</span>)
         — each pushes inventory further from target, which is why the rate only falls. Nothing here measures the
         covered side, so no covered-side curve is drawn: the covered line elsewhere on the site is computed from the
         formula, not observed.

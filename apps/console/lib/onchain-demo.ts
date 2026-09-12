@@ -16,6 +16,9 @@ export const onchainDemo = onchainDemoData as {
   explorer: string;
   deployedContracts: { aqua: string; keelRouter: string };
   demoTokens: { token0: string; token1: string };
+  /** USDC / WETH -- the real pair, not the retired mock one. */
+  tokenSymbols: { token0: string; token1: string };
+  tokenDecimals: { token0: number; token1: number };
   maker: string;
   demoTaker: string;
   strategyHash: string;
@@ -28,18 +31,24 @@ export const onchainDemo = onchainDemoData as {
     targetInventoryWad: string;
     boundWad: string;
     horizonSecs: number;
+    /** WAD-normalized, like the balances -- see the file's decimalsNote. */
     fillSize: string;
+    /** The same size in USDC's native 6 decimals, as actually submitted. */
+    fillSizeRaw: string;
     ticks: number;
   };
   fills: {
     tick: number;
+    /** Sender nonce -- the only trustworthy ordering for this run. */
+    nonce: number;
     balance0Before: string;
+    balance0BeforeRaw: string;
     balance1Before: string;
     actualAmountOut: string;
     txHash: string;
     blockNumber: number;
-    transactionIndex: number;
   }[];
   finalBalance0: string;
+  finalBalance0Raw: string;
   finalBalance1: string;
 };

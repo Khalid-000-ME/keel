@@ -3,106 +3,137 @@
   "chainId": 84532,
   "explorer": "https://sepolia.basescan.org",
   "verifiedAgainstLiveChain": true,
-  "verificationNote": "Every value below was independently re-derived from cast receipt/cast tx queries against https://sepolia.base.org after the broadcast, not copied from forge run-latest.json labels -- forge mislabeled which hash corresponded to which script call in this run (the tx hashes and receipts are real and correct, but the function/order metadata forge wrote alongside them was shuffled). True order was reconstructed from each transaction's own on-chain nonce (664-681, strictly sequential) and confirmed three independent ways: (1) nonce order, (2) block transactionIndex order (9-16, sequential within block 46474014), (3) the token1 Transfer amount per fill is monotonically decreasing tick-to-tick exactly as the Avellaneda-Stoikov skew predicts. balance0/balance1 before each fill and the final balances are computed by cumulatively applying these verified on-chain amounts starting from the known 100e18/100e18 shipped balances, and the computed final balance1 matches a live aqua.safeBalances() read back from the chain to the last wei. Do not trust broadcast/ShipKeelDemo.s.sol/84532/run-latest.json's own per-transaction \"function\" or array-position labels for this run -- use this file instead.",
+  "verificationNote": "A real Keel position on the real Circle USDC / WETH pair -- no mock tokens anywhere -- shipped and filled ten times against the live Aqua + redeployed KeelRouter on Base Sepolia via contracts/script/ShipKeelRealPair.s.sol. Every value here was re-derived from the chain after the broadcast (cast tx / cast receipt), never copied from forge's run-latest.json: forge mislabeled which hash belonged to which script call again in this run, exactly as it did in the earlier DRFT/BALT run. True order was reconstructed from each transaction's own on-chain nonce (743-752, strictly sequential) and cross-checked two further ways: the fill selector 0x358e73bf distinguishes the ten fills from the single approveRouter call (0xa773a59b), and the WETH paid out per fill decreases monotonically tick to tick (231012139850087 down to 34987833004421 wei), which is precisely the Avellaneda-Stoikov skew pricing the exposed side worse as inventory drifts. The strategyHash below is the one Aqua actually filed the position under, taken from the Shipped event in the ship transaction's own logs -- the script's pre-broadcast console line logged a different hash, and querying safeBalances with that one reverts. finalBalance0/1 were read back live from aqua.safeBalances() after the run and match the fill series. Do not trust broadcast/ShipKeelRealPair.s.sol/84532/run-latest.json's per-transaction function labels for this run -- use this file.",
+  "decimalsNote": "balance0Before/finalBalance0 are stored WAD-normalized (18 decimals) rather than in USDC's native 6, because every consumer of this file runs them through wadToNumber(), which assumes 18. The native raw amounts are kept alongside as *Raw fields. token1 is WETH, already 18 decimals, so its values are identical in both forms.",
   "deployedContracts": {
     "aqua": "0xAf5Bb8e83F3d22Ec349dB641E0Bd7edA5d9574CD",
-    "keelRouter": "0x1771093A5094FCc818775806eD8a729f6cF7DA0E"
+    "keelRouter": "0x9520b1F0Cbb14F0939041a16E12D9Bc857c50ea2"
   },
   "demoTokens": {
-    "token0": "0xF9b98331a7aFe571Bb77D273866F400e444c667C",
-    "token1": "0xFB2bFf582a21E400b1A1CF11F8A26F375Ca90750"
+    "token0": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "token1": "0x4200000000000000000000000000000000000006"
   },
+  "tokenSymbols": { "token0": "USDC", "token1": "WETH" },
+  "tokenDecimals": { "token0": 6, "token1": 18 },
   "maker": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE",
-  "demoTaker": "0xB042FE7057BC2eC730AC1A540E08ADcC379F8588",
-  "strategyHash": "0x21851573476bedbc0ca391536e394a1566be94ff1515a7ec07d81f7dd1961cd8",
-  "shipTxHash": "0xbc055d7c9a9decbf8f73b85612aa9ee48dd7fa4d7811f2725f9e248b8aedb260",
-  "shipBlockNumber": 46474013,
+  "demoTaker": "0xEA2323a5653C6392dB51558897d92e609eB1f92e",
+  "strategyHash": "0x9048fa797c40055d89db2ffd4cc5f189dd1d519740c5e03313c31b769b15a8d3",
+  "shipTxHash": "0x3418475e0dea08e4d88dff50d491d9352f489d5e4ec5bc5e8dab082c6067ca17",
+  "shipBlockNumber": 46726593,
   "params": {
-    "gammaWad": "5e14",
-    "sigmaSqWad": "5e13",
-    "baseSpreadWad": "1e15",
-    "targetInventoryWad": "100000000000000000000",
-    "boundWad": "20000000000000000000",
+    "gammaWad": "1.2e12",
+    "sigmaSqWad": "1e15",
+    "baseSpreadWad": "3e13",
+    "targetInventoryWad": "12000000000000000000",
+    "boundWad": "6000000000000000000",
     "horizonSecs": 3600,
-    "fillSize": "5000000000000000000",
-    "ticks": 8
+    "fillSize": "1000000000000000000",
+    "fillSizeRaw": "1000000",
+    "ticks": 10
   },
   "fills": [
     {
       "tick": 0,
-      "balance0Before": "100000000000000000000",
-      "balance1Before": "100000000000000000000",
-      "actualAmountOut": "4756840792297673695",
-      "txHash": "0x27772eaabd27d0597e471725a9eb62c6bebec5c64f66384265753b8a41a71d44",
-      "blockNumber": 46474014,
-      "transactionIndex": 9
+      "nonce": 743,
+      "balance0Before": "12000000000000000000",
+      "balance0BeforeRaw": "12000000",
+      "balance1Before": "3400000000000000",
+      "actualAmountOut": "231012139850087",
+      "txHash": "0x5e32d586f60461abeae90d1747e49d5ac9cd8fa25c88d8d4305b977a760f2e46",
+      "blockNumber": 46726595
     },
     {
       "tick": 1,
-      "balance0Before": "105000000000000000000",
-      "balance1Before": "95243159207702326305",
-      "actualAmountOut": "4268043670963668384",
-      "txHash": "0x50362a2eefceb41b4d1f6dce78ff3a9f75fff22127c584093530c9caa65a46df",
-      "blockNumber": 46474014,
-      "transactionIndex": 10
+      "nonce": 744,
+      "balance0Before": "13000000000000000000",
+      "balance0BeforeRaw": "13000000",
+      "balance1Before": "3168987860149913",
+      "actualAmountOut": "190103418949863",
+      "txHash": "0x34204b9deb995c0a2d8f149a57110d5a04dfc9c0e0b944586199b594127a7163",
+      "blockNumber": 46726595
     },
     {
       "tick": 2,
-      "balance0Before": "110000000000000000000",
-      "balance1Before": "90975115536738657921",
-      "actualAmountOut": "3847508346443076779",
-      "txHash": "0x6eb8d9d460cb20f5dfb6fc416abe26ce0b88181ed74235b67231addafa538c50",
-      "blockNumber": 46474014,
-      "transactionIndex": 11
+      "nonce": 745,
+      "balance0Before": "14000000000000000000",
+      "balance0BeforeRaw": "14000000",
+      "balance1Before": "2978884441200050",
+      "actualAmountOut": "157123285153848",
+      "txHash": "0x230557b256c2602c795817d1a532bf915cfb50bc4931d32cd1805d3019c87eb0",
+      "blockNumber": 46726597
     },
     {
       "tick": 3,
-      "balance0Before": "115000000000000000000",
-      "balance1Before": "87127607190295581142",
-      "actualAmountOut": "3483207712267775083",
-      "txHash": "0xefa0eb0b32bf9836f121ca071ea89dd326bb98a047b29ce9eb0550ef976328ac",
-      "blockNumber": 46474014,
-      "transactionIndex": 12
+      "nonce": 746,
+      "balance0Before": "15000000000000000000",
+      "balance0BeforeRaw": "15000000",
+      "balance1Before": "2821761156046202",
+      "actualAmountOut": "130016921217296",
+      "txHash": "0xc852f7f449d1253c2635676c90f4100d9cf7936b5a02d012cb64cb43e35392dd",
+      "blockNumber": 46726597
     },
     {
       "tick": 4,
-      "balance0Before": "120000000000000000000",
-      "balance1Before": "83644399478027806059",
-      "actualAmountOut": "3165632556467381726",
-      "txHash": "0x826a2090d4273f66b31e1dbc3df5988467c73096d4076b8b0dd8b92affe38aa6",
-      "blockNumber": 46474014,
-      "transactionIndex": 13
+      "nonce": 747,
+      "balance0Before": "16000000000000000000",
+      "balance0BeforeRaw": "16000000",
+      "balance1Before": "2691744234828906",
+      "actualAmountOut": "107409422225249",
+      "txHash": "0xd917ae8341f8fb7631a69a1855c57a142a04d64f16a3fdec1998b06a0c21832f",
+      "blockNumber": 46726597
     },
     {
       "tick": 5,
-      "balance0Before": "125000000000000000000",
-      "balance1Before": "80478766921560424333",
-      "actualAmountOut": "2925683484987189818",
-      "txHash": "0x403a1de42c60b4e26371312a7ab907233932aee73cef8ff45cdb345978f38dc3",
-      "blockNumber": 46474014,
-      "transactionIndex": 14
+      "nonce": 748,
+      "balance0Before": "17000000000000000000",
+      "balance0BeforeRaw": "17000000",
+      "balance1Before": "2584334812603657",
+      "actualAmountOut": "88270412294952",
+      "txHash": "0xeef939f2bb31d0d4efb13537fc1f899164e0ec64dc114c7cd47ccc9c22b2bebd",
+      "blockNumber": 46726597
     },
     {
       "tick": 6,
-      "balance0Before": "130000000000000000000",
-      "balance1Before": "77553083436573234515",
-      "actualAmountOut": "2711793876902708264",
-      "txHash": "0x0f5233396d2e962806d331a4d2ffd607ceed23909fa2b1154aa71659d6c6515b",
-      "blockNumber": 46474014,
-      "transactionIndex": 15
+      "nonce": 749,
+      "balance0Before": "18000000000000000000",
+      "balance0BeforeRaw": "18000000",
+      "balance1Before": "2496064400308705",
+      "actualAmountOut": "71880818958948",
+      "txHash": "0x9368a16575dabc75477be20928a6126fc209446ebb3843596d0d774eec2a310e",
+      "blockNumber": 46726599
     },
     {
       "tick": 7,
-      "balance0Before": "135000000000000000000",
-      "balance1Before": "74841289559670526251",
-      "actualAmountOut": "2520287466019240792",
-      "txHash": "0x9157e72adae6ad25123b284686fb4cb6ca182204219931daf543d448a49efee9",
-      "blockNumber": 46474014,
-      "transactionIndex": 16
+      "nonce": 750,
+      "balance0Before": "19000000000000000000",
+      "balance0BeforeRaw": "19000000",
+      "balance1Before": "2424183581349757",
+      "actualAmountOut": "58155784128293",
+      "txHash": "0x5f5a4f22aa836bc2a5d082161ed232b55eca95afaa56876d527ab8ce27bc23d9",
+      "blockNumber": 46726599
+    },
+    {
+      "tick": 8,
+      "nonce": 751,
+      "balance0Before": "20000000000000000000",
+      "balance0BeforeRaw": "20000000",
+      "balance1Before": "2366027797221464",
+      "actualAmountOut": "45950059567070",
+      "txHash": "0xbd1bd3d94f34355da2af89947407e13457bcf799b3be79437992e56fa4998cd5",
+      "blockNumber": 46726599
+    },
+    {
+      "tick": 9,
+      "nonce": 752,
+      "balance0Before": "21000000000000000000",
+      "balance0BeforeRaw": "21000000",
+      "balance1Before": "2320077737654394",
+      "actualAmountOut": "34987833004421",
+      "txHash": "0xd77a2c28bf69add72e579ba4795d5c1b029e0983a2a75345243c3367ff8e12f0",
+      "blockNumber": 46726599
     }
   ],
-  "finalBalance0": "140000000000000000000",
-  "finalBalance1": "72321002093651285459",
-  "finalBalancesVerifiedLive": true,
-  "script": "contracts/script/ShipKeelDemo.s.sol"
+  "finalBalance0": "22000000000000000000",
+  "finalBalance0Raw": "22000000",
+  "finalBalance1": "2285089904649973"
 }
