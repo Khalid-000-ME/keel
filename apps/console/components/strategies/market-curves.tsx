@@ -218,7 +218,7 @@ export function MarketCurves({ strategies }: { strategies: LiveStrategy[] }) {
                 textAnchor="middle"
                 className={isTarget ? "fill-[var(--amber-bright)] text-[9px]" : "fill-[var(--readout-dim)] text-[9px]"}
               >
-                {isTarget ? "target" : `${q > 0 ? "+" : ""}${q}×`}
+                {isTarget ? "own target" : `${q > 0 ? "+" : ""}${q}×`}
               </text>
             </g>
           );
