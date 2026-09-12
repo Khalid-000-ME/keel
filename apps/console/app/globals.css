@@ -1,21 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  /* Core terminal palette (KEEL_PRD Part F.2), extended for depth */
-  --graphite: #0c0e12;
-  --graphite-raised: #12151a;
-  --panel: #171b22;
-  --panel-raised: #1e232c;
-  --hairline: #2a313c;
-  --hairline-bright: #3a4351;
-  --readout: #e8ecf1;
-  --readout-dim: #9aa4b2;
-  --long: #3fa37a;
-  --long-bright: #4fd39b;
-  --short: #c2452c;
-  --short-bright: #ef5f42;
-  --neutral-amber: #d9a441;
-  --amber-bright: #f5c05e;
+  /* Core terminal palette (KEEL_PRD Part F.2), in its light form.
+     The token names stay semantic rather than literal -- `graphite` is
+     "the page ground", `readout` is "text on it", `panel` is "a surface
+     raised off it" -- so inverting their values here flips the whole app
+     without touching the components that consume them.
+
+     The accents are not the dark theme's colours reused: a green, red and
+     amber tuned to sit on near-black are far too light to read on white,
+     so each is darkened to hold contrast against the new ground while
+     keeping the same semantic role (long/short/neutral). */
+  --graphite: #f6f7f9;
+  --graphite-raised: #ffffff;
+  --panel: #ffffff;
+  --panel-raised: #eef1f5;
+  --hairline: #d9dfe7;
+  --hairline-bright: #b3bdca;
+  --readout: #14181f;
+  --readout-dim: #5c6775;
+  --long: #1c7a56;
+  --long-bright: #0f8f5f;
+  --short: #b23a22;
+  --short-bright: #d2452a;
+  --neutral-amber: #9a6f22;
+  --amber-bright: #b5842c;
 }
 
 @theme inline {
@@ -84,9 +93,13 @@ body {
 
 /* Fine grid, the substrate of a trading terminal. */
 .grid-substrate {
+  /* Grid lines sit just *below* the page ground rather than above it: on
+     the dark theme these were a lighter grey drawn over near-black, so
+     reusing that value on white reads as muddy smears rather than a fine
+     substrate. */
   background-image:
-    linear-gradient(to right, rgba(42, 49, 60, 0.35) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(42, 49, 60, 0.35) 1px, transparent 1px);
+    linear-gradient(to right, rgba(92, 103, 117, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(92, 103, 117, 0.07) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
 }

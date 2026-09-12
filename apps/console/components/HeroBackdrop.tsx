@@ -76,8 +76,8 @@ export function HeroBackdrop({ videoScale = 1.06 }: { videoScale?: number }) {
         }}
       >
         <Grainient
-          color1="#d9a441"
-          color2="#0c0e12"
+          color1="#c9962f"
+          color2="#e9edf2"
           color3="#2f6f5c"
           centerX={offset.x}
           centerY={offset.y}
@@ -101,7 +101,13 @@ export function HeroBackdrop({ videoScale = 1.06 }: { videoScale?: number }) {
           contrast independent of the main left-side gradient below */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-28"
-        style={{ background: "linear-gradient(to bottom, rgba(12,14,18,0.6) 0%, transparent 100%)" }}
+        style={{
+          // Tracks the page ground rather than a literal near-black: this
+          // exists to keep the nav links legible over the footage, and those
+          // links are dark text now, so it has to lighten rather than darken.
+          background:
+            "linear-gradient(to bottom, color-mix(in srgb, var(--graphite) 70%, transparent) 0%, transparent 100%)",
+        }}
       />
 
       {/* the actual composition move: video lives on the right, the left
@@ -110,8 +116,13 @@ export function HeroBackdrop({ videoScale = 1.06 }: { videoScale?: number }) {
       <div
         className="pointer-events-none absolute inset-0"
         style={{
+          // Every stop is the page ground at decreasing opacity. These used
+          // to be literal rgba(12,14,18,...) -- the old near-black -- mixed
+          // with var(--graphite); once the ground became near-white that
+          // combination faded white into a dark band and back out, which
+          // reads worse than either theme on its own.
           background:
-            "linear-gradient(90deg, var(--graphite) 0%, var(--graphite) 30%, rgba(12,14,18,0.88) 42%, rgba(12,14,18,0.45) 58%, transparent 74%)",
+            "linear-gradient(90deg, var(--graphite) 0%, var(--graphite) 30%, color-mix(in srgb, var(--graphite) 88%, transparent) 42%, color-mix(in srgb, var(--graphite) 45%, transparent) 58%, transparent 74%)",
         }}
       />
       {/* dissolve the bottom edge into the page below, same as before */}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { FieldLabel, NumericReadout } from "@/components/NumericReadout";
 import { Formula } from "@/components/Formula";
+import { cn } from "@/lib/utils";
 
 /**
  * The spirit level (spec §5.2) -- the one interaction on the site that lets
@@ -141,7 +142,17 @@ export function SkewLab() {
           {/* bubble */}
           <motion.g animate={{ x: cx - W / 2 }} transition={{ type: "spring", stiffness: 60, damping: 15 }}>
             <circle cx={W / 2} cy={H / 2} r={14} fill={bubbleColor} fillOpacity={0.22} stroke={bubbleColor} strokeWidth={1.5} filter="url(#skewlab-glow)" />
-            <path d={`M ${W / 2 - 6} ${H / 2 - 6} a 8 8 0 0 1 6 -3`} fill="none" stroke="#fff" strokeOpacity={0.5} strokeWidth={1.5} strokeLinecap="round" />
+            {/* Highlight arc, drawn in the page ground rather than literal
+                white: on a light theme a white stroke over a light bubble
+                is invisible. */}
+            <path
+              d={`M ${W / 2 - 6} ${H / 2 - 6} a 8 8 0 0 1 6 -3`}
+              fill="none"
+              stroke="var(--graphite-raised)"
+              strokeOpacity={0.7}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+            />
           </motion.g>
         </svg>
       </div>
@@ -153,26 +164,73 @@ export function SkewLab() {
         <span className="text-short-bright/80">EXPOSED +q</span>
       </div>
 
-      {/* slider */}
-      <div className="border-hairline/60 border-t px-6 py-5">
-        <div className="mx-auto flex max-w-[640px] items-center gap-4">
-          <FieldLabel>drift q</FieldLabel>
-          <input
-            type="range"
-            min={-BOUND}
-            max={BOUND}
-            step={0.5}
-            value={q}
-            onChange={(e) => setQ(Number(e.target.value))}
-            aria-label="Inventory drift q"
-            className="accent-amber-bright h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--hairline)]"
-          />
-          <NumericReadout
-            value={`${q > 0 ? "+" : ""}${q.toFixed(1)}`}
-            size="sm"
-            sign={tone as "long" | "short" | "amber"}
-            className="w-16 text-right"
-          />
+      {/* drift control */}
+      <div className="border-hairline/60 border-t px-6 py-6">
+        <div className="mx-auto max-w-[640px]">
+          <div className="flex items-baseline justify-between">
+            <FieldLabel>drift q</FieldLabel>
+            <div className="flex items-baseline gap-2">
+              <NumericReadout
+                value={`${q > 0 ? "+" : ""}${q.toFixed(1)}`}
+                size="sm"
+                sign={tone as "long" | "short" | "amber"}
+              />
+              <span className="text-readout-dim font-numeric text-[10px]">
+                of ±{BOUND} bound
+              </span>
+            </div>
+          </div>
+
+          {/* Track, drawn rather than themed. A bare range input gave a 1px
+              line with a browser-default thumb and no sense of where the
+              bound or the target actually were -- the two things this
+              control exists to show. The fill runs from the centre out to
+              the handle, so the direction and depth of the drift read at a
+              glance. */}
+          <div className="relative mt-4 h-9">
+            <div className="bg-hairline absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full" />
+            <div
+              className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full transition-[left,width] duration-150 ease-out"
+              style={{
+                left: `${Math.min(50, 50 + ratio * 50)}%`,
+                width: `${Math.abs(ratio) * 50}%`,
+                backgroundColor: bubbleColor,
+              }}
+            />
+            {/* limits and centre, so the scale is defined rather than implied */}
+            {[-1, 0, 1].map((t) => (
+              <span
+                key={t}
+                className={cn(
+                  "absolute top-1/2 h-3 w-px -translate-y-1/2",
+                  t === 0 ? "bg-hairline-bright" : "bg-hairline",
+                )}
+                style={{ left: `${50 + t * 50}%` }}
+              />
+            ))}
+            <span
+              aria-hidden
+              className="border-graphite pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-sm transition-[left] duration-150 ease-out"
+              style={{ left: `${50 + ratio * 50}%`, backgroundColor: bubbleColor }}
+            />
+            <input
+              type="range"
+              min={-BOUND}
+              max={BOUND}
+              step={0.5}
+              value={q}
+              onChange={(e) => setQ(Number(e.target.value))}
+              aria-label="Inventory drift q"
+              aria-valuetext={`${q > 0 ? "+" : ""}${q.toFixed(1)} of plus or minus ${BOUND}`}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+          </div>
+
+          <div className="text-readout-dim font-numeric mt-2 flex justify-between text-[10px] tracking-[0.12em]">
+            <span>−{BOUND} covered bound</span>
+            <span className={atTarget ? "text-amber-bright" : ""}>0 target</span>
+            <span>+{BOUND} exposed bound</span>
+          </div>
         </div>
       </div>
 

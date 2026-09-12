@@ -17,11 +17,13 @@ const VARIANTS: Record<Variant, string> = {
   primary:
     "bg-readout text-graphite px-5 py-2.5 shadow-[0_1px_0_0_rgba(255,255,255,0.6)_inset,0_8px_24px_-12px_rgba(217,164,65,0.5)] " +
     "hover:shadow-[0_1px_0_0_rgba(255,255,255,0.7)_inset,0_14px_36px_-12px_rgba(245,192,94,0.75)] hover:-translate-y-[1px]",
-  // Hairline glass: border brightens and a faint amber film fades in.
+  // Hairline glass: border brightens and the surface settles on hover.
+  // The lift shadow is far lighter than the dark theme's -- a near-opaque
+  // black drop reads as a smudge on a light ground rather than elevation.
   secondary:
     "border-hairline text-readout border bg-panel/40 px-5 py-2.5 backdrop-blur " +
     "hover:border-hairline-bright hover:bg-panel-raised/70 hover:-translate-y-[1px] " +
-    "hover:shadow-[0_10px_30px_-16px_rgba(0,0,0,0.9)]",
+    "hover:shadow-[0_10px_30px_-18px_rgba(20,24,31,0.35)]",
   ghost: "text-readout-dim hover:text-readout px-3 py-2",
 };
 
@@ -34,7 +36,10 @@ function Face({ variant, children }: { variant: Variant; children: React.ReactNo
           <span
             className={cn(
               "absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] transition-[left] duration-700 ease-out group-hover:left-[150%]",
-              variant === "primary" ? "bg-white/40" : "bg-white/[0.07]",
+              // primary keeps a light sheen (its face is the dark readout
+              // colour); secondary's has to darken, since its surface is now
+              // the near-white panel and a white sweep over it is invisible.
+              variant === "primary" ? "bg-white/40" : "bg-[rgba(20,24,31,0.06)]",
             )}
           />
         </span>

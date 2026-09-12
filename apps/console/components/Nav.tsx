@@ -138,7 +138,7 @@ function NetworkSwitcher() {
       {open && (
         <div
           role="listbox"
-          className="border-hairline bg-graphite-raised absolute right-0 mt-2 min-w-[180px] border py-1 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.8)]"
+          className="border-hairline bg-graphite-raised absolute right-0 mt-2 min-w-[180px] border py-1 shadow-[0_12px_36px_-14px_rgba(20,24,31,0.30)]"
         >
           {NETWORKS.map((n) => (
             <button

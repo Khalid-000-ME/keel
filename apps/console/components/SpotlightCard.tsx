@@ -13,7 +13,10 @@ interface SpotlightCardProps extends React.PropsWithChildren {
 const SpotlightCard: React.FC<SpotlightCardProps> = ({
   children,
   className = '',
-  spotlightColor = 'rgba(255, 255, 255, 0.25)'
+  // A cursor-following wash. On a light ground this has to darken rather
+  // than lighten -- the previous white spotlight was drawn on what is now a
+  // white surface, so it did nothing at all.
+  spotlightColor = 'rgba(20, 24, 31, 0.10)'
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState<boolean>(false);
