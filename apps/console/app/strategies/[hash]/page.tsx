@@ -70,7 +70,15 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   const { network } = useNetwork();
   const onRightChain = isConnected && chainId === network.chain.id;
 
-  const [fillSize, setFillSize] = useState(5);
+  // Two separate sizes, not one shared number applied to both tokens: token0
+  // and token1 can be wildly different in real-world scale (USDC vs WETH),
+  // and a single "5" that's a sane USDC test trade is ~$17,500 of WETH on
+  // the covered side -- almost certainly more than the wallet holds or
+  // approved, so that fill would revert every time and the strategy's own
+  // balance (and the tilt gauge) would never move off target. Defaults are
+  // sized for a small test trade on each side.
+  const [fillSize0, setFillSize0] = useState(50);
+  const [fillSize1, setFillSize1] = useState(0.01);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<Hex | undefined>();
@@ -80,16 +88,16 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
   const fillPending = useRef(false);
 
   const orderTuple = toOrderTuple(strategy.order);
-  // fillSize is a human amount of "the token being sold in this direction" --
-  // token0 (exposed side, sold in) and token1 (covered side, sold in) can
-  // have different decimals (USDC 6, WETH 18), so each direction parses it
-  // against its own token's decimals rather than assuming 18 for both.
-  const amountInExposed = parseUnits(String(fillSize), network.tokens[0].decimals);
-  const amountInCovered = parseUnits(String(fillSize), network.tokens[1].decimals);
+  const amountInExposed = parseUnits(String(fillSize0), network.tokens[0].decimals);
+  const amountInCovered = parseUnits(String(fillSize1), network.tokens[1].decimals);
   const docked = Boolean(strategy.dockedTxHash);
   const isMine = address?.toLowerCase() === strategy.order.maker.toLowerCase();
 
-  const { data: balances, refetch: refetchBalances } = useReadContract({
+  const {
+    data: balances,
+    error: balancesError,
+    refetch: refetchBalances,
+  } = useReadContract({
     address: network.addresses.aqua,
     abi: AQUA_ABI,
     functionName: "safeBalances",
@@ -114,8 +122,8 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
   const exposedOut = (quotes?.[0]?.result as readonly [bigint, bigint] | undefined)?.[1];
   const coveredOut = (quotes?.[1]?.result as readonly [bigint, bigint] | undefined)?.[1];
-  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize : null;
-  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) / fillSize : null;
+  const exposedRate = exposedOut !== undefined ? Number(formatUnits(exposedOut, network.tokens[1].decimals)) / fillSize0 : null;
+  const coveredRate = coveredOut !== undefined ? Number(formatUnits(coveredOut, network.tokens[0].decimals)) / fillSize1 : null;
 
   // The series carries poll samples too; the table below is only about fills.
   const fills = history.filter((h) => h.kind === "fill");
@@ -246,14 +254,20 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <div className="border-hairline bg-panel/40 border p-5">
           <FieldLabel>Live inventory</FieldLabel>
-          <div className="mt-4 flex justify-center">
-            <TiltGauge
-              inventoryWad={inventory ?? strategy.params.targetInventory}
-              targetWad={strategy.params.targetInventory}
-              boundWad={strategy.params.bound}
-              size={240}
-            />
-          </div>
+          {inventory !== null ? (
+            <div className="mt-4 flex justify-center">
+              <TiltGauge
+                inventoryWad={inventory}
+                targetWad={strategy.params.targetInventory}
+                boundWad={strategy.params.bound}
+                size={240}
+              />
+            </div>
+          ) : (
+            <div className="border-hairline/60 text-readout-dim mt-4 flex h-[180px] items-center justify-center border border-dashed text-[12px]">
+              {balancesError ? "Couldn't read live balances — see below." : "Loading live balances…"}
+            </div>
+          )}
           <div className="border-hairline/60 mt-4 grid grid-cols-3 gap-px border-t pt-4">
             <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)).toFixed(2) : "—"} />
             <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, network.tokens[1].decimals)).toFixed(6) : "—"} />
@@ -263,20 +277,39 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
               tone={drift === null ? "neutral" : drift > 0 ? "short" : drift < 0 ? "long" : "amber"}
             />
           </div>
+          {balancesError && (
+            <p className="text-short-bright mt-3 text-[11px]">
+              {strategy.symbol0}/{strategy.symbol1} balance read failed — this position may have been shipped against
+              a different KeelRouter than {network.chain.name}&apos;s current one ({txErrorText(balancesError)}).
+            </p>
+          )}
         </div>
 
         <div className="border-hairline bg-panel/40 border p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <FieldLabel>Make a fill — adjustable size</FieldLabel>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-4">
             <label className="text-readout-dim flex items-center gap-2 text-[11px]">
-              fill size
+              {strategy.symbol0} in
               <input
                 type="number"
-                min={0.1}
-                step={1}
-                value={fillSize}
-                onChange={(e) => setFillSize(Math.max(0.1, Number(e.target.value) || 0.1))}
-                className="border-hairline bg-graphite-raised text-readout font-numeric w-20 border px-2 py-1 text-[12px] outline-none"
+                min={0.01}
+                step={10}
+                value={fillSize0}
+                onChange={(e) => setFillSize0(Math.max(0.01, Number(e.target.value) || 0.01))}
+                className="border-hairline bg-graphite-raised text-readout font-numeric w-24 border px-2 py-1 text-[12px] outline-none"
+              />
+            </label>
+            <label className="text-readout-dim flex items-center gap-2 text-[11px]">
+              {strategy.symbol1} in
+              <input
+                type="number"
+                min={0.0001}
+                step={0.01}
+                value={fillSize1}
+                onChange={(e) => setFillSize1(Math.max(0.0001, Number(e.target.value) || 0.0001))}
+                className="border-hairline bg-graphite-raised text-readout font-numeric w-24 border px-2 py-1 text-[12px] outline-none"
               />
             </label>
           </div>
@@ -285,7 +318,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
             <QuoteBox
               label="Exposed-side fill"
               formula="r - \delta"
-              detail={`${fillSize} ${strategy.symbol0} in`}
+              detail={`${fillSize0} ${strategy.symbol0} in`}
               rate={exposedRate}
               tone="short"
               note="pushes inventory further from target"
@@ -293,7 +326,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
             <QuoteBox
               label="Covered-side fill"
               formula="r + \delta"
-              detail={`${fillSize} ${strategy.symbol1} in`}
+              detail={`${fillSize1} ${strategy.symbol1} in`}
               rate={coveredRate}
               tone="long"
               note="brings inventory back to target"
