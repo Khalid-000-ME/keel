@@ -108,9 +108,11 @@ export default function LandingPage() {
             <div className="relative">
               <PnlChart series={series} />
               <p className="text-readout-dim border-hairline/60 mt-8 border-t pt-6 text-[13px] leading-relaxed">
-                Two positions, the same 40 trades, the same tokens left at the end. The only difference is what each
-                trade <span className="text-readout">cost</span> — and that gap is worth{" "}
-                <span className="text-long-bright font-numeric">+22.35</span>.
+                Two positions, the same {receipt.ticks} trades, the same tokens left at the end. The only difference is
+                what each trade <span className="text-readout">cost</span> — and that gap is worth{" "}
+                <span className="text-long-bright font-numeric">
+                  +{pnlImprovement.toFixed(4)}
+                </span>.
               </p>
             </div>
           </div>

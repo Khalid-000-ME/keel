@@ -54,7 +54,7 @@ These two chains have Aqua + KeelRouter + KeelDemoTaker deployed but no shipped 
 | Demo kit | `contracts/src/demo/` | **Live on Base Sepolia** — faucet tokens + taker helper the console drives |
 | Console (demo UI) | `apps/console` | Built, 7 pages, typechecked + built + screenshot-verified |
 
-32 Foundry tests, 5 SDK tests, all green as of the last commit.
+35 Foundry tests, 5 SDK tests, all green as of the last commit.
 
 ---
 
@@ -62,7 +62,7 @@ These two chains have Aqua + KeelRouter + KeelDemoTaker deployed but no shipped 
 
 Generated from a real run of `contracts/script/AdversarialFlow.s.sol` piped through `packages/sim-report` — not hand-typed:
 
-> Over 40 fills on a trending series (mid moved from 1.0000 to 0.7002, -29.97%), both positions took on the identical inventory drift (token0 grew 19.40% for both, since both received the same fixed-size adversarial fills), but the stock position ended -26.6130 PnL while Keel ended -4.2607 PnL — a 22.3523 improvement, entirely from Keel's reservation-price skew pricing the exposed-side fills worse for the taker as inventory drifted.
+> Over 120 fills on a trending series (mid moved from 0.0002857142 to 0.0000834811, -70.78%), both positions took on the identical inventory drift (token0 grew 84.39% for both, since both received the same fixed-size adversarial fills), but the stock position ended -0.2110 PnL while Keel ended -0.0620 PnL — a 0.1490 improvement, entirely from Keel's reservation-price skew pricing the exposed-side fills worse for the taker as inventory drifted.
 
 Both positions face the *exact same* adversarial flow and end up holding the *exact same* inventory — the divergence is entirely in what each fill cost, because Keel's reservation price moved against the taker as inventory drifted and the stock constant-product curve's didn't. Reproduce it yourself:
 
@@ -73,7 +73,7 @@ cd ..
 pnpm --filter @keel/sim-report start /tmp/sim-output.log apps/console/data
 ```
 
-(The pinned seed and series parameters — 40 ticks, fixed fill size, fixed γ/σ²/spread/bound — are stated directly in `AdversarialFlow.s.sol`, next to where they're used, so the numbers are reproducible run to run.)
+(The pinned seed and series parameters — 120 ticks, fixed fill size, fixed γ/σ²/spread/bound — are stated directly in `AdversarialFlow.s.sol`, next to where they're used, so the numbers are reproducible run to run. The pair is USDC/WETH-shaped: 6 decimals on one side, 18 on the other, starting near a realistic ~1/3500 mid, so the run actually exercises `KeelInventorySkew`'s decimals normalization — the earlier version used two 18-decimal mocks at a mid of exactly 1.0, where that code path was unreachable.)
 
 ---
 

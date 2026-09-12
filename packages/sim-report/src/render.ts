@@ -10,6 +10,21 @@ function wadToFixed(v: bigint, decimals = 4): string {
   return `${negative ? "-" : ""}${whole}.${frac}`;
 }
 
+/**
+ * Prices need significant digits, not a flat 4 decimals.
+ *
+ * A WETH/USDC-shaped mid is around 2.9e-4, which renders as "0.0002" at 4dp
+ * -- and the end of a downward series renders as "0.0000", i.e. the
+ * headline claims the price went to zero when it actually fell about 70%.
+ * Anything at or above 0.001 keeps the original fixed-decimal form, so
+ * mid-1.0 pairs read exactly as they did before.
+ */
+function wadToPrice(v: bigint): string {
+  const abs = v < 0n ? -v : v;
+  if (abs === 0n) return "0";
+  return abs >= WAD / 1000n ? wadToFixed(v, 4) : wadToFixed(v, 10);
+}
+
 function pctChange(fromWad: bigint, toWad: bigint): string {
   if (fromWad === 0n) return "n/a";
   const deltaWad = ((toWad - fromWad) * WAD) / fromWad;
@@ -41,7 +56,7 @@ export function buildReceipt(records: SimFillRecord[]): SimReceipt {
 
   const headline =
     `Over ${records.length} fills on a trending series (mid moved from ` +
-    `${wadToFixed(startMidWad)} to ${wadToFixed(endMidWad)}, ${pctChange(startMidWad, endMidWad)}), ` +
+    `${wadToPrice(startMidWad)} to ${wadToPrice(endMidWad)}, ${pctChange(startMidWad, endMidWad)}), ` +
     `both positions took on the identical inventory drift (token0 grew ${pctChange(startInventoryWad, last.stockInventoryWad)} for both, ` +
     `since both received the same fixed-size adversarial fills), but the stock position ended ${wadToFixed(last.stockPnlWad)} PnL ` +
     `while Keel ended ${wadToFixed(last.keelPnlWad)} PnL -- a ${wadToFixed(pnlImprovementWad)} improvement, ` +
@@ -68,7 +83,7 @@ export function renderMarkdownTable(records: SimFillRecord[]): string {
     "|---|---|---|---|---|---|";
   const rows = records.map(
     (r) =>
-      `| ${r.tick} | ${wadToFixed(r.midWad)} | ${wadToFixed(r.stockInventoryWad)} | ${wadToFixed(r.stockPnlWad)} | ` +
+      `| ${r.tick} | ${wadToPrice(r.midWad)} | ${wadToFixed(r.stockInventoryWad)} | ${wadToFixed(r.stockPnlWad)} | ` +
       `${wadToFixed(r.keelInventoryWad)} | ${wadToFixed(r.keelPnlWad)} |`,
   );
   return [header, ...rows].join("\n");
