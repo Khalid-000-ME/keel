@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 
 import { FieldLabel } from "@/components/NumericReadout";
-import { quoteAtDrift } from "@/lib/keel-math";
+import { quoteAtDrift, PRICE_DECIMALS } from "@/lib/keel-math";
 import type { LiveStrategy } from "@/lib/use-market";
 
 const W = 720;
@@ -114,10 +115,10 @@ export function MarketCurves({ strategies }: { strategies: LiveStrategy[] }) {
         ))}
 
         <text x={PAD.left - 8} y={PAD.top + 8} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-          {yHi.toFixed(4)}
+          {yHi.toFixed(PRICE_DECIMALS)}
         </text>
         <text x={PAD.left - 8} y={H - PAD.bottom} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-          {yLo.toFixed(4)}
+          {yLo.toFixed(PRICE_DECIMALS)}
         </text>
         <text x={-(H / 2)} y={12} transform="rotate(-90)" textAnchor="middle" className="fill-[var(--readout-dim)] text-[10px]">
           price (token1 / token0)
@@ -129,12 +130,16 @@ export function MarketCurves({ strategies }: { strategies: LiveStrategy[] }) {
 
       <div className="border-hairline/60 mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t pt-4">
         {curves.map((c) => (
-          <div key={c.strategy.strategyHash} className="flex items-center gap-2 text-[11px]">
+          <Link
+            key={c.strategy.strategyHash}
+            href={`/strategies/${c.strategy.strategyHash}`}
+            className="hover:text-readout flex items-center gap-2 text-[11px] transition-colors"
+          >
             <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
             <span className="font-numeric text-readout-dim">
               {c.strategy.strategyHash.slice(0, 8)}… · q {c.strategy.q !== null ? c.strategy.q.toFixed(2) : "—"}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
       <p className="text-readout-dim mt-3 text-[11px]">

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import { FieldLabel } from "@/components/NumericReadout";
+import { PRICE_DECIMALS } from "@/lib/keel-math";
 
 const W = 720;
 const H = 320;
@@ -206,13 +207,13 @@ export function LivePriceChart({
                 )}
                 <circle cx={geom.x(h.t)} cy={geom.y(h.exposed)} r={isFill ? 4 : 2} fill="var(--short-bright)">
                   <title>
-                    {clock(h.t)} · exposed {h.exposed.toFixed(6)} · q {h.q.toFixed(2)}
+                    {clock(h.t)} · exposed {h.exposed.toFixed(PRICE_DECIMALS)} · q {h.q.toFixed(2)}
                     {isFill ? " · fill" : ""}
                   </title>
                 </circle>
                 <circle cx={geom.x(h.t)} cy={geom.y(h.covered)} r={isFill ? 4 : 2} fill="var(--long-bright)">
                   <title>
-                    {clock(h.t)} · covered {h.covered.toFixed(6)} · q {h.q.toFixed(2)}
+                    {clock(h.t)} · covered {h.covered.toFixed(PRICE_DECIMALS)} · q {h.q.toFixed(2)}
                     {isFill ? " · fill" : ""}
                   </title>
                 </circle>
@@ -232,10 +233,10 @@ export function LivePriceChart({
 
           {/* axis labels */}
           <text x={PAD.left - 8} y={PAD.top + 8} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-            {geom.yHi.toFixed(4)}
+            {geom.yHi.toFixed(PRICE_DECIMALS)}
           </text>
           <text x={PAD.left - 8} y={H - PAD.bottom} textAnchor="end" className="fill-[var(--readout-dim)] text-[10px]">
-            {geom.yLo.toFixed(4)}
+            {geom.yLo.toFixed(PRICE_DECIMALS)}
           </text>
           <text
             x={-(H / 2)}

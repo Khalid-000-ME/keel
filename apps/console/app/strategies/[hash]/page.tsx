@@ -18,6 +18,7 @@ import { LivePriceChart, MAX_SAMPLES, type LiveSample } from "@/components/strat
 import { cn } from "@/lib/utils";
 import { txErrorText } from "@/lib/tx-error";
 import { waitForTx } from "@/lib/wait-for-tx";
+import { PRICE_DECIMALS } from "@/lib/keel-math";
 
 const REFRESH_MS = 15_000; // gentle on the shared public RPC -- see lib/chain.ts's RPC_URL note
 
@@ -236,7 +237,11 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
 
       <WalletBar />
 
-      <LivePriceChart history={history} currentQ={drift} />
+      <LivePriceChart
+        history={history}
+        currentQ={drift}
+        mid={Number(strategy.amount0) > 0 ? Number(strategy.amount1) / Number(strategy.amount0) : 1}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <div className="border-hairline bg-panel/40 border p-5">
@@ -251,7 +256,7 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
           </div>
           <div className="border-hairline/60 mt-4 grid grid-cols-3 gap-px border-t pt-4">
             <Mini label={strategy.symbol0} value={bal0 !== undefined ? Number(formatUnits(bal0, network.tokens[0].decimals)).toFixed(2) : "—"} />
-            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, network.tokens[1].decimals)).toFixed(4) : "—"} />
+            <Mini label={strategy.symbol1} value={bal1 !== undefined ? Number(formatUnits(bal1, network.tokens[1].decimals)).toFixed(6) : "—"} />
             <Mini
               label="drift q"
               value={drift !== null ? `${drift > 0 ? "+" : ""}${drift.toFixed(2)}` : "—"}
@@ -343,9 +348,9 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
           )}
 
           <div className="border-hairline/60 text-readout-dim mt-5 flex flex-wrap gap-x-5 gap-y-1 border-t pt-4 text-[11px]">
-            <span>γ {strategy.params.gamma}</span>
-            <span>σ² {strategy.params.sigmaSq}</span>
-            <span>δ₀ {strategy.params.baseSpread}</span>
+            <span>γ {strategy.params.gamma.toFixed(PRICE_DECIMALS)}</span>
+            <span>σ² {strategy.params.sigmaSq.toFixed(PRICE_DECIMALS)}</span>
+            <span>δ₀ {strategy.params.baseSpread.toFixed(PRICE_DECIMALS)}</span>
             <span>target {strategy.params.targetInventory}</span>
             <span>bound {strategy.params.bound}</span>
             <span>T {strategy.params.horizonSecs}s</span>
@@ -367,10 +372,10 @@ function StrategyDetail({ strategy }: { strategy: StoredStrategy }) {
                     q <span className="text-readout">{h.q > 0 ? "+" : ""}{h.q.toFixed(2)}</span>
                   </span>
                   <span>
-                    exposed <span className="text-short-bright">{h.exposed.toFixed(5)}</span>
+                    exposed <span className="text-short-bright">{h.exposed.toFixed(PRICE_DECIMALS)}</span>
                   </span>
                   <span>
-                    covered <span className="text-long-bright">{h.covered.toFixed(5)}</span>
+                    covered <span className="text-long-bright">{h.covered.toFixed(PRICE_DECIMALS)}</span>
                   </span>
                 </div>
               ))}
@@ -403,7 +408,7 @@ function QuoteBox({
         <Formula tex={formula} className="text-hairline-bright" />
       </div>
       <div className="mt-2">
-        <NumericReadout value={rate !== null ? rate.toFixed(6) : "—"} size="lg" sign={tone} />
+        <NumericReadout value={rate !== null ? rate.toFixed(PRICE_DECIMALS) : "—"} size="lg" sign={tone} />
       </div>
       <div className="text-readout-dim mt-1 text-[11px]">{detail}</div>
       <div className="text-readout-dim mt-0.5 text-[11px]">{note}</div>

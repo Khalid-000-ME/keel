@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatUnits, type Hex } from "viem";
 
 import { explorerTx } from "@/lib/chain";
@@ -82,14 +83,17 @@ export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) 
         <div className="flex items-center justify-between">
           <span className="text-readout-dim text-[12px]">Best quote</span>
           {best && (
-            <span className="font-numeric text-readout-dim text-[11px]">
+            <Link
+              href={`/strategies/${best.strategy.strategyHash}`}
+              className="font-numeric text-readout-dim hover:text-amber-bright text-[11px] transition-colors"
+            >
               via {best.strategy.strategyHash.slice(0, 10)}…
-            </span>
+            </Link>
           )}
         </div>
         <div className="mt-1.5">
           <NumericReadout
-            value={bestOut !== null ? bestOut.toFixed(tokenOut.symbol === "USDC" ? 2 : 6) : "—"}
+            value={bestOut !== null ? bestOut.toFixed(tokenOut.symbol === "USDC" ? 2 : 8) : "—"}
             suffix={` ${tokenOut.symbol}`}
             size="lg"
             sign="long"
@@ -110,9 +114,14 @@ export function MarketSwapPanel({ strategies }: { strategies: LiveStrategy[] }) 
                   best?.strategy.strategyHash === q.strategy.strategyHash && "bg-long/[0.06]",
                 )}
               >
-                <span className="font-numeric text-readout-dim">{q.strategy.strategyHash.slice(0, 10)}…</span>
+                <Link
+                  href={`/strategies/${q.strategy.strategyHash}`}
+                  className="font-numeric text-readout-dim hover:text-amber-bright transition-colors"
+                >
+                  {q.strategy.strategyHash.slice(0, 10)}…
+                </Link>
                 <span className="font-numeric text-readout">
-                  {Number(formatUnits(q.amountOut, tokenOut.decimals)).toFixed(tokenOut.symbol === "USDC" ? 2 : 6)}{" "}
+                  {Number(formatUnits(q.amountOut, tokenOut.decimals)).toFixed(tokenOut.symbol === "USDC" ? 2 : 8)}{" "}
                   {tokenOut.symbol}
                 </span>
               </div>
