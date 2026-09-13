@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Eye, Scale, Zap } from "lucide-react";
 
 import { NumericReadout } from "@/components/NumericReadout";
 
@@ -13,19 +12,16 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
 const BEATS = [
   {
     step: "01",
-    icon: Eye,
     title: "It sees what it holds",
     body: "At the moment it quotes a price, the position can read its own real balance — not a pool's, its own.",
   },
   {
     step: "02",
-    icon: Scale,
     title: "It leans against the risk",
     body: "The more it's already holding, the more expensive it makes the trade that would hand it even more.",
   },
   {
     step: "03",
-    icon: Zap,
     title: "It never has to act",
     body: "No keeper, no rebalancing transaction, no delay. By the time the next trade arrives, the price has already moved.",
   },
@@ -125,21 +121,23 @@ export function LandingTimeline() {
       </div>
 
       {BEATS.map((beat, i) => {
-        const Icon = beat.icon;
         const shown = !driven || live[i];
         return (
           <li key={beat.step} className="relative grid grid-cols-[40px_1fr] gap-x-5 pb-12 last:pb-0 sm:gap-x-7">
+            {/* The marker is a plain solid square. The 40px cell stays: the
+                spine is drawn at left-[19px] and every connector at
+                top-[19px], both keyed to this cell's centre, so the square
+                is centred inside it rather than replacing it. */}
             <div
               ref={(el) => {
                 nodeRefs.current[i] = el;
               }}
-              className={`relative z-10 flex h-10 w-10 items-center justify-center border transition-colors duration-500 ${
-                shown
-                  ? "border-hairline-bright bg-panel-raised text-amber-bright"
-                  : "border-hairline bg-panel text-readout-dim"
-              }`}
+              className="relative z-10 flex h-10 w-10 items-center justify-center"
             >
-              <Icon className="h-4 w-4" />
+              <span
+                className="h-3.5 w-3.5 transition-colors duration-500"
+                style={{ background: shown ? "var(--amber-bright)" : "var(--hairline-bright)" }}
+              />
             </div>
 
             <div
